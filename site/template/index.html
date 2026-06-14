@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#13315c">
 <title>Atlas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Alumni+Sans+Pinstripe&family=Albert+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2313315c'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='19' font-weight='700' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
 <style>
   /* ── Institutional navy palette (matches the briefs) ── */
@@ -48,8 +48,10 @@
           padding-top: clamp(56px, 12vh, 140px); transition: padding-top 300ms var(--ease); }
   body.searching .hero { padding-top: clamp(32px, 6vh, 64px); }
 
-  .wordmark { font-family: "Alumni Sans Pinstripe", "Albert Sans", sans-serif; font-weight: 300;
-              font-size: clamp(3rem, 9vw, 5.5rem); line-height: 0.9; letter-spacing: 0.02em;
+  /* Serif masthead — the same face as the brief company-name, so the site and the
+     report read as one brand. */
+  .wordmark { font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; font-weight: 700;
+              font-size: clamp(3rem, 9vw, 5.5rem); line-height: 0.9; letter-spacing: -0.015em;
               color: var(--champagne); }
   .wordmark .dot { color: var(--crimson); }
   .tagline { font-family: var(--mono); font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase;
@@ -185,6 +187,8 @@
   @media (max-width: 600px) { .bar-name { display: none; } .newtab span { display: none; }
     .back, .newtab, select.run { padding: 11px 14px; } }
 </style>
+<!-- Vercel Web Analytics (page views / visitors) — served automatically once enabled on the project -->
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
   <div class="stage">

@@ -2,7 +2,7 @@
 // Atlas site build — assembles the static coverage viewer into site/dist.
 //
 // Emits TWO views from data-dumps:
-//   • dist/        → PUBLIC demo: only DEMO_IDS (e.g. Decagon + Broadcom), no auth
+//   • dist/        → PUBLIC demo: the DEMO_COUNT most-recent companies, no auth
 //   • dist/full/   → FULL coverage: every company, gated by middleware.js (SITE_PASSWORD)
 // Each view gets its own index.json + index.html + briefs/, so the shared template's
 // relative fetches ("index.json", "briefs/…") just work in either directory. A company's
@@ -27,24 +27,26 @@ const TEMPLATE = path.join(__dirname, 'template', 'index.html');
 // Refreshed 2026-06-11: the public demo now features Netskope plus the latest coverage
 // (CoreWeave, Broadcom, AppLovin, Figma, Databricks). The prior demo names (CRM, EGAN,
 // forgepoint-ai, standard-intelligence) are archived off the live demo but remain in /full.
-const DEMO_IDS = ['NTSK', 'CRWV', 'AVGO', 'APP', 'FIG', 'databricks'];
+// Public demo shows the N most recently updated companies from the full coverage set.
+const DEMO_COUNT = 5;
+
+// Vercel Web Analytics tag, injected into each published brief page at build time.
+const ANALYTICS_TAG = '<script defer src="/_vercel/insights/script.js"></script>';
 
 // ── Sector buckets for the filter bar. Profile `verticals` are free-form (80+ unique
 // tags), so the site maps them into this canonical set and renders one chip per bucket.
 // Matching is keyword-based against each vertical string, so newly researched companies
 // bucket themselves with no manual tagging. A company can land in several buckets.
+// Kept deliberately BROAD for now — a handful of top-level tech sectors rather than
+// fine-grained sub-categories. Matching is keyword-based against each free-form vertical
+// string, so a company can land in several buckets and new names self-classify.
 const SECTORS = [
-  ['Semiconductors',       /semiconductor|\bdram\b|\bnand\b|\bhbm\b|silicon|\basic\b|\bxpu\b|chiplet|foundry|\beuv\b/i],
-  ['Cybersecurity',        /security|cyber|\bsase\b|\bsse\b|zero trust|\bsiem\b|\bpqc\b|endpoint/i],
-  ['Cloud / Infra',        /cloud|infra|data ?center|(?<!quantum )networking|\bcdn\b|\bedge\b|\bgpu\b|serverless|observability|monitoring|\bapm\b|hyperscaler|ethernet/i],
-  ['AI',                   /artificial intelligence|foundation model|agentic|ai agents|enterprise ai|generative ai|genai|machine learning|ai research|\bllm\b/i],
-  ['Data & Analytics',     /database|data (platform|cloud|warehouse|engineering)|analytics|lakehouse|dbaas|nosql|vector search|log management/i],
-  ['Enterprise Software',  /enterprise software|\bcrm\b|(?<!vertical )saas\b|productivity|design software|creative tools|knowledge management|customer (engagement|service)|sales automation|infrastructure software/i],
-  ['Vertical SaaS',        /vertical saas|restaurant|point of sale|\bsmb\b|manufacturing|industrials/i],
-  ['Internet / Consumer',  /internet|e-?commerce|\bcommerce\b|adtech|advertis|\bctv\b|consumer|marketplace/i],
-  ['Fintech / Payments',   /payments|fintech/i],
-  ['Defense / Gov',        /defense|gov tech|national security/i],
-  ['Deep Tech',            /quantum|deep tech|robotics/i],
+  ['Software',            /software|\bsaas\b|\bcrm\b|\berp\b|productivity|design software|creative tools|knowledge management|customer (engagement|service)|sales automation|database|data (platform|cloud|warehouse|engineering)|analytics|lakehouse|nosql|vector search|log management|restaurant|point of sale|\bsmb\b|vertical saas/i],
+  ['AI',                  /artificial intelligence|foundation model|agentic|ai agents?|enterprise ai|generative ai|genai|machine learning|ai research|\bllm\b|\bai\b/i],
+  ['Semiconductors',      /semiconductor|\bsemis?\b|\bdram\b|\bnand\b|\bhbm\b|silicon|\basic\b|\bxpu\b|\bgpus?\b|\bcpus?\b|accelerator|chiplet|foundry|\beuv\b|optical|interconnect/i],
+  ['Cloud & Infra',       /cloud|infra|data ?center|(?<!quantum )networking|\bcdn\b|\bedge\b|serverless|observability|monitoring|\bapm\b|hyperscaler|ethernet|security|cyber|\bsase\b|\bsse\b|zero trust|\bsiem\b|endpoint|devops/i],
+  ['Internet & Consumer', /internet|e-?commerce|\bcommerce\b|adtech|advertis|\bctv\b|consumer|marketplace|payments|fintech|gaming|\bmedia\b/i],
+  ['Frontier Tech',       /quantum|deep tech|robotics|defense|gov tech|national security|\bspace\b|autonomous|biotech/i],
 ];
 const sectorsFor = (verticals) =>
   SECTORS.filter(([, re]) => verticals.some((v) => re.test(v))).map(([name]) => name);
@@ -163,7 +165,10 @@ function emitView(outDir, list, opts = {}) {
       // layout (../<date>/<id>_brief_<date>.html). On the site every version sits flat in
       // briefs/<id>/, so a sibling version is just <date>.html — rewrite the links to match.
       const html = fs.readFileSync(r.srcHtml, 'utf8')
-        .replace(/href="\.\.\/(\d{4}-\d{2}-\d{2})\/[^"]*\.html"/g, 'href="$1.html"');
+        .replace(/href="\.\.\/(\d{4}-\d{2}-\d{2})\/[^"]*\.html"/g, 'href="$1.html"')
+        // Inject Vercel Web Analytics into the published copy only — the raw brief in
+        // data-dumps/ stays self-contained (its PDF source makes no external calls).
+        .replace('</head>', `${ANALYTICS_TAG}</head>`);
       fs.writeFileSync(path.join(outDir, 'briefs', c.id, `${r.date}.html`), html);
       if (r.srcPdf) fs.copyFileSync(r.srcPdf, path.join(outDir, 'briefs', c.id, `${r.date}.pdf`));
     }
@@ -185,18 +190,14 @@ function emitView(outDir, list, opts = {}) {
   return clean.reduce((n, c) => n + c.runs.length, 0);
 }
 
-// Demo subset (keeps the sorted order), case-insensitive id match.
-const demoSet = new Set(DEMO_IDS.map((s) => s.toLowerCase()));
-const demo = companies.filter((c) => demoSet.has(c.id.toLowerCase()));
+// Public demo = the most recently updated companies on the full site (no curated list).
+const demo = [...companies]
+  .sort((a, b) => String(b.latestRunDate || '').localeCompare(String(a.latestRunDate || '')))
+  .slice(0, DEMO_COUNT);
 
 ensureDir(OUT);
 const fullBriefs = emitView(path.join(OUT, 'full'), companies);              // /full → gated, everything
 const demoBriefs = emitView(OUT, demo, { demo: true });                      // /     → public demo
-
-// Surface a missing demo id so a typo doesn't silently ship an empty demo.
-const found = new Set(demo.map((c) => c.id.toLowerCase()));
-const missing = [...demoSet].filter((d) => !found.has(d));
-if (missing.length) console.log(`⚠ demo id(s) not found in data-dumps: ${missing.join(', ')}`);
 
 console.log(`✓ demo: ${demo.length} companies, ${demoBriefs} briefs → site/dist  (public)`);
 console.log(`✓ full: ${companies.length} companies, ${fullBriefs} briefs → site/dist/full  (gated)`);

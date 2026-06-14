@@ -1650,6 +1650,12 @@ def build_html(profile: dict) -> str:
     --ks-rule-strong:  #c2c8d2;
     --ks-serif:        Georgia, "Iowan Old Style", "Times New Roman", serif;
     --ks-ease:         cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* ── Type scale: ONE size per role so the same kind of text is the same
+       size in every section (no half-pixel drift across the report) ── */
+    --fs-lede:   17px;     /* serif lede + section callouts                 */
+    --fs-body:   14px;     /* ALL flowing body: bullets, list items, prose  */
+    --lh-body:   1.6;      /* matching body line-height                     */
+    --fs-dense:  13px;     /* data tables + dense reference text            */
   }}
 
   /* ── Base ── */
@@ -1780,7 +1786,7 @@ def build_html(profile: dict) -> str:
   .wm-label {{ flex: 0 0 96px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em;
                text-transform: uppercase; color: var(--ks-kinpaku); white-space: nowrap;
                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; padding-top: 2px; }}
-  .wm-text {{ font-size: 13.5px; line-height: 1.55; color: var(--ks-body); }}
+  .wm-text {{ font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ks-body); }}
 
   /* ── TOC ── */
   .toc {{ background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule-strong);
@@ -1816,7 +1822,7 @@ def build_html(profile: dict) -> str:
   .explain-lede-label {{ display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.15em;
                          text-transform: uppercase; color: var(--ks-accent); margin-bottom: 5px;
                          font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
-  .explain-lede-text {{ font-family: var(--ks-serif); font-size: 17.5px; line-height: 1.5;
+  .explain-lede-text {{ font-family: var(--ks-serif); font-size: var(--fs-lede); line-height: 1.5;
                         color: var(--ks-champagne); }}
   .explain-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }}
   @media (max-width: 820px) {{ .explain-grid {{ grid-template-columns: 1fr; }} }}
@@ -1831,9 +1837,9 @@ def build_html(profile: dict) -> str:
                        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
   .explain-1 .explain-label {{ color: var(--ks-accent); }}
   .explain-2 .explain-label {{ color: var(--ks-patina); }}
-  .explain-text {{ font-size: 14px; line-height: 1.6; color: var(--ks-body); }}
+  .explain-text {{ font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ks-body); }}
   .explain-list {{ list-style: none; padding: 0; margin: 0; }}
-  .explain-list li {{ position: relative; padding: 5px 0 5px 16px; font-size: 14px; line-height: 1.5;
+  .explain-list li {{ position: relative; padding: 5px 0 5px 16px; font-size: var(--fs-body); line-height: var(--lh-body);
                       color: var(--ks-body); }}
   .explain-list li:before {{ content: ""; position: absolute; left: 2px; top: 10px; width: 5px; height: 5px;
                              border-radius: 50%; background: var(--ks-kinpaku); }}
@@ -1871,7 +1877,7 @@ def build_html(profile: dict) -> str:
     .diff-table thead {{ display: none; }} .diff-table .diff-player {{ white-space: normal; padding-top: 12px; }} }}
 
   /* ── SWOT analysis (2×2 quadrant) ── */
-  .swot-standout {{ font-size: 14.5px; line-height: 1.7; color: var(--ks-body);
+  .swot-standout {{ font-size: var(--fs-body); line-height: 1.7; color: var(--ks-body);
                     background: var(--ks-graphite); border-left: 3px solid var(--ks-kinpaku);
                     padding: 12px 16px; border-radius: 0 6px 6px 0; margin-bottom: 18px; }}
   .swot-standout-label {{ font-weight: 700; color: var(--ks-champagne); }}
@@ -1892,8 +1898,8 @@ def build_html(profile: dict) -> str:
   .swot-sub {{ font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase;
                color: var(--ks-faint); font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
   .swot-list {{ list-style: none; margin: 0; padding: 0; }}
-  .swot-list li {{ position: relative; padding: 0 0 7px 15px; font-size: 13.5px;
-                   line-height: 1.55; color: var(--ks-body); }}
+  .swot-list li {{ position: relative; padding: 0 0 7px 15px; font-size: var(--fs-body);
+                   line-height: var(--lh-body); color: var(--ks-body); }}
   .swot-list li:last-child {{ padding-bottom: 0; }}
   .swot-list li::before {{ content: ""; position: absolute; left: 1px; top: 8px;
                            width: 5px; height: 5px; border-radius: 50%;
@@ -1913,7 +1919,7 @@ def build_html(profile: dict) -> str:
   /* ── Body bullet list ── */
   .body-list {{ list-style: none; padding: 0; margin: 0; }}
   .body-list li {{ padding: 9px 0 9px 18px; position: relative; color: var(--ks-body);
-                   font-size: 15.5px; line-height: 1.6; border-bottom: 1px solid var(--ks-rule); }}
+                   font-size: var(--fs-body); line-height: var(--lh-body); border-bottom: 1px solid var(--ks-rule); }}
   .body-list li:last-child {{ border-bottom: none; }}
   .body-list li:before {{ content: ""; position: absolute; left: 2px; top: 14px;
                           width: 5px; height: 5px; border-radius: 50%; background: var(--ks-kinpaku); }}
@@ -1951,7 +1957,7 @@ def build_html(profile: dict) -> str:
   .news-date {{ font-size: 10px; color: var(--ks-faint); white-space: nowrap; min-width: 74px;
                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; padding-top: 2px; }}
   .news-headline {{ font-size: 15.5px; font-weight: 600; color: var(--ks-champagne); line-height: 1.4; }}
-  .news-why {{ font-size: 14px; color: var(--ks-muted); margin-top: 6px; margin-left: 88px; line-height: 1.6; }}
+  .news-why {{ font-size: var(--fs-body); color: var(--ks-muted); margin-top: 6px; margin-left: 88px; line-height: var(--lh-body); }}
 
   /* ── Financials / metrics ── */
   .fin-meta {{ font-size: 11px; color: var(--ks-faint); margin-bottom: 14px;
@@ -1998,8 +2004,8 @@ def build_html(profile: dict) -> str:
                    color: var(--ks-faint); white-space: nowrap; }}
   .qtrend-table tbody tr:last-child td {{ border-bottom: none; }}
   .earn-bullets {{ list-style: none; padding: 0; margin: 0; }}
-  .earn-bullets li {{ padding: 8px 0 8px 16px; position: relative; font-size: 14.5px;
-                      color: var(--ks-body); border-bottom: 1px solid var(--ks-rule); line-height: 1.65; }}
+  .earn-bullets li {{ padding: 8px 0 8px 16px; position: relative; font-size: var(--fs-body);
+                      color: var(--ks-body); border-bottom: 1px solid var(--ks-rule); line-height: var(--lh-body); }}
   .earn-bullets li:before {{ content: ""; position: absolute; left: 2px; top: 14px;
                              width: 5px; height: 5px; border-radius: 50%; background: var(--ks-patina); }}
   .earn-bullets li:last-child {{ border-bottom: none; }}
@@ -2054,7 +2060,7 @@ def build_html(profile: dict) -> str:
 
   /* ── body-p (single paragraph, no bullets) ── */
   /* prose measure: full-width lines are unreadable at 1400px — cap at ~75ch */
-  .body-p {{ color: var(--ks-body); font-size: 15.5px; line-height: 1.7; max-width: 920px; }}
+  .body-p {{ color: var(--ks-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: 920px; }}
   .body-list {{ max-width: 920px; }}
 
   /* ── SEC filings ── */
@@ -2123,7 +2129,7 @@ def build_html(profile: dict) -> str:
   /* ── Risk list ── */
   .risk-list {{ list-style: none; padding: 0; }}
   .risk-list li {{ padding: 10px 0 10px 22px; border-bottom: 1px solid var(--ks-rule);
-                   position: relative; font-size: 14.5px; color: var(--ks-body); line-height: 1.65; }}
+                   position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }}
   .risk-list li:before {{ content: "!"; position: absolute; left: 3px; top: 10px; width: 13px; height: 13px;
                           border-radius: 50%; background: rgba(179,18,43,0.1);
                           color: var(--ks-vermilion); font-size: 9px; font-weight: 900;
@@ -2133,7 +2139,7 @@ def build_html(profile: dict) -> str:
   .risk-label {{ font-weight: 600; color: var(--ks-champagne); }}
 
   /* ── Comps table ── */
-  .comps-table {{ width: 100%; border-collapse: collapse; font-size: 13.5px; }}
+  .comps-table {{ width: 100%; border-collapse: collapse; font-size: var(--fs-dense); }}
   .comps-table th {{ text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
                      text-transform: uppercase; color: var(--ks-faint); padding: 0 12px 8px 0;
                      border-bottom: 1.5px solid var(--ks-kinpaku); vertical-align: bottom;
@@ -2178,7 +2184,7 @@ def build_html(profile: dict) -> str:
   /* ── Slide bullets ── */
   .slide-list {{ list-style: none; padding: 0; counter-reset: slides; }}
   .slide-list li {{ padding: 10px 0 10px 42px; border-bottom: 1px solid var(--ks-rule);
-                    position: relative; font-size: 13px; color: var(--ks-body); line-height: 1.7; }}
+                    position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }}
   .slide-list li:last-child {{ border-bottom: none; }}
   .slide-list li:before {{ counter-increment: slides; content: counter(slides);
                            position: absolute; left: 0; top: 8px; width: 26px; height: 26px;
@@ -2189,7 +2195,7 @@ def build_html(profile: dict) -> str:
   /* ── Diligence ── */
   .dq-list {{ list-style: none; padding: 0; counter-reset: dqs; }}
   .dq-list li {{ padding: 10px 0 10px 42px; border-bottom: 1px solid var(--ks-rule);
-                 position: relative; font-size: 13px; color: var(--ks-body); line-height: 1.7; }}
+                 position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }}
   .dq-list li:last-child {{ border-bottom: none; }}
   .dq-list li:before {{ counter-increment: dqs; content: "Q" counter(dqs);
                         position: absolute; left: 0; top: 8px; width: 26px; height: 26px;
@@ -2295,9 +2301,13 @@ def build_html(profile: dict) -> str:
     .exec-card {{ padding: 11px 13px; }}
     .explain-card {{ padding: 10px 13px; }}
     .explain-grid {{ gap: 9px; margin-bottom: 14px; }}
-    .explain-list li {{ padding: 3px 0 3px 16px; font-size: 12.5px; line-height: 1.45; }}
-    .body-list li {{ padding: 6px 0 6px 18px; font-size: 13px; line-height: 1.5; }}
+    .explain-list li {{ padding: 3px 0 3px 16px; }}
+    .body-list li {{ padding: 6px 0 6px 18px; }}
     .earn-bullets li, .risk-list li {{ padding-top: 6px; padding-bottom: 6px; }}
+    /* one print body size across every section so reading text never changes mid-note */
+    .explain-text, .explain-list li, .body-p, .body-list li, .swot-list li,
+    .swot-standout, .earn-bullets li, .risk-list li, .news-why,
+    .slide-list li, .dq-list li {{ font-size: 13px; line-height: 1.5; }}
     .news-item {{ padding: 8px 0; }}
     .news-why {{ margin-top: 4px; }}
     .chart-wrap {{ margin: 2px 0 4px; }}
@@ -2432,6 +2442,12 @@ def _find_chrome():
         "/Applications/Chromium.app/Contents/MacOS/Chromium",
         "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
         "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        # Windows (Chrome, then Edge as a fallback — both are Chromium)
+        os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+        os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
     ]
     for c in candidates:
         if Path(c).exists():
@@ -2453,7 +2469,10 @@ def _find_chrome():
         if not root:
             continue
         for pat in ("chromium-*/chrome-linux/chrome", "chromium_headless_shell-*/chrome-linux/headless_shell"):
-            hits = sorted(Path("/").glob(os.path.join(root, pat).lstrip("/")))
+            try:
+                hits = sorted(Path("/").glob(os.path.join(root, pat).lstrip("/")))
+            except (NotImplementedError, OSError):
+                continue          # POSIX-style root glob is unsupported on Windows — skip
             if hits:
                 return str(hits[-1])
     for c in ("/usr/lib/chromium/chrome", "/usr/lib/chromium-browser/chromium-browser",
@@ -2989,7 +3008,7 @@ def run(ticker: str, detail: str = "brief", audit: bool = True, strict: bool = F
     # Save HTML to runs folder (latest run date)
     suffix    = f"_{detail}" if detail != "brief" else ""
     html_path = out_dir / f"{folder_id}_brief_{run_date}{suffix}.html"
-    html_path.write_text(html)
+    html_path.write_text(html, encoding="utf-8")
     print(f"📄  Brief saved: {html_path}")
 
     # Render a print-faithful PDF alongside the HTML (the primary deliverable).

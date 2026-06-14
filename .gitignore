@@ -13,9 +13,3 @@ site/dist/
 # alfred-private's sync-to-public workflow — don't hand-edit it here.
 data-dumps/*
 !data-dumps/.gitkeep
-!data-dumps/NTSK
-!data-dumps/CRWV
-!data-dumps/AVGO
-!data-dumps/APP
-!data-dumps/FIG
-!data-dumps/databricks
