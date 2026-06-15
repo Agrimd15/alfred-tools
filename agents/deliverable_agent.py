@@ -1532,7 +1532,7 @@ def build_html(profile: dict) -> str:
     if swot_html:                               toc_items.append(("swot",      "SWOT"))
     if gartner_html:                            toc_items.append(("gartner",   "Gartner"))
     if filings_section_html:                     toc_items.append(("filings",   "Filings"))
-    if funding_rounds or total_raised or stage: toc_items.append(("funding",   "Funding"))
+    if funding_rounds:                          toc_items.append(("funding",   "Funding"))
     if investors:                               toc_items.append(("investors", "Investors"))
     if bullets:                                 toc_items.append(("bullets",   "Bullets"))
     if dqs:                                     toc_items.append(("diligence", "Diligence"))
