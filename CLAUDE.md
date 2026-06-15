@@ -1,24 +1,32 @@
 # Atlas - Company Research Tool
 
-## ▶️ Auto run routine UNPAUSED — daily budget: 5 reports per day (all Opus-tier)
+## ▶️ Auto run routine UNPAUSED — daily budget: 10 reports per day (all Opus-tier), 2 groups
 
 Per the user's instruction on 2026-06-12, scheduled / automatic / routine-triggered Atlas runs are
-enabled with a budget that **resets every day**. Live counter: **0 remaining for 2026-06-15** (published today: NVDA, ADBE, INTU, CDNS, FTNT — daily budget of 5 fully used). Previous day 2026-06-14 published: PANW, ORCL, AMD (+ CRM refresh). New 5/day all-Opus budget now in effect (set 2026-06-13, superseding the prior 10/day Opus+Sonnet tiering).
+enabled with a budget that **resets every day**. Live counter: **5 remaining for 2026-06-15** (published today: NVDA, ADBE, INTU, CDNS, FTNT — 5 of the new 10/day budget used by the earlier 5/day run). Previous day 2026-06-14 published: PANW, ORCL, AMD (+ CRM refresh). New 10/day all-Opus budget now in effect (set 2026-06-15, superseding the prior 5/day all-Opus budget).
 
-**Model policy (set 2026-06-13 on Max 5x):** every brief — new coverage and refreshes alike — runs
+**Two scheduled groups (set 2026-06-15).** The 10/day budget runs as **two routines of 5 briefs each**, both all-Opus:
+- **Group 1 — 1:30 AM PT** (`30 1 * * *`, America/Los_Angeles): up to 5 briefs.
+- **Group 2 — 3:30 AM PT** (`30 3 * * *`, America/Los_Angeles): up to 5 briefs.
+
+Each group session shares the single daily counter — Group 1 runs first and decrements it; Group 2 runs whatever budget remains (normally 5). The counter is the source of truth, not the group size: if Group 1 over- or under-runs, Group 2 takes the remainder so the day still totals at most 10.
+
+**Model policy (set 2026-06-15 on Max 5x):** every brief — new coverage and refreshes alike — runs
 on the **Opus-tier main loop**. There is **no Sonnet-subagent tier**; the old tiering was removed
 because the Opus sub-cap acted as an early exit and the Sonnet delegation never reliably fired. The
-**5/day cap is a budget dial, not an observed limit** — it was chosen to keep weekly Opus usage
-comfortably inside the Max 5x allowance (~5/day ≈ 35/week), not because Claude hits a wall at 5. If a
-real rate/usage limit is ever hit mid-run, stop gracefully per bookkeeping item 4; that empirical
-signal — not this number — marks the true ceiling, and the cap can be retuned from there.
+**10/day cap is a budget dial, not an observed limit** — it is a deliberate raise from the prior 5/day
+and is *expected to run hot* against the Max 5x allowance (~10/day ≈ 70/week). If a real rate/usage
+limit is hit mid-run, stop gracefully per bookkeeping item 4; that empirical signal — not this number
+— marks the true ceiling, and the cap can be retuned from there.
 
 Bookkeeping (mandatory for schedule/trigger-started sessions), in order, before running:
 1. **Roll the day.** If the date in the counter line above is not today, reset the line to
-   "5 remaining for <today's date>" — the new day starts with a fresh budget of 5 (all Opus-tier).
+   "10 remaining for <today's date>" — the new day starts with a fresh budget of 10 (all Opus-tier),
+   shared across both scheduled groups.
 2. **Respect the cap.** If the counter reads **0** remaining for today, do not run the pipeline:
-   end the session with a one-line note that today's 5-report budget is exhausted (it resets
-   tomorrow automatically — no pause block needed, no user action required).
+   end the session with a one-line note that today's 10-report budget is exhausted (it resets
+   tomorrow automatically — no pause block needed, no user action required). A group should also
+   publish at most its share (5) in one session unless the other group did not run.
 3. **Decrement on publish.** Each time the session publishes a finished report (brief), reduce the
    counter by the number of reports published and commit that edit together with the run.
 4. **Stop gracefully on usage limits.** If a run hits a rate/usage limit mid-batch, finish or
