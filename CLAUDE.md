@@ -3,7 +3,7 @@
 ## ▶️ Auto run routine UNPAUSED — daily budget: 5 reports per day (all Opus-tier)
 
 Per the user's instruction on 2026-06-12, scheduled / automatic / routine-triggered Atlas runs are
-enabled with a budget that **resets every day**. Live counter: **2 remaining for 2026-06-15** (published today: NVDA, ADBE, INTU). Previous day 2026-06-14 published: PANW, ORCL, AMD (+ CRM refresh). New 5/day all-Opus budget now in effect (set 2026-06-13, superseding the prior 10/day Opus+Sonnet tiering).
+enabled with a budget that **resets every day**. Live counter: **1 remaining for 2026-06-15** (published today: NVDA, ADBE, INTU, CDNS). Previous day 2026-06-14 published: PANW, ORCL, AMD (+ CRM refresh). New 5/day all-Opus budget now in effect (set 2026-06-13, superseding the prior 10/day Opus+Sonnet tiering).
 
 **Model policy (set 2026-06-13 on Max 5x):** every brief — new coverage and refreshes alike — runs
 on the **Opus-tier main loop**. There is **no Sonnet-subagent tier**; the old tiering was removed
