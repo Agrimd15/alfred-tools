@@ -3,7 +3,7 @@
 ## ▶️ Auto run routine UNPAUSED — daily budget: 10 reports per day (all Opus-tier), 2 groups
 
 Per the user's instruction on 2026-06-12, scheduled / automatic / routine-triggered Atlas runs are
-enabled with a budget that **resets every day**. Live counter: **5 remaining for 2026-06-17** (published today: TEAM, TTD, S, GTLB, DT — this session's group). Previous day 2026-06-16 published: SNPS, WDAY, QCOM, OKTA, HUBS (5). Day before 2026-06-15 published: NVDA, ADBE, INTU, CDNS, FTNT (5). Earlier 2026-06-14 published: PANW, ORCL, AMD (+ CRM refresh). New 10/day all-Opus budget now in effect (set 2026-06-15, superseding the prior 5/day all-Opus budget).
+enabled with a budget that **resets every day**. Live counter: **9 remaining for 2026-06-18** (published today: VEEV). Previous day 2026-06-17 published: TEAM, TTD, S, GTLB, DT (5). Day 2026-06-16 published: SNPS, WDAY, QCOM, OKTA, HUBS (5). Day before 2026-06-15 published: NVDA, ADBE, INTU, CDNS, FTNT (5). Earlier 2026-06-14 published: PANW, ORCL, AMD (+ CRM refresh). New 10/day all-Opus budget now in effect (set 2026-06-15, superseding the prior 5/day all-Opus budget).
 
 **Two scheduled groups (set 2026-06-15).** The 10/day budget runs as **two routines of 5 briefs each**, both all-Opus:
 - **Group 1 — 1:30 AM PT** (`30 1 * * *`, America/Los_Angeles): up to 5 briefs.
