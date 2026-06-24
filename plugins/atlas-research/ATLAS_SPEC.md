@@ -147,7 +147,7 @@ MUST upsert the row yourself**: search the `atlas tracker` DB (data source
 `c2b483d1-4dd7-41df-a6f8-42475576b9ff`) by **Company Name**, update or create — one row per company.
 Fill `Description` (one-liner), `Stage` (`Public`/round), `Valuation` (live snapshot from the Data
 Agent), `Last Updated` (run date), `report`
-(`https://atlas-private.vercel.app/full/briefs/<FOLDER_ID>/<run-date>.html`). Confirm and report the
+(`https://atlas-private.vercel.app/atlas/briefs/<FOLDER_ID>/<run-date>.html`). Confirm and report the
 row URL; if neither MCP nor token exists, say so plainly.
 
 **Step 5 — Report back.** Confirm FOLDER_ID, public/private, run date, the `marketCloseAsOf` all

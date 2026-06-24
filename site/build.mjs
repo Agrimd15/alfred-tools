@@ -1,16 +1,19 @@
 #!/usr/bin/env node
-// Atlas site build — assembles the static coverage viewer into site/dist.
+// Alfred site build — assembles the walled Alfred platform into site/dist.
 //
-// Emits TWO views from data-dumps:
-//   • dist/        → PUBLIC demo: the DEMO_COUNT most-recent companies, no auth
-//   • dist/full/   → FULL coverage: every company, gated by middleware.js (SITE_PASSWORD)
-// Each view gets its own index.json + index.html + briefs/, so the shared template's
-// relative fetches ("index.json", "briefs/…") just work in either directory. A company's
-// brief is only published into a view that includes it, so private briefs never land in
-// the public root.
+// Layout (Alfred = the platform, Atlas = its first tool):
+//   • dist/index.html     → Alfred LAUNCHER (tool picker)        [gated by middleware.js]
+//   • dist/atlas/         → ATLAS coverage browser, full library [gated] — index.html +
+//                           index.json + briefs/, all relative fetches resolve under /atlas/
+//   • dist/login.html     → Alfred sign-in                       [open]
+//   • dist/config.js, auth.js, vendor/supabase.js                [open] — referenced by
+//                           every page with ABSOLUTE paths, so they live once at the root
 //
-// Zero dependencies. Run from repo root: `node site/build.mjs`. Vercel runs the same
-// (project repo root (default), so the build command is just `node site/build.mjs`).
+// The whole app is behind the Alfred login (see middleware.js). A private instance sets the
+// Supabase env and is walled; the public alfred-tools clone sets no env, so middleware falls
+// through to OPEN and the same build serves the synced demo companies with no gate.
+//
+// Zero dependencies. Run from repo root: `node site/build.mjs`. Vercel runs the same.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,18 +23,61 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');          // repo root (data-dumps lives here)
 const DATA = path.join(ROOT, 'data-dumps');
 const OUT = path.join(__dirname, 'dist');            // site/dist (published)
-const TEMPLATE = path.join(__dirname, 'template', 'index.html');
+const TEMPLATE = path.join(__dirname, 'template', 'index.html');       // Atlas coverage browser
+const LAUNCHER = path.join(__dirname, 'template', 'launcher.html');    // Alfred home / tool picker
 
-// Companies shown on the PUBLIC demo at the site root. Everything else is reachable
-// only via the gated /full view. Add more demo ids over time. (Folder ids: Broadcom = "AVGO".)
-// Refreshed 2026-06-11: the public demo now features Netskope plus the latest coverage
-// (CoreWeave, Broadcom, AppLovin, Figma, Databricks). The prior demo names (CRM, EGAN,
-// forgepoint-ai, standard-intelligence) are archived off the live demo but remain in /full.
-// Public demo shows the N most recently updated companies from the full coverage set.
-const DEMO_COUNT = 5;
+// Demo companies shipped to the PUBLIC alfred-tools repo. The site itself no longer renders a
+// separate demo view (the private app shows the full library at /atlas behind login; the public
+// clone shows whatever data is synced, ungated). This list is the single source the
+// `sync-to-public.yml` workflow greps (`^const DEMO_IDS`) to decide which data-dumps/ folders
+// are public. Folder ids — Broadcom = "AVGO", Netskope = "NTSK", Databricks = "databricks".
+const DEMO_IDS = ['NTSK', 'CRWV', 'AVGO', 'APP', 'FIG', 'databricks'];
 
 // Vercel Web Analytics tag, injected into each published brief page at build time.
 const ANALYTICS_TAG = '<script defer src="/_vercel/insights/script.js"></script>';
+
+// ── Alfred accounts: auth asset sources + build-time client config. ──
+// The Supabase project URL + anon key are PUBLIC by design (the JWT secret is not, and lives
+// only in middleware env). They're stamped into config.js so the vendored client knows the
+// project. Empty when unset → auth.js no-ops and (no jwtSecret) middleware stays open.
+const AUTH_JS = path.join(__dirname, 'template', 'auth.js');
+const LOGIN_HTML = path.join(__dirname, 'template', 'login.html');
+const VENDOR_SUPABASE = path.join(__dirname, 'vendor', 'supabase.js');
+const CONFIG_JS = `window.ALFRED_SUPABASE=${JSON.stringify({
+  url: process.env.SUPABASE_URL || '',
+  anonKey: process.env.SUPABASE_ANON_KEY || '',
+})};\n`;
+
+// Injected before </body> of every gated page: the floating sign-in/out slot (filled by
+// auth.js) plus the three scripts. ABSOLUTE srcs so a page at /atlas/ loads the same root
+// assets; position:fixed, so DOM placement is irrelevant. The open paths (login.html, the
+// three assets) are excluded from the middleware gate.
+const AUTH_INJECT = `
+<style>
+  #auth-slot{position:fixed;top:14px;right:16px;z-index:50;display:flex;align-items:center;gap:10px}
+  #auth-slot .auth-btn{font-family:"SFMono-Regular",ui-monospace,monospace;font-size:11px;font-weight:600;
+    letter-spacing:.04em;color:#13315c;background:#fff;border:1px solid #dce0e7;border-radius:999px;
+    padding:6px 13px;cursor:pointer;text-decoration:none}
+  #auth-slot .auth-btn:hover{border-color:#1a3f6e}
+  #auth-slot .auth-user{font-size:12px;color:#3d434f;max-width:180px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+</style>
+<div id="auth-slot"></div>
+<script src="/config.js"></script>
+<script src="/vendor/supabase.js"></script>
+<script src="/auth.js"></script>
+`;
+
+const injectAuth = (html) => html.replace('</body>', `${AUTH_INJECT}</body>`);
+
+// Emit the open auth assets ONCE at the site root (login page + client + config + vendor).
+function emitRootAuthAssets(outDir) {
+  fs.writeFileSync(path.join(outDir, 'config.js'), CONFIG_JS);
+  fs.copyFileSync(AUTH_JS, path.join(outDir, 'auth.js'));
+  ensureDir(path.join(outDir, 'vendor'));
+  fs.copyFileSync(VENDOR_SUPABASE, path.join(outDir, 'vendor', 'supabase.js'));
+  fs.copyFileSync(LOGIN_HTML, path.join(outDir, 'login.html'));
+}
 
 // ── Sector buckets for the filter bar. Profile `verticals` are free-form (80+ unique
 // tags), so the site maps them into this canonical set and renders one chip per bucket.
@@ -98,7 +144,7 @@ function blurbFor(profile) {
   return cap((profile.marketContext || '').trim());
 }
 
-console.log('▶ Atlas site build');
+console.log('▶ Alfred site build');
 fs.rmSync(OUT, { recursive: true, force: true });
 
 // ── Scan every company once. Record brief SOURCE paths; copy per-view later. ──
@@ -155,8 +201,8 @@ companies.sort((a, b) =>
   (Number(b.isStarred) - Number(a.isStarred)) ||
   String(b.latestRunDate || '').localeCompare(String(a.latestRunDate || '')));
 
-// ── Emit one view: copy its briefs, write its manifest + the shared template. ──
-function emitView(outDir, list, opts = {}) {
+// ── Emit the Atlas coverage view: copy briefs, write its manifest + the coverage page. ──
+function emitCoverage(outDir, list) {
   ensureDir(path.join(outDir, 'briefs'));
   for (const c of list) {
     for (const r of c.runs) {
@@ -180,24 +226,24 @@ function emitView(outDir, list, opts = {}) {
   }));
   const manifest = {
     generatedAt: new Date().toISOString(),
-    demo: !!opts.demo,
     count: clean.length,
     latestRunDate: clean.reduce((m, c) => (c.latestRunDate && c.latestRunDate > m ? c.latestRunDate : m), ''),
     companies: clean,
   };
   fs.writeFileSync(path.join(outDir, 'index.json'), JSON.stringify(manifest, null, 2));
-  fs.copyFileSync(TEMPLATE, path.join(outDir, 'index.html'));
+  // Coverage page = shared Atlas template + the auth slot/scripts injected before </body>.
+  fs.writeFileSync(path.join(outDir, 'index.html'), injectAuth(fs.readFileSync(TEMPLATE, 'utf8')));
   return clean.reduce((n, c) => n + c.runs.length, 0);
 }
 
-// Public demo = the most recently updated companies on the full site (no curated list).
-const demo = [...companies]
-  .sort((a, b) => String(b.latestRunDate || '').localeCompare(String(a.latestRunDate || '')))
-  .slice(0, DEMO_COUNT);
-
 ensureDir(OUT);
-const fullBriefs = emitView(path.join(OUT, 'full'), companies);              // /full → gated, everything
-const demoBriefs = emitView(OUT, demo, { demo: true });                      // /     → public demo
+// 1. Alfred launcher (tool picker) at the root, gated.
+fs.writeFileSync(path.join(OUT, 'index.html'), injectAuth(fs.readFileSync(LAUNCHER, 'utf8')));
+// 2. Atlas coverage tool at /atlas — the full library (one view, gated).
+const atlasBriefs = emitCoverage(path.join(OUT, 'atlas'), companies);
+// 3. Open auth assets (login + client + config + vendor) once at the root.
+emitRootAuthAssets(OUT);
 
-console.log(`✓ demo: ${demo.length} companies, ${demoBriefs} briefs → site/dist  (public)`);
-console.log(`✓ full: ${companies.length} companies, ${fullBriefs} briefs → site/dist/full  (gated)`);
+console.log(`✓ launcher → site/dist/index.html`);
+console.log(`✓ atlas: ${companies.length} companies, ${atlasBriefs} briefs → site/dist/atlas  (gated)`);
+console.log(`✓ demo set for public sync: ${DEMO_IDS.join(', ')}`);

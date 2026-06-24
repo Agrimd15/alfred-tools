@@ -210,7 +210,7 @@ It also runs three QA passes and prints a report: a layout/overflow check; a **s
 **Notion mirror via MCP (mandatory — the primary path in cloud/phone sessions).** The token-based `notion_sync.py` above is a no-op whenever `NOTION_TOKEN`/`NOTION_DB_ID` are unset, which is the *usual* case in a cloud sandbox — so the row silently never gets written. Therefore: **in any session where a Notion MCP is connected, you (Claude) MUST upsert this company's row into the `atlas tracker` database yourself via the Notion MCP at the end of every run** — do not skip it and do not assume the token sync covered it. This is part of the standard pipeline, not an optional extra. Procedure:
   1. **Upsert, never duplicate.** Search the database for an existing row whose **Company Name** matches; if one exists, update it in place, otherwise create a new page. One row per company.
   2. **Target.** Database "🚀 atlas tracker", data source `c2b483d1-4dd7-41df-a6f8-42475576b9ff`. Schema: `Company Name` (title), `Description` (text), `Stage` (select: `Public`/`Seed`/`Series A`), `Valuation` (text), `Last Updated` (date), `report` (url). Match by property name to whatever the live schema shows — re-fetch the data source first if unsure, since columns can change.
-  3. **Field mapping (all from the live run, never memory):** `Description` = the profile's one-line `shortDescription` (prefix `• `, match the existing rows' style); `Stage` = `Public` for listed names, else the latest round; `Valuation` = a live snapshot line from the Data Agent pull (market cap + EV + EV/Rev LTM + forward P/E + beta + 52-wk range + analyst consensus/target, e.g. the format used in the existing Micron row); `Last Updated` = the run date; `report` = `https://atlas-private.vercel.app/full/briefs/<FOLDER_ID>/<run-date>.html` (the same URL convention the other rows use).
+  3. **Field mapping (all from the live run, never memory):** `Description` = the profile's one-line `shortDescription` (prefix `• `, match the existing rows' style); `Stage` = `Public` for listed names, else the latest round; `Valuation` = a live snapshot line from the Data Agent pull (market cap + EV + EV/Rev LTM + forward P/E + beta + 52-wk range + analyst consensus/target, e.g. the format used in the existing Micron row); `Last Updated` = the run date; `report` = `https://atlas-private.vercel.app/atlas/briefs/<FOLDER_ID>/<run-date>.html` (Atlas is now mounted under `/atlas` in the Alfred platform; older rows may still use the legacy `/full/briefs/…` path).
   4. **Confirm it landed** and report the row URL in your run summary. If no Notion MCP is connected *and* no token creds are set, say so plainly in the summary rather than leaving the omission silent.
 
 **Step 5 - Ship to `main` (standing instruction).** Atlas runs should land on `main`, not sit in a draft. After the brief is generated and QA is clean: commit the run on the working branch, push it, and open the PR **ready-for-review (NOT a draft)** so the repo's auto-merge workflow can take it in. If auto-merge does not merge it (e.g. it's disabled or the PR stays open) and `mergeable_state` is `clean`, **merge it into `main` yourself** (squash). Only hold off and ask first if QA is blocking/unresolved, there's a merge conflict, or the diff touches code/config beyond `data-dumps/` (a brief that's just a new `data-dumps/<ID>/` run is safe to land automatically). This overrides the default "open as draft and wait" behavior for Atlas research runs.
@@ -288,11 +288,14 @@ do the following automatically — do not make the user issue extra commands:
 
 ## Deploying the coverage site (Vercel)
 
-`site/build.mjs` builds the site into `site/dist/` - a **public demo** at `/` (the companies in
-`DEMO_IDS`) and your **full coverage** at `/full`, gated by the `SITE_PASSWORD` env var via
-`middleware.js`. To deploy: import this repo into Vercel, **leave the Root Directory at the repo
-root**, Framework = Other (build command + output come from `vercel.json`). Add `SITE_PASSWORD` to
-gate `/full`. HTTPS + security headers are configured out of the box.
+`site/build.mjs` builds the **Alfred platform** into `site/dist/`: an Alfred **launcher** at `/`
+(the tool picker), the **Atlas** coverage tool at `/atlas` (the full library), and the Alfred
+**sign-in** at `/login`. The whole app is walled by `middleware.js` — when `SUPABASE_JWT_SECRET`
+is set it requires a signed-in Google account (see `supabase/README.md`); a legacy `SITE_PASSWORD`
+is honored only while Supabase is unset, and with neither the site is open (which is how the public
+`alfred-tools` clone serves the synced `DEMO_IDS` companies ungated). To deploy: import this repo
+into Vercel, **leave the Root Directory at the repo root**, Framework = Other (build command +
+output come from `vercel.json`). HTTPS + security headers are configured out of the box.
 
 ---
 

@@ -1,0 +1,20 @@
+{
+  "runDate": "2026-06-18",
+  "searchedSince": "2026-06-11",
+  "items": [
+    {
+      "date": "2026-06-12",
+      "headline": "CoreWeave to Join Nasdaq-100 Index on June 22",
+      "whyItMatters": "Index inclusion forces passive funds to buy CRWV; structural buy-side demand catalyst.",
+      "source": "CoreWeave Investor Relations",
+      "sourceUrl": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-to-Join-Nasdaq-100-Index/default.aspx"
+    },
+    {
+      "date": "2026-06-11",
+      "headline": "CoreWeave Prices $3.5B Senior Unsecured Notes (USD+EUR tranches)",
+      "whyItMatters": "First euro-denominated junk bond by a U.S. AI infra company; proceeds to repay existing debt and fund GPU capacity.",
+      "source": "SEC EDGAR (8-K filing)",
+      "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000278/crwv-20260611.htm"
+    }
+  ]
+}

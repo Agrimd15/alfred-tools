@@ -111,7 +111,7 @@ ATLAS_SITE_URL=https://your-site.vercel.app   # your deployed coverage site (for
 ```
 
 `ATLAS_SITE_URL` is your deployed Vercel domain — it's what makes the **Brief** links resolve to
-`<site>/full/briefs/<ID>/<date>.html`. If you haven't deployed the site yet you can leave it blank;
+`<site>/atlas/briefs/<ID>/<date>.html`. If you haven't deployed the site yet you can leave it blank;
 rows still sync, just without the link.
 
 ---

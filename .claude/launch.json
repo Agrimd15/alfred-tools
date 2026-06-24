@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "atlas-site",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4173", "--directory", "site/dist"],
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "site/dist", "-l", "4173", "--no-port-switching"],
       "port": 4173
     },
     {

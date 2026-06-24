@@ -22,8 +22,8 @@ and every output is a draft for human review** — research support, not investm
 
 Atlas is a research copilot for technology investment bankers. You type a company name; Atlas pulls
 live trading comps, recent news, and earnings takeaways into a clean, fully sourced brief (a web page
-and a print-ready PDF), saves it to a research library you own, and can publish that library as a
-password-protected website. Every number is pulled live and dated, never written from memory.
+and a print-ready PDF), saves it to a research library you own, and serves that library inside the
+login-gated **Alfred** site. Every number is pulled live and dated, never written from memory.
 
 ### What you get
 
@@ -31,7 +31,8 @@ password-protected website. Every number is pulled live and dated, never written
   news, earnings takeaways, a SWOT, key risks, and diligence questions — a clean web page plus a
   print-ready PDF.
 - **A research library** that compounds. Every company you cover is saved, dated, and searchable.
-- **A coverage website you control**: a public demo page to share, and your full library behind a password.
+- **A coverage website you control**: the walled **Alfred** platform — sign in, pick a tool, and Atlas
+  opens your full research library at `/atlas`.
 
 ### How it works
 
@@ -41,7 +42,7 @@ flowchart LR
   B --> C[Live comps pulled at one market close]
   C --> D[Atlas synthesizes the brief]
   D --> E[Brief: web page + PDF, fully cited]
-  D --> F[Your coverage website: public demo + private library]
+  D --> F[Alfred platform: sign in → launcher → Atlas library]
 ```
 
 Under the hood: four agents (Research · News · Transcript · Data) run in parallel, restricted to a
@@ -88,7 +89,7 @@ up your tools, then you just type company names and read the briefs.
 | `agents/` | The four research agents + the deliverable renderer and QA audits |
 | `plugins/atlas-research/` | Atlas packaged as an installable Claude Code plugin |
 | `.claude-plugin/` | The marketplace manifest (this repo doubles as the plugin marketplace) |
-| `site/` | Your coverage website (a public demo plus a password-protected full library) |
+| `site/` | The walled **Alfred** web app — a tool launcher at `/` and the Atlas library at `/atlas`, behind login |
 | `data-dumps/` | Your research library, one folder per company |
 | `docs/` | The sync model between the Alfred repos + Notion mirror setup |
 | `SETUP.md`, `CLAUDE.md` | The setup guide and the operating manual |

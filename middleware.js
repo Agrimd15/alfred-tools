@@ -1,19 +1,105 @@
-// Password gate for the private /full coverage view (Vercel Edge Middleware).
+// Gate for the private /full coverage view (Vercel Edge Middleware).
 //
-// DORMANT until you set a SITE_PASSWORD env var in Vercel. When set, /full shows a
-// small password-only page (no username) and remembers you for 30 days via a cookie.
-// The public demo at / is never gated. Everything travels over HTTPS only.
+// Two gating modes, selected by which env vars are set:
+//
+//   1. ACCOUNTS (preferred, Layer 2). When SUPABASE_JWT_SECRET is set, /full requires a
+//      signed-in user: the browser mirrors its Supabase access token into an `sb_at` cookie
+//      (see site/template/auth.js), and this middleware verifies that JWT's HMAC-SHA256
+//      signature + expiry here at the edge. No valid token → redirect to /login. This is the
+//      real protection: brief files are static on the CDN, so the check must run server-side
+//      BEFORE the file is served, not in browser JS.
+//
+//   2. LEGACY PASSWORD (fallback). When SUPABASE_JWT_SECRET is NOT set but SITE_PASSWORD is,
+//      the old shared-password gate applies (a hashed cookie). This keeps the site usable
+//      mid-migration; remove SITE_PASSWORD once accounts are confirmed working.
+//
+// If neither is set, the site is fully open (the public demo at / is never gated either way).
+// Everything travels over HTTPS only.
 
 export const config = {
-  // Gate only the private full-coverage view; the public demo at / stays open.
-  matcher: ['/full', '/full/:path*'],
+  // Wall the whole Alfred app — the launcher (/), Atlas (/atlas/*), and every brief — EXCEPT
+  // the open paths the sign-in page itself needs: /login and the three root auth assets
+  // (config.js, auth.js, vendor/supabase.js), plus Vercel's own /_vercel/*. The negative
+  // lookahead leaves those reachable so the OAuth return can run and set the session cookie.
+  matcher: ['/((?!_vercel|login|config\\.js|auth\\.js|vendor).*)'],
 };
 
-const COOKIE = 'atlas_full';
+// Open paths — never gated, even on a direct middleware call (keeps the matcher and the unit
+// test in agreement). Matches /login, /config.js, /auth.js, /vendor/*, /_vercel/*.
+const OPEN_PATH = /^\/(login(\/|$|\?)|config\.js$|auth\.js$|vendor\/|_vercel\/)/;
 
-// Cookie value is a hash of the password, so the password itself is never stored.
+const PW_COOKIE = 'atlas_full';
+const SB_COOKIE = 'sb_at';
+
+const enc = new TextEncoder();
+
+function parseCookies(header) {
+  const out = {};
+  (header || '').split(/;\s*/).forEach((p) => {
+    const i = p.indexOf('=');
+    if (i > 0) out[p.slice(0, i)] = p.slice(i + 1);
+  });
+  return out;
+}
+
+// base64url → bytes (atob is available in the edge runtime).
+function b64urlToBytes(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = s.length % 4;
+  if (pad) s += '='.repeat(4 - pad);
+  const bin = atob(s);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+// Verify a Supabase HS256 JWT and confirm it represents a genuine signed-in END USER.
+//
+// CRITICAL: a valid signature is NOT sufficient. Supabase's anon key and service_role key
+// are themselves JWTs signed with this same SUPABASE_JWT_SECRET (role "anon" / "service_role"),
+// and the anon key is PUBLIC — it's baked into the site's config.js and shipped to every
+// browser. If we accepted any validly-signed token, anyone could paste the public anon key
+// into the sb_at cookie and walk straight past the gate. So we additionally require
+// role === "authenticated" (the role Supabase stamps on a real user session) and a sane
+// aud, on top of signature + exp.
+//
+// Returns the decoded payload when valid AND it's an authenticated user, otherwise null.
+async function verifyJWT(token, secret) {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [h, p, sig] = parts;
+  let header;
+  try { header = JSON.parse(new TextDecoder().decode(b64urlToBytes(h))); } catch { return null; }
+  if (header.alg !== 'HS256') return null; // only the shared-secret algo is verified here
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+    const ok = await crypto.subtle.verify('HMAC', key, b64urlToBytes(sig), enc.encode(`${h}.${p}`));
+    if (!ok) return null;
+    const payload = JSON.parse(new TextDecoder().decode(b64urlToBytes(p)));
+
+    // Must be a genuine authenticated user — NOT the public anon key or the service_role key.
+    if (payload.role !== 'authenticated') return null;
+    // Supabase user tokens carry aud "authenticated" (a single string, or an array that
+    // includes it). Reject anything else.
+    const aud = payload.aud;
+    const audOk = aud === 'authenticated' || (Array.isArray(aud) && aud.includes('authenticated'));
+    if (!audOk) return null;
+    // A user session must identify the user.
+    if (!payload.sub) return null;
+    // Expiry is required and must be in the future.
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (typeof payload.exp !== 'number' || nowSec >= payload.exp) return null; // expired/missing
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+// ── Legacy password gate ──────────────────────────────────────────────────────
 async function tokenFor(secret) {
-  const bytes = new TextEncoder().encode('atlas-coverage:' + secret);
+  const bytes = enc.encode('atlas-coverage:' + secret);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
@@ -51,28 +137,51 @@ function passwordPage(error) {
   return new Response(html, { status: 401, headers: { 'content-type': 'text/html; charset=utf-8' } });
 }
 
-export default async function middleware(request) {
-  const password = process.env.SITE_PASSWORD;
-  if (!password) return; // no password configured, site is open
-
+async function passwordGate(request, password) {
   const expected = await tokenFor(password);
 
   if (request.method === 'POST') {
     let given = '';
     try { given = String((await request.formData()).get('password') || ''); } catch (_) {}
     if (given !== password) return passwordPage('Incorrect password. Try again.');
-    // Correct: set the cookie, then reload the current URL (works behind the /atlas proxy too).
     return new Response('<!DOCTYPE html><meta http-equiv="refresh" content="0"><title>Unlocking</title>', {
       status: 200,
       headers: {
         'content-type': 'text/html; charset=utf-8',
-        'set-cookie': `${COOKIE}=${expected}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
+        'set-cookie': `${PW_COOKIE}=${expected}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
       },
     });
   }
 
   const cookies = (request.headers.get('cookie') || '').split(/;\s*/);
-  if (cookies.includes(`${COOKIE}=${expected}`)) return; // authorized
-
+  if (cookies.includes(`${PW_COOKIE}=${expected}`)) return null; // authorized
   return passwordPage('');
+}
+
+// ── Entry ─────────────────────────────────────────────────────────────────────
+export default async function middleware(request) {
+  const jwtSecret = process.env.SUPABASE_JWT_SECRET;
+  const password = process.env.SITE_PASSWORD;
+
+  // Never gate the sign-in page or the assets it loads (defensive — the matcher already
+  // excludes them, but a direct call / the unit test relies on this too).
+  const { pathname, search } = new URL(request.url);
+  if (OPEN_PATH.test(pathname)) return;
+
+  // Mode 1 — accounts (preferred). Verify the Supabase session cookie.
+  if (jwtSecret) {
+    const token = parseCookies(request.headers.get('cookie'))[SB_COOKIE];
+    if (token && (await verifyJWT(token, jwtSecret))) return; // authorized
+    return Response.redirect(new URL('/login?next=' + encodeURIComponent(pathname + search), request.url), 302);
+  }
+
+  // Mode 2 — legacy shared password (only while Supabase isn't configured).
+  if (password) {
+    const blocked = await passwordGate(request, password);
+    if (blocked) return blocked; // password page / POST handling
+    return; // authorized
+  }
+
+  // Neither configured — site is open.
+  return;
 }

@@ -1,0 +1,27 @@
+{
+  "runDate": "2026-06-18",
+  "searchedSince": "2026-06-11",
+  "items": [
+    {
+      "date": "2026-06-17",
+      "headline": "Databricks Cybersecurity Acquisition at Annual Conference (Lakewatch SIEM extension)",
+      "whyItMatters": "Cybersecurity becoming third product pillar alongside data/AI.",
+      "source": "Axios",
+      "sourceUrl": "https://www.axios.com/pro/enterprise-software-deals/2026/06/17/databricks-cybersecurity-ai-enterprise"
+    },
+    {
+      "date": "2026-06-16",
+      "headline": "Databricks Data Warehousing ARR Doubles to $1.5B",
+      "whyItMatters": "SQL ARR doubled YoY on AI demand + Snowflake churn; strongest consolidation signal yet.",
+      "source": "Bloomberg",
+      "sourceUrl": "https://www.bloomberg.com/news/articles/2026-06-16/databricks-sales-double-for-product-that-competes-with-snowflake"
+    },
+    {
+      "date": "2026-06-16",
+      "headline": "Databricks Launches Unity AI Gateway for AI Cost Control",
+      "whyItMatters": "Spend limits + cross-provider routing positions Databricks as enterprise AI cost-control layer.",
+      "source": "Axios",
+      "sourceUrl": "https://www.axios.com/2026/06/16/databricks-stop-ai-overspend-tokenmaxxing"
+    }
+  ]
+}
