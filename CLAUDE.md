@@ -1,32 +1,34 @@
 # Atlas - Company Research Tool
 
-## ▶️ Auto run routine UNPAUSED — daily budget: 10 reports per day (all Opus-tier), 2 groups
+## ▶️ Auto run routine UNPAUSED — daily budget: 20 reports per day (all Opus-tier), 4 groups
 
 Per the user's instruction on 2026-06-12, scheduled / automatic / routine-triggered Atlas runs are
-enabled with a budget that **resets every day**. Live counter: **2 remaining for 2026-06-24** (Group 1 published 3 new reports: KLAC, AFRM, LRCX — marketCloseAsOf 2026-06-23. Group 2 refreshed 5 stale briefs: CRWD, TOST, PLTR, OKTA, NTSK — marketCloseAsOf 2026-06-23. NOTE: the curl_cffi `impersonate="chrome110"` + CA-bundle fix is now committed into `data_agent.py` — patches `Session._request_once` to force chrome110 and point BoringSSL at /root/.ccr/ca-bundle.crt; comps fetched sequentially. Prior day 2026-06-23: Group 1 published NXPI, COIN, ABNB, UBER, RBLX; Group 2 refreshed 4 stale briefs: ANET, BE, CRM, DDOG — marketCloseAsOf 2026-06-22; CRWD held (layout overflow, fixed this run). Day 2026-06-22: Group 1 published 5 new reports: ARM, ALAB, DASH, IOT, CRDO; Group 2 refreshed 5 stale briefs: ADBE, CDNS, FTNT, INTU, NVDA (marketCloseAsOf 2026-06-18). Previous day 2026-06-20 published: NTNX, ESTC, HOOD, PATH (4). Day 2026-06-19 published: RBRK, SPOT, TWLO (3). Day 2026-06-18 published: VEEV, RDDT, DUOL, AMAT (4). Day 2026-06-17 published: TEAM, TTD, S, GTLB, DT (5). Day 2026-06-16 published: SNPS, WDAY, QCOM, OKTA, HUBS (5). Day before 2026-06-15 published: NVDA, ADBE, INTU, CDNS, FTNT (5). Earlier 2026-06-14 published: PANW, ORCL, AMD (+ CRM refresh). New 10/day all-Opus budget now in effect (set 2026-06-15, superseding the prior 5/day all-Opus budget).
+enabled with a budget that **resets every day**. Live counter: **12 remaining for 2026-06-24** (budget raised to 20/day mid-day 2026-06-24; today already used 8 under the new budget — Group 1 published 3 new reports: KLAC, AFRM, LRCX — marketCloseAsOf 2026-06-23. Group 2 refreshed 5 stale briefs: CRWD, TOST, PLTR, OKTA, NTSK — marketCloseAsOf 2026-06-23. NOTE: the curl_cffi `impersonate="chrome110"` + CA-bundle fix is now committed into `data_agent.py` — patches `Session._request_once` to force chrome110 and point BoringSSL at /root/.ccr/ca-bundle.crt; comps fetched sequentially. Prior day 2026-06-23: Group 1 published NXPI, COIN, ABNB, UBER, RBLX; Group 2 refreshed 4 stale briefs: ANET, BE, CRM, DDOG — marketCloseAsOf 2026-06-22; CRWD held (layout overflow, fixed this run). Day 2026-06-22: Group 1 published 5 new reports: ARM, ALAB, DASH, IOT, CRDO; Group 2 refreshed 5 stale briefs: ADBE, CDNS, FTNT, INTU, NVDA (marketCloseAsOf 2026-06-18). Previous day 2026-06-20 published: NTNX, ESTC, HOOD, PATH (4). Day 2026-06-19 published: RBRK, SPOT, TWLO (3). Day 2026-06-18 published: VEEV, RDDT, DUOL, AMAT (4). Day 2026-06-17 published: TEAM, TTD, S, GTLB, DT (5). Day 2026-06-16 published: SNPS, WDAY, QCOM, OKTA, HUBS (5). Day before 2026-06-15 published: NVDA, ADBE, INTU, CDNS, FTNT (5). Earlier 2026-06-14 published: PANW, ORCL, AMD (+ CRM refresh). 20/day all-Opus budget now in effect (set 2026-06-24, doubling the prior 10/day budget by adding a mid-morning and an evening group; the 10/day budget had been set 2026-06-15, itself superseding the original 5/day).
 
-**Two scheduled groups (set 2026-06-15).** The 10/day budget runs as **two routines of 5 briefs each**, both all-Opus:
+**Four scheduled groups (mid-morning + evening added 2026-06-24).** The 20/day budget runs as **four routines of 5 briefs each**, all all-Opus:
 - **Group 1 — 1:30 AM PT** (`30 1 * * *`, America/Los_Angeles): up to 5 briefs.
 - **Group 2 — 3:30 AM PT** (`30 3 * * *`, America/Los_Angeles): up to 5 briefs.
+- **Group 3 — 10:07 AM PT** (`7 10 * * *`, America/Los_Angeles): up to 5 briefs.
+- **Group 4 — 7:07 PM PT** (`7 19 * * *`, America/Los_Angeles): up to 5 briefs.
 
-Each group session shares the single daily counter — Group 1 runs first and decrements it; Group 2 runs whatever budget remains (normally 5). The counter is the source of truth, not the group size: if Group 1 over- or under-runs, Group 2 takes the remainder so the day still totals at most 10.
+All four group sessions share the single daily counter — they run in order (1 → 2 → 3 → 4), each decrementing it. The counter is the source of truth, not the group size: if an earlier group over- or under-runs, the later groups take the remainder so the day still totals at most 20.
 
 **Model policy (set 2026-06-15 on Max 5x):** every brief — new coverage and refreshes alike — runs
 on the **Opus-tier main loop**. There is **no Sonnet-subagent tier**; the old tiering was removed
 because the Opus sub-cap acted as an early exit and the Sonnet delegation never reliably fired. The
-**10/day cap is a budget dial, not an observed limit** — it is a deliberate raise from the prior 5/day
-and is *expected to run hot* against the Max 5x allowance (~10/day ≈ 70/week). If a real rate/usage
+**20/day cap is a budget dial, not an observed limit** — it is a deliberate raise from the prior 10/day
+and is *expected to run hot* against the Max 5x allowance (~20/day ≈ 140/week). If a real rate/usage
 limit is hit mid-run, stop gracefully per bookkeeping item 4; that empirical signal — not this number
 — marks the true ceiling, and the cap can be retuned from there.
 
 Bookkeeping (mandatory for schedule/trigger-started sessions), in order, before running:
 1. **Roll the day.** If the date in the counter line above is not today, reset the line to
-   "10 remaining for <today's date>" — the new day starts with a fresh budget of 10 (all Opus-tier),
-   shared across both scheduled groups.
+   "20 remaining for <today's date>" — the new day starts with a fresh budget of 20 (all Opus-tier),
+   shared across all four scheduled groups.
 2. **Respect the cap.** If the counter reads **0** remaining for today, do not run the pipeline:
-   end the session with a one-line note that today's 10-report budget is exhausted (it resets
+   end the session with a one-line note that today's 20-report budget is exhausted (it resets
    tomorrow automatically — no pause block needed, no user action required). A group should also
-   publish at most its share (5) in one session unless the other group did not run.
+   publish at most its share (5) in one session unless an earlier group did not run.
 3. **Decrement on publish.** Each time the session publishes a finished report (brief), reduce the
    counter by the number of reports published and commit that edit together with the run.
 4. **Stop gracefully on usage limits.** If a run hits a rate/usage limit mid-batch, finish or
