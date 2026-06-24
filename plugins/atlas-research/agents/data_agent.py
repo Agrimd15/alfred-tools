@@ -36,6 +36,26 @@ except ImportError:
 else:
     _YF_IMPORT_ERROR = None
 
+# The agent proxy re-terminates TLS with its own CA and rejects curl_cffi's default
+# "chrome" fingerprint. Patch _request_once (called on every curl request) to force
+# "chrome110" impersonation and point BoringSSL at the proxy CA bundle.
+try:
+    import curl_cffi.requests as _cffi_requests
+    import os as _os
+    _CCR_CA = "/root/.ccr/ca-bundle.crt"
+    _cffi_orig_req = _cffi_requests.Session._request_once
+
+    def _cffi_patched_req(self, *a, **kw):
+        if not getattr(self, "impersonate", None) or self.impersonate == "chrome":
+            self.impersonate = "chrome110"
+        if _os.path.exists(_CCR_CA) and kw.get("verify") in (None, True):
+            kw["verify"] = _CCR_CA
+        return _cffi_orig_req(self, *a, **kw)
+
+    _cffi_requests.Session._request_once = _cffi_patched_req
+except Exception:
+    pass
+
 FMP_KEY  = os.environ.get("FMP_API_KEY", "")
 FMP_BASE = "https://financialmodelingprep.com/stable"
 
@@ -634,13 +654,11 @@ RAMP_DEMAND_SIGNAL_SCHEMA = {
 def get_comps(tickers: list[str]) -> list:
     """Every comp pulled in the same run via the shared live_quote helper, so
     all multiples share one consistent last-close anchor (or visibly flag if
-    a ticker's data is stale relative to the rest). Quotes are fetched in
-    parallel — each is ~2 slow Yahoo round-trips, so a 6-name comp set would
-    otherwise dominate the run time."""
+    a ticker's data is stale relative to the rest). Fetched sequentially to
+    avoid Yahoo Finance rate-limiting in cloud/proxied environments."""
     if not tickers:
         return []
-    with ThreadPoolExecutor(max_workers=min(8, len(tickers))) as pool:
-        quotes = list(pool.map(live_quote, tickers))
+    quotes = [live_quote(t) for t in tickers]
     out = []
     for t, q in zip(tickers, quotes):
         if "error" in q:
