@@ -36,6 +36,29 @@ except ImportError:
 else:
     _YF_IMPORT_ERROR = None
 
+# ── curl_cffi / egress-proxy TLS fix ──────────────────────────────────────────
+# In the cloud sandbox, outbound HTTPS is re-terminated by a policy egress proxy
+# whose CA lives at /root/.ccr/ca-bundle.crt. yfinance's default session is
+# curl_cffi Session(impersonate="chrome"); that fingerprint trips a BoringSSL
+# "invalid library" handshake error through the proxy. Forcing
+# impersonate="chrome110" and pointing verify at the proxy CA bundle restores
+# live pulls. Fully a no-op off-sandbox (no CA bundle / curl_cffi backend).
+if yf is not None:
+    try:
+        import yfinance._http as _yf_http
+        import yfinance.data as _yf_data
+        _ATLAS_CA = os.environ.get("CURL_CA_BUNDLE") or os.environ.get("REQUESTS_CA_BUNDLE")
+        if getattr(_yf_http, "HAS_CURL_CFFI", False):
+            def _atlas_new_session():
+                kw = {"impersonate": "chrome110"}
+                if _ATLAS_CA and os.path.exists(_ATLAS_CA):
+                    kw["verify"] = _ATLAS_CA
+                return _yf_http._backend.Session(**kw)
+            _yf_http.new_session = _atlas_new_session
+            _yf_data.new_session = _atlas_new_session
+    except Exception:
+        pass
+
 FMP_KEY  = os.environ.get("FMP_API_KEY", "")
 FMP_BASE = "https://financialmodelingprep.com/stable"
 
