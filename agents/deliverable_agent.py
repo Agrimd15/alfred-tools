@@ -873,7 +873,9 @@ def build_html(profile: dict) -> str:
     section_pd = _section_period_short(et)
 
     # ── Financials metric cards (value + growth/context + period, never overflowing) ──
-    metrics_cards_html = ""
+    # Collected first, then rendered as ONE hero metric (large) + a supporting grid — the v2
+    # layout that replaces the old wall of same-size tiles so the eye has a single anchor.
+    metric_cards = []   # (lbl, head, sub, sub_cls, period, is_green)
     for k, v in metrics.items():
         if _is_empty(v):
             continue
@@ -889,9 +891,7 @@ def build_html(profile: dict) -> str:
         head, sub = _split_stat(v)
         if _is_empty(head):                         # e.g. "Not disclosed (private)" -> drop
             continue
-        cls = "metric-value green" if k in GREEN_KEYS else "metric-value"
-        if len(str(head)) > 7:                      # long head -> shrink, don't wrap
-            cls += " long"
+        is_green = k in GREEN_KEYS
         sub_cls = "metric-sub"
         if k == "revenue" and not _is_empty(metrics.get("revenueGrowth")):
             sub = _growth_sub(metrics["revenueGrowth"])
@@ -908,10 +908,47 @@ def build_html(profile: dict) -> str:
             sub = ""                                # sub is just a period → prefer the tag
         elif sub_has_period:
             show_period = False                     # sub already conveys the period + context
-        sub_html = f'<div class="{sub_cls}">{sub}</div>' if sub else ""
-        period_html = f'<div class="metric-period">{period}</div>' if show_period else ""
-        metrics_cards_html += (f'<div class="metric-card"><div class="metric-label">{lbl}</div>'
-                               f'<div class="{cls}">{head}</div>{sub_html}{period_html}</div>')
+        metric_cards.append((lbl, head, sub, sub_cls, period if show_period else "", is_green))
+
+    # Hero metric = Revenue (or ARR) when present — the engine of the story; else the first.
+    for _i, _c in enumerate(metric_cards):
+        if _c[0].lower().startswith("revenue") or _c[0].lower() == "arr":
+            if _i:
+                metric_cards.insert(0, metric_cards.pop(_i))
+            break
+
+    def _delta_or_sub(sub, sub_cls):
+        """SHORT signed change -> a ▲/▼ chip (never wraps); longer context stays a sub line
+        (which can wrap) so a chip never overflows its card."""
+        s = (sub or "").strip()
+        if not s:
+            return ""
+        is_pos = s.startswith("+") or "pos" in sub_cls
+        is_neg = bool(re.match(r"-\d", s))
+        if (is_pos or is_neg) and len(s) <= 16:
+            return f'<span class="delta {"up" if is_pos else "down"}">{"▲" if is_pos else "▼"} {s}</span>'
+        if is_pos:
+            return f'<div class="metric-sub pos">{s}</div>'
+        return f'<div class="{sub_cls}">{s}</div>'
+
+    metrics_layout_html = ""
+    if metric_cards:
+        hlbl, hhead, hsub, hsub_cls, hper, _hg = metric_cards[0]
+        hper_html = f'<div class="metric-period">{hper}</div>' if hper else ""
+        hero_card = (f'<div class="metric-hero"><div class="metric-label">{hlbl}</div>'
+                     f'<div class="metric-hero-value">{hhead}</div>'
+                     f'{_delta_or_sub(hsub, hsub_cls)}{hper_html}</div>')
+        grid_cards = ""
+        for (lbl, head, sub, sub_cls, period, is_green) in metric_cards[1:]:
+            cls = "metric-value green" if is_green else "metric-value"
+            if len(str(head)) > 7:                  # long head -> shrink, don't wrap
+                cls += " long"
+            sub_html = _delta_or_sub(sub, sub_cls)
+            period_html = f'<div class="metric-period">{period}</div>' if period else ""
+            grid_cards += (f'<div class="metric-card"><div class="metric-label">{lbl}</div>'
+                           f'<div class="{cls}">{head}</div>{sub_html}{period_html}</div>')
+        metrics_layout_html = (f'<div class="metrics-layout">{hero_card}'
+                               f'<div class="metrics-grid">{grid_cards}</div></div>')
 
     # ── Hero stats bar — live trading multiples + headline KPIs, all SHORT ──
     # Institutional: stat values read navy (set in CSS); keep map navy for any inline use.
@@ -1070,6 +1107,33 @@ def build_html(profile: dict) -> str:
             f'<span class="wm-text">{txt}</span></div>' for lbl, txt in wm_rows)
         what_matters_html = (f'<div class="what-matters"><div class="wm-head">What Matters</div>'
                              f'{_wm_rows_html}</div>')
+
+    # ── Bull / Base / Bear scenario box (v2) — the explicit view an MD wants. Renders only
+    # when the run authored brief.bullBearBase; silently absent otherwise (graceful for older
+    # briefs). Each scenario: {target|label, detail, street?}. Base is usually the live Street
+    # target. Never fabricated here — the research/synthesis step writes the bull & bear cases.
+    bbb = (b.get("bullBearBase") or b.get("scenarios") or {})
+    bull_bear_html = ""
+    if isinstance(bbb, dict) and bbb:
+        cells = ""
+        for key, lbl, cls in (("bear", "Bear", "bbb-bear"), ("base", "Base", "bbb-base"),
+                              ("bull", "Bull", "bbb-bull")):
+            sc = bbb.get(key)
+            if isinstance(sc, str):
+                sc = {"detail": sc}
+            if not isinstance(sc, dict) or not (sc.get("detail") or sc.get("target") or sc.get("label")):
+                continue
+            tgt = clean(str(sc.get("label") or sc.get("target") or ""))
+            det = clean(str(sc.get("detail") or ""))
+            tag = ' <span class="bbb-tag">Street</span>' if (key == "base" and sc.get("street")) else ""
+            cells += (f'<div class="bbb-cell {cls}"><div class="bbb-head">'
+                      f'<span class="bbb-name">{lbl}{tag}</span>'
+                      f'<span class="bbb-target">{tgt}</span></div>'
+                      f'<div class="bbb-detail">{det}</div></div>')
+        if cells:
+            bull_bear_html = (f'<div class="section" id="scenarios">'
+                              f'<div class="sec-label">Bull · Base · Bear</div>'
+                              f'<div class="bbb-grid">{cells}</div></div>')
 
     # ── Visuals ──
     arr_chart_html     = build_arr_chart(rev_history)
@@ -1591,7 +1655,7 @@ def build_html(profile: dict) -> str:
         if q_date:
             meta_bits.append(f"reported {q_date}")
         meta_txt = "; ".join(meta_bits)
-        if meta_txt and metrics_cards_html:
+        if meta_txt and metrics_layout_html:
             meta_txt += ". Each metric is tagged with the period it covers; LTM and as-of figures are labeled individually."
         meta_row = f'<div class="sec-meta">{meta_txt}</div>' if meta_txt else ""
         # Live last-4-quarters trend (public tickers) so the section shows trajectory,
@@ -1600,7 +1664,7 @@ def build_html(profile: dict) -> str:
         earnings_section_html = (
             f'<div class="section" id="earnings">'
             f'<div class="sec-label">Financials &amp; Key Metrics</div>{meta_row}'
-            f'<div class="metrics-grid">{metrics_cards_html}</div>'
+            f'{metrics_layout_html}'
             f'{qtrend_html}'
             f'{earn_ul}'
             f'{_source_row(et)}'
@@ -1628,6 +1692,7 @@ def build_html(profile: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{name} · Atlas Research Brief</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap');
   /* Institutional (light) design tokens: sell-side research note */
   :root {{
     --ks-lacquer:      #ffffff;            /* paper */
@@ -1648,21 +1713,22 @@ def build_html(profile: dict) -> str:
     --ks-faint:        #727a89;
     --ks-rule:         #dce0e7;            /* hairline */
     --ks-rule-strong:  #c2c8d2;
-    --ks-serif:        Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --ks-sans:         'Inter', Arial, "Helvetica Neue", Helvetica, sans-serif;
+    --ks-serif:        'Source Serif 4', Georgia, "Iowan Old Style", "Times New Roman", serif;
     --ks-ease:         cubic-bezier(0.2, 0.8, 0.2, 1);
     /* ── Type scale: ONE size per role so the same kind of text is the same
        size in every section (no half-pixel drift across the report) ── */
-    --fs-lede:   17px;     /* serif lede + section callouts                 */
-    --fs-body:   14px;     /* ALL flowing body: bullets, list items, prose  */
+    --fs-lede:   18px;     /* serif lede + section callouts                 */
+    --fs-body:   15px;     /* ALL flowing body: bullets, list items, prose  */
     --lh-body:   1.6;      /* matching body line-height                     */
-    --fs-dense:  13px;     /* data tables + dense reference text            */
+    --fs-dense:  13.5px;   /* data tables + dense reference text            */
   }}
 
   /* ── Base ── */
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-         background: var(--ks-lacquer); color: var(--ks-body); font-size: 14px; line-height: 1.55;
-         font-variant-numeric: tabular-nums;
+  body {{ font-family: var(--ks-sans);
+         background: var(--ks-lacquer); color: var(--ks-body); font-size: 15px; line-height: 1.6;
+         font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
          -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }}
   /* charts scale down proportionally on narrow screens instead of letterboxing */
   .chart-wrap svg {{ max-width: 100%; height: auto; }}
@@ -1671,7 +1737,7 @@ def build_html(profile: dict) -> str:
   a {{ color: inherit; text-decoration: none; }}
   p {{ color: var(--ks-body); line-height: 1.6; margin-bottom: 6px; }}
   strong {{ color: var(--ks-champagne); }}
-  .mono {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-variant-numeric: tabular-nums; }}
+  .mono {{ font-family: var(--ks-sans); font-variant-numeric: tabular-nums; }}
   .right {{ text-align: right; }}
 
   .wrapper {{ width: 100%; max-width: 1400px; margin: 0 auto; background: var(--ks-lacquer);
@@ -1691,17 +1757,17 @@ def build_html(profile: dict) -> str:
                    display: block; }}
   .header-badges {{ display: flex; align-items: center; gap: 7px; margin-top: 6px; flex-wrap: wrap; }}
   .ticker-badge {{ background: transparent; color: var(--ks-kinpaku);
-                   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+                   font-family: var(--ks-sans);
                    font-size: 10.5px; font-weight: 700; padding: 0; border-radius: 0;
                    letter-spacing: 0.16em; text-transform: uppercase; }}
   .stage-badge {{ background: var(--ks-raised); border: 1px solid var(--ks-rule);
                   color: var(--ks-muted); font-size: 10px; font-weight: 600; padding: 2px 8px;
                   border-radius: 2px; letter-spacing: 0.12em;
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                  font-family: var(--ks-sans); }}
   .draft-badge {{ background: var(--ks-kinpaku); border: 1px solid var(--ks-kinpaku);
                   color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 9px;
                   border-radius: 2px; letter-spacing: 0.15em;
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                  font-family: var(--ks-sans); }}
   .header-meta {{ font-size: 11.5px; color: var(--ks-faint); }}
   .header-meta a {{ color: var(--ks-kinpaku-pale); }}
   /* ── Version history (header disclosure) ── */
@@ -1726,10 +1792,10 @@ def build_html(profile: dict) -> str:
   .verticals {{ margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }}
   .vertical-tag {{ background: var(--ks-graphite); border: 1px solid var(--ks-rule);
                    color: var(--ks-muted); font-size: 10px; padding: 2px 9px; border-radius: 3px;
-                   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.06em; }}
+                   font-family: var(--ks-sans); letter-spacing: 0.06em; }}
   .trading-bar {{ background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
                   padding: 9px 14px; margin-top: 14px; font-size: 11px; color: var(--ks-faint);
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                  font-family: var(--ks-sans); }}
   .trading-bar strong {{ color: var(--ks-champagne); margin-right: 4px; }}
 
   /* ── Hero stats bar ── */
@@ -1743,12 +1809,12 @@ def build_html(profile: dict) -> str:
   .hero-card:last-child {{ border-right: none; }}
   .hero-label {{ font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.13em;
                  color: var(--ks-faint); margin-bottom: 6px; white-space: nowrap;
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   /* big number stays on ONE line; a long head shrinks to fit rather than wrapping */
-  .hero-value {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 1.5rem; font-weight: 700;
+  .hero-value {{ font-family: var(--ks-sans); font-size: 1.5rem; font-weight: 700;
                  line-height: 1.1; color: var(--ks-kinpaku); white-space: nowrap; }}
   .hero-value.long {{ font-size: 1.1rem; letter-spacing: -0.01em; }}
-  .hero-sub {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px;
+  .hero-sub {{ font-family: var(--ks-sans); font-size: 10.5px;
                color: var(--ks-faint); margin-top: 4px; line-height: 1.3; }}
   .hero-sub.pos {{ color: var(--ks-patina); }}
   /* narrow screens: let the 5-col strip reflow (print/desktop keep 5 across) */
@@ -1763,29 +1829,29 @@ def build_html(profile: dict) -> str:
   .ctx-card:last-child {{ border-right: none; }}
   .ctx-label {{ font-size: 8.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em;
                 color: var(--ks-faint); margin-bottom: 4px; white-space: nowrap;
-                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
-  .ctx-value {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 1.0rem;
+                font-family: var(--ks-sans); }}
+  .ctx-value {{ font-family: var(--ks-sans); font-size: 1.0rem;
                 font-weight: 700; color: var(--ks-muted); white-space: nowrap; }}
   .ctx-sub {{ font-size: 9.5px; color: var(--ks-faint); margin-top: 3px; line-height: 1.3;
-              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+              font-family: var(--ks-sans); }}
   @media (max-width: 820px) {{ .ctx-card {{ flex-basis: 33.333%; }} }}
 
   /* ── As-of anchor: ONE dated line for the whole trading strip ── */
   .asof-band {{ background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule);
                 padding: 6px 18px; font-size: 10px; color: var(--ks-faint);
-                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.03em; }}
+                font-family: var(--ks-sans); letter-spacing: 0.03em; }}
   .asof-band strong {{ color: var(--ks-muted); }}
 
   /* ── "What matters" band: thesis · key debate · next catalyst ── */
   .what-matters {{ border-bottom: 1px solid var(--ks-rule); padding: 16px 40px 14px;
                    background: var(--ks-lacquer); border-left: 3px solid var(--ks-kinpaku); }}
-  .wm-head {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10px;
+  .wm-head {{ font-family: var(--ks-sans); font-size: 10px;
               font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
               color: var(--ks-accent); margin-bottom: 9px; }}
   .wm-row {{ display: flex; gap: 14px; padding: 4px 0; align-items: baseline; }}
   .wm-label {{ flex: 0 0 96px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em;
                text-transform: uppercase; color: var(--ks-kinpaku); white-space: nowrap;
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; padding-top: 2px; }}
+               font-family: var(--ks-sans); padding-top: 2px; }}
   .wm-text {{ font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ks-body); }}
 
   /* ── TOC ── */
@@ -1795,33 +1861,33 @@ def build_html(profile: dict) -> str:
   .toc-link {{ font-size: 10px; font-weight: 600; color: var(--ks-faint); padding: 3px 10px;
                border-radius: 20px; border: 1px solid var(--ks-rule); background: transparent;
                transition: background 150ms var(--ks-ease), color 150ms var(--ks-ease);
-               white-space: nowrap; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+               white-space: nowrap; font-family: var(--ks-sans);
                letter-spacing: 0.04em; }}
   .toc-link:hover {{ background: var(--ks-kinpaku); color: var(--ks-lacquer-deep); border-color: var(--ks-kinpaku); }}
 
   /* ── Sections ── */
   .section {{ border-bottom: 1px solid var(--ks-rule); padding: 24px 40px; scroll-margin-top: 48px; }}
   .section:last-of-type {{ border-bottom: none; }}
-  .sec-label {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10px; font-weight: 700;
+  .sec-label {{ font-family: var(--ks-sans); font-size: 10px; font-weight: 700;
                 letter-spacing: 0.15em; text-transform: uppercase; color: var(--ks-accent);
                 margin-bottom: 15px; padding-bottom: 7px; border-bottom: 1px solid var(--ks-rule); }}
   /* normal-weight metadata line under a section label (quarter, as-of, captions) —
      keeps the eyebrow itself short and uncluttered instead of wrapping inline */
-  .sec-meta {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px;
+  .sec-meta {{ font-family: var(--ks-sans); font-size: 10.5px;
                color: var(--ks-faint); margin: -9px 0 14px; letter-spacing: 0.03em; line-height: 1.4; }}
 
   /* ── Two-col layout (overview) ── */
   .two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }}
   @media (max-width: 760px) {{ .two-col {{ grid-template-columns: 1fr; }} }}
   .diagram-caption {{ font-size: 11px; color: var(--ks-faint); margin-bottom: 10px; line-height: 1.4;
-                      font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                      font-family: var(--ks-sans); }}
 
   /* ── "Understand the business" explainer (lede + plain / technical / simple) ── */
   .explain-lede {{ margin-bottom: 16px; padding: 14px 18px; background: var(--ks-graphite);
                    border-left: 3px solid var(--ks-accent); border-radius: 0 6px 6px 0; }}
   .explain-lede-label {{ display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.15em;
                          text-transform: uppercase; color: var(--ks-accent); margin-bottom: 5px;
-                         font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                         font-family: var(--ks-sans); }}
   .explain-lede-text {{ font-family: var(--ks-serif); font-size: var(--fs-lede); line-height: 1.5;
                         color: var(--ks-champagne); }}
   .explain-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }}
@@ -1832,9 +1898,9 @@ def build_html(profile: dict) -> str:
   .explain-2 {{ border-top-color: var(--ks-patina); }}
   .explain-label {{ font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase;
                     color: var(--ks-kinpaku); margin-bottom: 2px;
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                    font-family: var(--ks-sans); }}
   .explain-sublabel {{ font-size: 10.5px; color: var(--ks-faint); margin-bottom: 8px;
-                       font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                       font-family: var(--ks-sans); }}
   .explain-1 .explain-label {{ color: var(--ks-accent); }}
   .explain-2 .explain-label {{ color: var(--ks-patina); }}
   .explain-text {{ font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ks-body); }}
@@ -1851,13 +1917,13 @@ def build_html(profile: dict) -> str:
                   border-left: 3px solid var(--ks-kinpaku); padding: 14px 16px; margin-bottom: 24px; }}
   .gloss-head {{ font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase;
                  color: var(--ks-kinpaku); margin-bottom: 10px;
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   .gloss-list {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 24px; margin: 0; }}
   @media (max-width: 820px) {{ .gloss-list {{ grid-template-columns: 1fr; }} }}
   .gloss-item {{ margin: 0; padding: 7px 0; border-top: 1px solid var(--ks-rule); }}
   .gloss-item:first-child, .gloss-list > .gloss-item:nth-child(2) {{ border-top: 0; }}
   .gloss-term {{ font-size: 13px; font-weight: 700; color: var(--ks-champagne);
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   .gloss-exp {{ font-weight: 400; font-style: italic; font-size: 12px; color: var(--ks-faint); }}
   .gloss-def {{ font-size: 13px; line-height: 1.5; color: var(--ks-body); margin: 2px 0 0 0; }}
 
@@ -1866,7 +1932,7 @@ def build_html(profile: dict) -> str:
   .diff-table th {{ text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
                     text-transform: uppercase; color: var(--ks-faint); padding: 0 14px 8px 0;
                     border-bottom: 1.5px solid var(--ks-kinpaku);
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; vertical-align: bottom; }}
+                    font-family: var(--ks-sans); vertical-align: bottom; }}
   .diff-table td {{ padding: 11px 14px 11px 0; border-bottom: 1px solid var(--ks-rule);
                     vertical-align: top; color: var(--ks-body); line-height: 1.55; }}
   .diff-table tr:last-child td {{ border-bottom: none; }}
@@ -1894,9 +1960,9 @@ def build_html(profile: dict) -> str:
                 border-bottom: 1px solid var(--ks-rule); }}
   .swot-title {{ font-size: 11px; font-weight: 700; letter-spacing: 0.11em;
                  text-transform: uppercase; color: var(--ks-champagne);
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   .swot-sub {{ font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase;
-               color: var(--ks-faint); font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+               color: var(--ks-faint); font-family: var(--ks-sans); }}
   .swot-list {{ list-style: none; margin: 0; padding: 0; }}
   .swot-list li {{ position: relative; padding: 0 0 7px 15px; font-size: var(--fs-body);
                    line-height: var(--lh-body); color: var(--ks-body); }}
@@ -1930,7 +1996,7 @@ def build_html(profile: dict) -> str:
   .biz-col-mid {{ flex: 1.05; }}
   .biz-col-label {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em;
                     color: var(--ks-faint); margin-bottom: 3px; line-height: 1.3;
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                    font-family: var(--ks-sans); }}
   .biz-node {{ padding: 9px 11px; border-radius: 4px; }}
   .biz-node-name {{ font-size: 12.5px; font-weight: 600; line-height: 1.25;
                     overflow-wrap: anywhere; }}
@@ -1955,13 +2021,13 @@ def build_html(profile: dict) -> str:
   .news-item:last-child {{ border-bottom: none; }}
   .news-row {{ display: flex; gap: 14px; align-items: flex-start; }}
   .news-date {{ font-size: 10px; color: var(--ks-faint); white-space: nowrap; min-width: 74px;
-                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; padding-top: 2px; }}
+                font-family: var(--ks-sans); padding-top: 2px; }}
   .news-headline {{ font-size: 15.5px; font-weight: 600; color: var(--ks-champagne); line-height: 1.4; }}
   .news-why {{ font-size: var(--fs-body); color: var(--ks-muted); margin-top: 6px; margin-left: 88px; line-height: var(--lh-body); }}
 
   /* ── Financials / metrics ── */
   .fin-meta {{ font-size: 11px; color: var(--ks-faint); margin-bottom: 14px;
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.05em; }}
+               font-family: var(--ks-sans); letter-spacing: 0.05em; }}
   /* auto-fill (not auto-fit): a partial last row keeps card width + stays left-aligned */
   .metrics-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
                    gap: 10px; margin-bottom: 18px; }}
@@ -1971,35 +2037,69 @@ def build_html(profile: dict) -> str:
      cards aligned whether the label is 1 or 2 lines */
   .metric-label {{ font-size: 9.5px; font-weight: 500; color: var(--ks-faint); text-transform: uppercase;
                    letter-spacing: 0.12em; margin-bottom: 6px; line-height: 1.3; min-height: 1.9em;
-                   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                   font-family: var(--ks-sans); }}
   /* big number stays on ONE line; a long/sentence-like head shrinks AND wraps inside the
      card instead of overflowing into the neighbouring tile */
-  .metric-value {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 1.15rem; font-weight: 700;
+  .metric-value {{ font-family: var(--ks-sans); font-size: 1.15rem; font-weight: 700;
                    color: var(--ks-kinpaku); line-height: 1.2; white-space: nowrap; }}
   .metric-value.long {{ font-size: 0.95rem; letter-spacing: -0.01em; white-space: normal;
                         overflow-wrap: anywhere; line-height: 1.3; }}
   .metric-value.green {{ color: var(--ks-patina); }}
   .metric-sub {{ font-size: 10.5px; color: var(--ks-faint); margin-top: 4px; line-height: 1.35;
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   .metric-sub.pos {{ color: var(--ks-patina); font-weight: 600; }}
   /* period tag: the time window each metric covers, so a number is never undated */
   .metric-period {{ font-size: 9px; color: var(--ks-faint); margin-top: 5px; line-height: 1.3;
                     letter-spacing: 0.04em; text-transform: uppercase; white-space: normal;
                     overflow-wrap: anywhere; padding-top: 4px; border-top: 1px solid var(--ks-rule);
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                    font-family: var(--ks-sans); }}
+
+  /* v2: ONE hero metric (large, serif) + supporting grid, so the eye has an anchor */
+  .metrics-layout {{ display: grid; grid-template-columns: minmax(210px, 1.25fr) 2.75fr;
+                     gap: 10px; margin-bottom: 18px; align-items: stretch; }}
+  .metrics-layout .metrics-grid {{ margin-bottom: 0; }}
+  .metric-hero {{ background: var(--ks-raised); border: 1px solid var(--ks-rule-strong);
+                  border-radius: 6px; padding: 18px 20px; display: flex; flex-direction: column;
+                  justify-content: center; min-width: 0; }}
+  .metric-hero-value {{ font-family: var(--ks-serif); font-size: clamp(2rem, 4.2vw, 2.75rem);
+                        font-weight: 700; color: var(--ks-kinpaku); line-height: 1.04;
+                        white-space: nowrap; letter-spacing: -0.01em; margin: 2px 0; }}
+  /* signed-change chip: preattentive ▲/▼ + colour, faster to read than a clause */
+  .delta {{ display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px;
+            border-radius: 20px; margin-top: 7px; white-space: nowrap; align-self: flex-start;
+            font-family: var(--ks-sans); }}
+  .delta.up {{ background: #e7f4ec; color: var(--ks-patina); }}
+  .delta.down {{ background: #fbeef0; color: var(--ks-vermilion); }}
+  @media (max-width: 760px) {{ .metrics-layout {{ grid-template-columns: 1fr; }} }}
+
+  /* ── Bull / Base / Bear scenario box (v2) ── */
+  .bbb-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }}
+  .bbb-cell {{ border-top: 3px solid var(--ks-rule-strong); background: var(--ks-raised);
+               border-radius: 0 0 4px 4px; padding: 12px 14px; }}
+  .bbb-bear {{ border-top-color: var(--ks-vermilion); background: #fcf4f5; }}
+  .bbb-base {{ border-top-color: var(--ks-kinpaku); background: #f3f7fc; }}
+  .bbb-bull {{ border-top-color: var(--ks-patina); background: #f3faf6; }}
+  .bbb-head {{ display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+               font-weight: 700; color: var(--ks-champagne); }}
+  .bbb-name {{ font-size: 13px; }}
+  .bbb-tag {{ font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+              color: var(--ks-faint); }}
+  .bbb-target {{ font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }}
+  .bbb-detail {{ font-size: 13px; color: var(--ks-muted); margin-top: 5px; line-height: 1.45; }}
+  @media (max-width: 680px) {{ .bbb-grid {{ grid-template-columns: 1fr; }} }}
 
   /* ── Quarterly trend matrix (Revenue / QoQ / Gross Margin × last 4 quarters) ── */
   .qtrend-wrap {{ margin: 4px 0 6px; }}
   .qtrend-table {{ width: 100%; border-collapse: collapse; margin-top: 8px; }}
   .qtrend-table th, .qtrend-table td {{ padding: 7px 12px; border-bottom: 1px solid var(--ks-rule);
                    font-size: 13px; }}
-  .qtrend-table thead th {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10px;
+  .qtrend-table thead th {{ font-family: var(--ks-sans); font-size: 10px;
                    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
                    color: var(--ks-faint); border-bottom: 1px solid var(--ks-rule-strong); }}
   .qtrend-table td.mono {{ color: var(--ks-champagne); font-weight: 600; }}
   .qtrend-table td.pos {{ color: var(--ks-patina); }}
   .qtrend-table td.neg {{ color: var(--ks-vermilion); }}
-  .qtrend-rowlbl {{ text-align: left; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  .qtrend-rowlbl {{ text-align: left; font-family: var(--ks-sans);
                    font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;
                    color: var(--ks-faint); white-space: nowrap; }}
   .qtrend-table tbody tr:last-child td {{ border-bottom: none; }}
@@ -2025,7 +2125,7 @@ def build_html(profile: dict) -> str:
   .chart-wrap {{ margin: 4px 0 8px; }}
   .chart-eyebrow {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.18em;
                     color: var(--ks-faint); margin-bottom: 12px;
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                    font-family: var(--ks-sans); }}
 
   /* ── Funding timeline (flex cards) ── */
   .tl-flex  {{ display: flex; align-items: center; gap: 0; overflow-x: auto;
@@ -2034,12 +2134,12 @@ def build_html(profile: dict) -> str:
                padding: 10px 12px; min-width: 88px; text-align: center; flex-shrink: 0; }}
   .tl-arrow {{ color: var(--ks-kinpaku); font-size: 14px; padding: 0 4px; flex-shrink: 0; }}
   .tl-round {{ font-size: 8px; text-transform: uppercase; letter-spacing: 0.10em;
-               color: var(--ks-faint); font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+               color: var(--ks-faint); font-family: var(--ks-sans);
                margin-bottom: 3px; }}
   .tl-amt   {{ font-size: 12px; font-weight: 700; color: var(--ks-kinpaku);
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+               font-family: var(--ks-sans); }}
   .tl-val   {{ font-size: 10px; color: var(--ks-patina);
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; margin-top: 2px; }}
+               font-family: var(--ks-sans); margin-top: 2px; }}
   .tl-date  {{ font-size: 9px; color: var(--ks-faint); margin-top: 1px; }}
   .tl-leads {{ font-size: 9px; color: var(--ks-muted); margin-top: 3px; line-height: 1.3; }}
 
@@ -2054,7 +2154,7 @@ def build_html(profile: dict) -> str:
   .news-source-nolink {{ color: var(--ks-faint); }}
   /* legacy: keep so old references do not break */
   .news-source {{ font-size: 9.5px; font-weight: 600; color: var(--ks-faint); margin-left: 8px;
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.05em;
+                  font-family: var(--ks-sans); letter-spacing: 0.05em;
                   background: var(--ks-raised); border: 1px solid var(--ks-rule);
                   padding: 1px 6px; border-radius: 3px; vertical-align: middle; }}
 
@@ -2069,11 +2169,11 @@ def build_html(profile: dict) -> str:
                  border-bottom: 1px solid var(--ks-rule); }}
   .filing-row:last-child {{ border-bottom: none; }}
   .filing-row:hover .filing-go {{ opacity: 1; }}
-  .filing-form {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-weight: 700;
+  .filing-form {{ font-family: var(--ks-sans); font-weight: 700;
                   font-size: 12.5px; color: var(--ks-kinpaku); min-width: 52px; }}
-  .filing-meta {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 11.5px;
+  .filing-meta {{ font-family: var(--ks-sans); font-size: 11.5px;
                   color: var(--ks-faint); flex: 1; }}
-  .filing-go {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px;
+  .filing-go {{ font-family: var(--ks-sans); font-size: 10.5px;
                 font-weight: 700; letter-spacing: 0.04em; color: var(--ks-kinpaku-pale);
                 opacity: 0.55; transition: opacity .15s; white-space: nowrap; }}
 
@@ -2090,20 +2190,20 @@ def build_html(profile: dict) -> str:
   .kit-tags {{ display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }}
   .kit-tag  {{ font-size: 9px; background: var(--ks-graphite); border: 1px solid var(--ks-rule);
                color: var(--ks-kinpaku-pale); padding: 2px 7px; border-radius: 3px;
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.04em; }}
+               font-family: var(--ks-sans); letter-spacing: 0.04em; }}
   .kit-copy {{ display: flex; flex-direction: column; gap: 6px; }}
   .kit-copy-label {{ font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.18em;
-                     color: var(--ks-faint); font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                     color: var(--ks-faint); font-family: var(--ks-sans); }}
   .kit-stat {{ background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
                padding: 8px 12px; font-size: 12.5px; font-weight: 600; color: var(--ks-champagne);
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; cursor: text; }}
+               font-family: var(--ks-sans); cursor: text; }}
   .kit-bullet {{ background: var(--ks-graphite); border-left: 2px solid var(--ks-kinpaku);
                  padding: 7px 10px; font-size: 12px; color: var(--ks-body); line-height: 1.5;
                  margin-top: 2px; }}
   .kit-assets {{ display: flex; flex-direction: column; gap: 6px; }}
   .kit-url  {{ background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
                padding: 7px 10px; font-size: 10.5px; color: var(--ks-patina); word-break: break-all;
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+               font-family: var(--ks-sans); }}
   .kit-swatches {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }}
   .kit-swatch-wrap {{ display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: default; }}
   .kit-swatch {{ width: 36px; height: 36px; border-radius: 6px; border: 1px solid rgba(0,0,0,.12);
@@ -2134,7 +2234,7 @@ def build_html(profile: dict) -> str:
                           border-radius: 50%; background: rgba(179,18,43,0.1);
                           color: var(--ks-vermilion); font-size: 9px; font-weight: 900;
                           text-align: center; line-height: 13px;
-                          font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                          font-family: var(--ks-sans); }}
   .risk-list li:last-child {{ border-bottom: none; }}
   .risk-label {{ font-weight: 600; color: var(--ks-champagne); }}
 
@@ -2143,7 +2243,7 @@ def build_html(profile: dict) -> str:
   .comps-table th {{ text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
                      text-transform: uppercase; color: var(--ks-faint); padding: 0 12px 8px 0;
                      border-bottom: 1.5px solid var(--ks-kinpaku); vertical-align: bottom;
-                     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                     font-family: var(--ks-sans); }}
   .comps-table th.right {{ text-align: right; }}
   /* unit (LTM / YoY) parked under the header so each cell value is one clean token */
   .th-unit {{ display: block; text-transform: none; font-weight: 400; font-size: 8.5px;
@@ -2190,7 +2290,7 @@ def build_html(profile: dict) -> str:
                            position: absolute; left: 0; top: 8px; width: 26px; height: 26px;
                            border-radius: 2px; background: var(--ks-kinpaku); color: var(--ks-lacquer-deep);
                            font-size: 11px; font-weight: 700; text-align: center; line-height: 26px;
-                           font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                           font-family: var(--ks-sans); }}
 
   /* ── Diligence ── */
   .dq-list {{ list-style: none; padding: 0; counter-reset: dqs; }}
@@ -2202,7 +2302,7 @@ def build_html(profile: dict) -> str:
                         border-radius: 2px; background: var(--ks-raised); color: var(--ks-kinpaku);
                         border: 1px solid var(--ks-rule); font-size: 9.5px; font-weight: 700;
                         text-align: center; line-height: 26px;
-                        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                        font-family: var(--ks-sans); }}
 
   /* ── Chips ── */
   .chip-list {{ display: flex; flex-wrap: wrap; gap: 6px; }}
@@ -2214,7 +2314,7 @@ def build_html(profile: dict) -> str:
              padding: 14px 40px; display: flex; justify-content: space-between; align-items: center; }}
   .footer-left {{ font-size: 10.5px; color: var(--ks-faint); line-height: 1.7; }}
   .footer-right {{ font-size: 10.5px; font-weight: 700; color: var(--ks-kinpaku);
-                   letter-spacing: 0.22em; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                   letter-spacing: 0.22em; font-family: var(--ks-sans); }}
   .meta-note {{ font-size: 12px; color: var(--ks-muted); margin-top: 8px; }}
   .meta-note strong {{ color: var(--ks-champagne); }}
 
@@ -2223,6 +2323,10 @@ def build_html(profile: dict) -> str:
      (Letter-width viewport) never triggers any of it — no print overrides needed. */
   @media (max-width: 520px) {{
     .header, .what-matters, .toc, .section, .footer {{ padding-left: 16px; padding-right: 16px; }}
+    /* header meta (website + version-history dropdown, which can't wrap) drops below the
+       company name on a phone instead of forcing the header wider than the screen */
+    .header-top {{ flex-wrap: wrap; }}
+    .header-meta {{ width: 100%; text-align: left !important; margin-top: 4px; }}
     /* sticky TOC: one scrollable row with finger-sized targets, not 4 stacked rows */
     .toc {{ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
             padding-top: 6px; padding-bottom: 6px; }}
@@ -2346,6 +2450,9 @@ def build_html(profile: dict) -> str:
 
   <!-- ③a WHAT MATTERS: thesis · key debate · next catalyst (the MD's first 30 seconds) -->
   {what_matters_html}
+
+  <!-- ③b BULL · BASE · BEAR scenario box (v2; renders only when the run authored it) -->
+  {bull_bear_html}
 
   <!-- ④ BUSINESS OVERVIEW: explainer (3 levels) + bullets + value-chain diagram (only when an explicit bizFlow exists) -->
   {'<div class="section" id="overview"><div class="sec-label">Business Overview</div>' + explainer_html + ('<div class="two-col"><div>' + to_bullets(b.get("businessOverview") or short_desc, max_bullets=max_ov_bullets) + '</div><div><div class="diagram-caption">How the business works, left to right: who buys, what the platform provides, and the payoff.</div>' + biz_flow_html + '</div></div>' if biz_flow_html else to_bullets(b.get("businessOverview") or short_desc, max_bullets=max_ov_bullets)) + _source_row(b.get("businessOverviewSources") or []) + '</div>' if (b.get("businessOverview") or short_desc) else ''}
