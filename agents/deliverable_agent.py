@@ -708,7 +708,7 @@ def build_slide_kit(profile: dict, logo_url: str, brand_colors: list = None) -> 
     stage_str  = f" · {stage.upper()}" if stage else ""
     header_str = f"{name}{ticker_str}{stage_str}"
 
-    stats_html = "".join(f'<div class="kit-stat">{_roll_units(str(s))}</div>' for s in stats)
+    stats_html = "".join(f'<div class="kit-stat">{clean(str(s))}</div>' for s in stats)
     tag_html   = "".join(f'<span class="kit-tag">{v}</span>' for v in verticals)
     logo_html  = f'<img src="{logo_url}" class="kit-logo-lg" alt="{name} logo" onerror="this.style.display=\'none\'">' if logo_url else ""
     bullets_html = "".join(f'<div class="kit-bullet">{clean(bl)}</div>' for bl in bullets[:3]) if bullets else ""
