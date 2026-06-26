@@ -249,6 +249,16 @@ def _embed_image(src, base_dirs=None):
     return None
 
 
+def _runin(p: str) -> str:
+    """Bold a leading run-in label: 'What it sells: four platforms...' -> the label, then
+    detail. Only fires on a short (≤5-word) label followed by a colon, so a normal sentence
+    with a mid-clause colon is left alone. This is what makes a bullet list 'layer-cake'."""
+    m = re.match(r'^([A-Z][^:.]{1,34}):\s+(\S.*)$', p)
+    if m and len(m.group(1).split()) <= 5:
+        return f'<b class="run-in">{m.group(1)}:</b> {m.group(2)}'
+    return p
+
+
 def to_bullets(text, max_bullets: int = 0) -> str:
     """Convert a paragraph string or list of strings into HTML bullet points."""
     if not text:
@@ -260,7 +270,7 @@ def to_bullets(text, max_bullets: int = 0) -> str:
             parts = parts[:max_bullets]
         if not parts:
             return ""
-        return "<ul class='body-list'>" + "".join(f"<li>{p}.</li>" for p in parts) + "</ul>"
+        return "<ul class='body-list'>" + "".join(f"<li>{_runin(p)}.</li>" for p in parts) + "</ul>"
     # Otherwise split paragraph string
     text = clean(text)
     # Only split after lowercase letter or digit followed by ". " then uppercase/digit
@@ -271,7 +281,7 @@ def to_bullets(text, max_bullets: int = 0) -> str:
         return f"<p class='body-p'>{text}</p>"
     if max_bullets:
         parts = parts[:max_bullets]
-    return "<ul class='body-list'>" + "".join(f"<li>{p}.</li>" for p in parts) + "</ul>"
+    return "<ul class='body-list'>" + "".join(f"<li>{_runin(p)}.</li>" for p in parts) + "</ul>"
 
 
 # ── Visual helpers ────────────────────────────────────────────────────────────
@@ -1010,14 +1020,95 @@ def build_html(profile: dict) -> str:
     # NOTE: stage is intentionally NOT a hero card — it already shows as a header
     # badge, and a lone "Stage" stat stretched into its own full-width row.
 
-    hero_cards = ""
-    for label, val, sub, clr in hero_items[:8]:
-        sub_cls = " pos" if sub and sub.strip().startswith("+") else ""
-        sub_html = f'<div class="hero-sub{sub_cls}">{sub}</div>' if sub else ""
-        val_cls = "hero-value long" if len(str(val)) > 7 else "hero-value"   # shrink, don't wrap
-        hero_cards += (f'<div class="hero-card"><div class="hero-label">{label}</div>'
-                       f'<div class="{val_cls}" style="color:{color_map.get(clr,"var(--ks-champagne)")}">{val}</div>{sub_html}</div>')
-    hero_html = f'<div class="hero-stats">{hero_cards}</div>' if hero_cards else ""
+    # ── Shared live extras (computed once; used by the hero rail AND the ctx strip) ──
+    rel_perf, sbc_pct = None, None
+    if live_q:
+        try:
+            from data_agent import sbc_pct_revenue, relative_performance
+            sbc_pct = sbc_pct_revenue(ticker_sym, live_q.get("totalRevenueNum"))
+            rel_perf = relative_performance(ticker_sym)
+        except Exception:
+            pass
+
+    # ── Verdict + Street target that anchor the v2 hero (composed, never invented) ──
+    _swot_h = b.get("swot") or profile.get("swot") or {}
+    _wm_h = b.get("whatMatters") or profile.get("whatMatters") or {}
+    def _first_sentence(t, cap=210):
+        """First complete sentence; if longer than cap, end on a clean clause/word boundary
+        with an ellipsis — never clipped mid-word."""
+        t = clean(str(t or "")).strip()
+        m = re.search(r'(.+?[.!?])(?:\s|$)', t)
+        s = (m.group(1) if m else t).strip().rstrip(".!?").strip()
+        if len(s) <= cap:
+            return s
+        head = s[:cap]
+        cut = max(head.rfind("; "), head.rfind(", "))
+        return (head[:cut].rstrip(",; ") if cut >= cap * 0.6 else head.rsplit(" ", 1)[0]).strip() + "…"
+    verdict = _first_sentence(_swot_h.get("standoutSummary") or _wm_h.get("thesis")
+                              or _swot_h.get("summary") or short_desc)
+    analyst_target = live_q.get("analystTarget") if live_q else None
+    _up_raw = str((live_q or {}).get("analystUpside") or "").strip()
+    up_disp = _up_raw if _up_raw[:1] in "+-" else (("+" + _up_raw) if _up_raw[:1].isdigit() else _up_raw)
+    up_pos = up_disp.startswith("+")
+
+    # ── Thesis bar: ticker · the call · Street PT + upside (the line that never scrolls off) ──
+    thesis_bar_html = ""
+    if verdict or analyst_target:
+        tb_right = ""
+        if analyst_target:
+            tb_right = (f'<span class="tb-pt">Street PT <b>{analyst_target}</b>'
+                        + (f' <span class="tb-up {"pos" if up_pos else "neg"}">{up_disp}</span>' if up_disp else "")
+                        + "</span>")
+        tb_tkr = (f'<span class="tb-ticker">{ticker_sym}</span>'
+                  if ticker_sym and re.fullmatch(_TICKER_RE, ticker_sym or "") else "")
+        thesis_bar_html = (f'<div class="thesis-bar">{tb_tkr}'
+                           f'<span class="tb-verdict">{verdict}</span>{tb_right}</div>')
+
+    # ── Hero ── v2 hero (public, with a live Street target): ONE big number (upside to
+    # target) + a compact market-snapshot rail. Falls back to the KPI stat-card grid for
+    # private names or when there is no analyst target.
+    use_v2_hero = bool(live_q and analyst_target and up_disp)
+    if use_v2_hero:
+        bench_lbl = bench_val = None
+        if rel_perf:
+            _v1y = rel_perf["periods"].get("1Y", {}).get("spreadPp")
+            if _v1y is not None:
+                bench_lbl, bench_val = f"vs {rel_perf['benchmark']}", f"{_v1y:+.0f}pp 1Y"
+        rail = []
+        if live_q.get("closePrice") is not None:
+            rail.append(("Price", f"${live_q['closePrice']:,.2f}"))
+        if live_q.get("marketCap"):
+            rail.append(("Mkt cap", live_q["marketCap"]))
+        rail.append(("Street PT", analyst_target))
+        if live_q.get("evRevenueLTM"):
+            rail.append(("EV / Rev", live_q["evRevenueLTM"]))
+        if live_q.get("analystRating"):
+            rail.append(("Consensus", str(live_q["analystRating"]).title()))
+        if bench_lbl:
+            rail.append((bench_lbl, bench_val))
+        rail_html = "".join(
+            f'<div class="hr-cell"><span class="hr-label">{l}</span>'
+            f'<span class="hr-value">{v}</span></div>' for l, v in rail[:6])
+        n_an = live_q.get("numberOfAnalysts")
+        eyebrow = (f"{n_an} analysts · " if n_an else "") + "consensus view"
+        sec = (f"at {live_q['evRevenueLTM']} EV/Rev (LTM)"
+               if live_q.get("evRevenueLTM") else (live_q.get("analystRating") or ""))
+        hero_html = (f'<div class="hero-v2"><div class="hero-lead">'
+                     f'<div class="hero-eyebrow">{eyebrow}</div>'
+                     f'<div class="hero-bignum {"pos" if up_pos else "neg"}">{up_disp}</div>'
+                     f'<div class="hero-bigcap">upside to the Street target<br>'
+                     f'<span class="hero-bigcap-2">{sec}</span></div></div>'
+                     f'<div class="hero-rail">{rail_html}</div></div>')
+    else:
+        hero_cards = ""
+        for label, val, sub, clr in hero_items[:8]:
+            sub_cls = " pos" if sub and sub.strip().startswith("+") else ""
+            sub_html = f'<div class="hero-sub{sub_cls}">{sub}</div>' if sub else ""
+            val_cls = "hero-value long" if len(str(val)) > 7 else "hero-value"   # shrink, don't wrap
+            hero_cards += (f'<div class="hero-card"><div class="hero-label">{label}</div>'
+                           f'<div class="{val_cls}" style="color:{color_map.get(clr,"var(--ks-champagne)")}">{val}</div>{sub_html}</div>')
+        hero_html = f'<div class="hero-stats">{hero_cards}</div>' if hero_cards else ""
+
     # One as-of anchor for the whole strip; figures on a different window are labeled
     # individually (per the Metric Clarity Mandate), so only the exception carries a tag.
     if hero_html and hero_asof:
@@ -1025,13 +1116,14 @@ def build_html(profile: dict) -> str:
                       f'(yfinance; EV/Rev recomputed from last close × shares + net debt). '
                       f'Figures covering a different window are labeled individually.</div>')
 
-    # ── Street & balance-sheet context strip (public tickers, all live) ──
-    # The second read after the hero: consensus target + upside, forward P/E, where the
-    # multiple sits in its 52-week band, short interest, net cash, SBC drag, and
-    # performance vs the software-heavy benchmark. Each card degrades silently.
+    # ── Street & balance-sheet context strip (deeper context below the hero) ──
+    # The second read after the hero: forward P/E, where the multiple sits in its 52-week
+    # band, short interest, net cash, SBC drag, and performance vs the benchmark. When the
+    # v2 hero is shown, the target + 1Y-vs-benchmark already live in the rail, so they are
+    # dropped here to avoid repeating them. Each card degrades silently.
     ctx_items = []
     if live_q:
-        if live_q.get("analystTarget"):
+        if live_q.get("analystTarget") and not use_v2_hero:
             up = live_q.get("analystUpside") or ""
             up = (("+" + up) if up[:1].isdigit() else up) + " vs close" if up else ""
             bits = [x for x in (up, live_q.get("analystRating"),
@@ -1047,22 +1139,16 @@ def build_html(profile: dict) -> str:
         if live_q.get("netCash"):
             lbl = "Net Cash" if not str(live_q["netCash"]).startswith("-") else "Net Debt"
             ctx_items.append((lbl, str(live_q["netCash"]).lstrip("-"), "cash − total debt"))
-        try:
-            from data_agent import sbc_pct_revenue, relative_performance
-            _sbc = sbc_pct_revenue(ticker_sym, live_q.get("totalRevenueNum"))
-            if _sbc:
-                ctx_items.append(("SBC % of Rev", _sbc, "LTM, the dilution drag"))
-            _rp = relative_performance(ticker_sym)
-            if _rp:
-                p = _rp["periods"]
-                def _pp(k):
-                    v = p.get(k, {}).get("spreadPp")
-                    return f"{v:+.0f}pp" if v is not None else ""
-                if _pp("1Y"):
-                    ctx_items.append((f"vs {_rp['benchmark']}", f"{_pp('1Y')} 1Y",
-                                      f"1M {_pp('1M')} · YTD {_pp('YTD')}"))
-        except Exception:
-            pass
+        if sbc_pct:
+            ctx_items.append(("SBC % of Rev", sbc_pct, "LTM, the dilution drag"))
+        if rel_perf and not use_v2_hero:
+            p = rel_perf["periods"]
+            def _pp(k):
+                v = p.get(k, {}).get("spreadPp")
+                return f"{v:+.0f}pp" if v is not None else ""
+            if _pp("1Y"):
+                ctx_items.append((f"vs {rel_perf['benchmark']}", f"{_pp('1Y')} 1Y",
+                                  f"1M {_pp('1M')} · YTD {_pp('YTD')}"))
     ctx_html = ""
     if ctx_items:
         cards = "".join(
@@ -1098,8 +1184,11 @@ def build_html(profile: dict) -> str:
             if re.search(r"guid", _k, re.I) and not _is_empty(_v):
                 wm_catalyst = f"Guidance: {clean(str(_v))}"
                 break
-    wm_rows = [(lbl, txt) for lbl, txt in (("Thesis", wm_thesis), ("Key debate", wm_debate),
-                                           ("Next catalyst", wm_catalyst)) if txt]
+    # The thesis already leads the page in the sticky thesis bar, so drop it here when that
+    # bar is shown — the band then carries only the live debate + next catalyst (no repeat).
+    _wm_pairs = (("Key debate", wm_debate), ("Next catalyst", wm_catalyst)) if thesis_bar_html \
+        else (("Thesis", wm_thesis), ("Key debate", wm_debate), ("Next catalyst", wm_catalyst))
+    wm_rows = [(lbl, txt) for lbl, txt in _wm_pairs if txt]
     what_matters_html = ""
     if wm_rows:
         _wm_rows_html = "".join(
@@ -1113,6 +1202,43 @@ def build_html(profile: dict) -> str:
     # briefs). Each scenario: {target|label, detail, street?}. Base is usually the live Street
     # target. Never fabricated here — the research/synthesis step writes the bull & bear cases.
     bbb = (b.get("bullBearBase") or b.get("scenarios") or {})
+    # Compose a default from what's already sourced when the run didn't author one: Base = the
+    # live Street target (factual), Bear = the top risk, Bull = the top opportunity/strength. No
+    # price target is invented for the wings — they carry the case, not a fabricated number. An
+    # explicitly authored brief.bullBearBase always wins.
+    if not bbb and analyst_target:
+        def _swot_first(val):
+            if isinstance(val, str):
+                return val
+            if isinstance(val, list) and val:
+                it = val[0]
+                if isinstance(it, str):
+                    return it
+                if isinstance(it, dict):
+                    p, dd = it.get("point") or it.get("label") or "", it.get("detail") or ""
+                    return f"{p}: {dd}" if (p and dd) else (p or dd)
+            return ""
+        _risks = b.get("keyRisks") or []
+        _bear_txt = _first_sentence(_risk_text(_risks[0]), cap=190) if _risks else ""
+        _bull_src = _swot_first(_swot_h.get("opportunities")) or _swot_first(_swot_h.get("strengths"))
+        _bull_txt = _first_sentence(_bull_src, cap=190)
+        # Base case is a DISTINCT consensus-valuation line (not a repeat of the thesis bar).
+        _rating = str(live_q.get("analystRating") or "").title()
+        _n = live_q.get("numberOfAnalysts")
+        _bbits = [x for x in (f"Street consensus {_rating}" if _rating else "",
+                              f"{_n} analysts" if _n else "") if x]
+        if live_q.get("closePrice") is not None:
+            _tail = f"the {analyst_target} target sits {up_disp} above the ${live_q['closePrice']:,.2f} close"
+        else:
+            _tail = f"the {analyst_target} target implies {up_disp}"
+        _base_txt = (", ".join(_bbits) + "; " + _tail) if _bbits else (_tail[0].upper() + _tail[1:])
+        if _bear_txt or _bull_txt or _base_txt:
+            bbb = {
+                "bear": ({"detail": _bear_txt} if _bear_txt else {}),
+                "base": {"label": analyst_target + (f" ({up_disp})" if up_disp else ""),
+                         "street": True, "detail": _base_txt},
+                "bull": ({"detail": _bull_txt} if _bull_txt else {}),
+            }
     bull_bear_html = ""
     if isinstance(bbb, dict) and bbb:
         cells = ""
@@ -1842,6 +1968,52 @@ def build_html(profile: dict) -> str:
                 font-family: var(--ks-sans); letter-spacing: 0.03em; }}
   .asof-band strong {{ color: var(--ks-muted); }}
 
+  /* ── v2 thesis bar: ticker · the call · Street PT + upside (sticky at the top) ── */
+  .thesis-bar {{ position: sticky; top: 0; z-index: 40; display: flex; align-items: center;
+                 gap: 14px; background: var(--ks-kinpaku); color: #fff; padding: 9px 40px;
+                 font-size: 13.5px; border-bottom: 1px solid var(--ks-kinpaku-deep); }}
+  .tb-ticker {{ background: var(--ks-accent); font-weight: 700; letter-spacing: 0.03em;
+                padding: 2px 9px; border-radius: 3px; font-size: 12.5px; flex-shrink: 0; }}
+  .tb-verdict {{ flex: 1; font-family: var(--ks-serif); font-size: 15px; line-height: 1.3;
+                 color: #fff; min-width: 0; }}
+  .tb-pt {{ white-space: nowrap; flex-shrink: 0; color: #d7e0ee;
+            border-left: 1px solid #34527c; padding-left: 14px; }}
+  .tb-pt b {{ color: #fff; }}
+  .tb-up.pos {{ color: #7fe3b0; font-weight: 600; }}
+  .tb-up.neg {{ color: #ff9a8f; font-weight: 600; }}
+  @media print {{ .thesis-bar {{ position: static; }} }}
+
+  /* ── v2 hero: ONE big number (upside to target) + a market-snapshot rail ── */
+  .hero-v2 {{ display: flex; gap: 26px; align-items: center; flex-wrap: wrap;
+              background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule);
+              padding: 20px 40px; }}
+  .hero-lead {{ flex: 0 0 auto; }}
+  .hero-eyebrow {{ font-size: 10px; font-weight: 600; text-transform: uppercase;
+                   letter-spacing: 0.13em; color: var(--ks-faint); margin-bottom: 4px; }}
+  .hero-bignum {{ font-family: var(--ks-serif); font-size: clamp(2.8rem, 6vw, 3.6rem);
+                  font-weight: 700; line-height: 0.95; font-variant-numeric: tabular-nums;
+                  letter-spacing: -0.02em; }}
+  .hero-bignum.pos {{ color: var(--ks-patina); }}
+  .hero-bignum.neg {{ color: var(--ks-vermilion); }}
+  .hero-bigcap {{ font-size: 12.5px; color: var(--ks-faint); margin-top: 6px; line-height: 1.4; }}
+  .hero-bigcap-2 {{ color: var(--ks-muted); }}
+  .hero-rail {{ flex: 1; min-width: 280px; display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0;
+                border: 1px solid var(--ks-rule-strong); border-radius: 6px; overflow: hidden;
+                background: var(--ks-lacquer); }}
+  .hr-cell {{ display: flex; flex-direction: column; gap: 3px; padding: 10px 14px;
+              border-right: 1px solid var(--ks-rule); border-bottom: 1px solid var(--ks-rule); }}
+  .hr-cell:nth-child(3n) {{ border-right: none; }}
+  .hr-cell:nth-last-child(-n+3) {{ border-bottom: none; }}
+  .hr-label {{ font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+               letter-spacing: 0.1em; color: var(--ks-faint); white-space: nowrap; }}
+  .hr-value {{ font-size: 16px; font-weight: 700; color: var(--ks-kinpaku);
+               white-space: nowrap; font-variant-numeric: tabular-nums; }}
+  @media (max-width: 680px) {{ .hero-v2 {{ padding-left: 16px; padding-right: 16px; }}
+                               .hero-rail {{ grid-template-columns: repeat(2, minmax(0,1fr)); }}
+                               .hr-cell:nth-child(3n) {{ border-right: 1px solid var(--ks-rule); }}
+                               .hr-cell:nth-child(2n) {{ border-right: none; }} }}
+
   /* ── "What matters" band: thesis · key debate · next catalyst ── */
   .what-matters {{ border-bottom: 1px solid var(--ks-rule); padding: 16px 40px 14px;
                    background: var(--ks-lacquer); border-left: 3px solid var(--ks-kinpaku); }}
@@ -1989,6 +2161,7 @@ def build_html(profile: dict) -> str:
   .body-list li:last-child {{ border-bottom: none; }}
   .body-list li:before {{ content: ""; position: absolute; left: 2px; top: 14px;
                           width: 5px; height: 5px; border-radius: 50%; background: var(--ks-kinpaku); }}
+  .body-list .run-in {{ color: var(--ks-kinpaku); font-weight: 700; }}
 
   /* ── Business flow diagram ── */
   .biz-flow {{ display: flex; align-items: stretch; gap: 0; margin: 6px 0; }}
@@ -2420,6 +2593,9 @@ def build_html(profile: dict) -> str:
 </head>
 <body>
 <div class="wrapper">
+
+  <!-- ⓪ THESIS BAR: ticker · the call · Street PT + upside (sticky; the call never scrolls off) -->
+  {thesis_bar_html}
 
   <!-- ① HEADER: Logo + Name + Badges -->
   <div class="header">
