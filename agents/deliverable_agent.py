@@ -205,7 +205,7 @@ def _source_row(item_or_list, label_singular="Source"):
         raw = item_or_list or []
     links = []
     for s in raw:
-        sname = (s.get("name") or s.get("source") or "").strip()
+        sname = clean(s.get("name") or s.get("source") or "").strip()   # strip em dashes in cites
         surl = (s.get("url") or s.get("sourceUrl") or "").strip()
         if surl:
             links.append(f'<a class="news-source-link" href="{surl}" target="_blank" rel="noopener">{sname or surl}</a>')
@@ -922,6 +922,15 @@ def build_html(profile: dict) -> str:
         head, sub = _split_stat(v)
         if _is_empty(head):                         # e.g. "Not disclosed (private)" -> drop
             continue
+        # A value written as "Adjusted EPS $0.33" duplicates the card's own label and reads
+        # crowded — peel the leading "Adjusted/GAAP/Diluted <word>" descriptor into the sub so
+        # the big number is just the figure. Only fires when the head LEADS with a descriptor
+        # word + a number, so real values like "60% adjusted" or "$870.5M" are untouched.
+        _lead = re.match(r'^(Adjusted|Adj|GAAP|Non-GAAP|Diluted|Basic)\s+\w+\s+(\$?-?[\d][\d.,]*%?)\b\s*(.*)$',
+                         head, re.I)
+        if _lead:
+            head = _lead.group(2)
+            sub = ", ".join(p for p in (_lead.group(1), _lead.group(3).strip(), sub) if p)
         is_green = k in GREEN_KEYS
         sub_cls = "metric-sub"
         if k == "revenue" and not _is_empty(metrics.get("revenueGrowth")):
@@ -1512,7 +1521,8 @@ def build_html(profile: dict) -> str:
                     _w = max(5, round(_ev / _max_ev * 100))
                     _bc = ("evbar-max" if abs(_ev - _max_ev) < 0.05
                            else ("evbar-subj" if r["is_subject"] else "evbar"))
-                    _evhtml = f'<span class="ev-num">{r["ev"]}</span><span class="{_bc}" style="width:{_w}%"></span>'
+                    _evhtml = (f'<span class="ev-num">{r["ev"]}</span>'
+                               f'<span class="evtrack"><span class="evfill {_bc}" style="width:{_w}%"></span></span>')
                 else:
                     _evhtml = r["ev"]
                 cells += f'<td class="mono right comp-ev">{_evhtml}</td>'
@@ -2571,13 +2581,16 @@ def build_html(profile: dict) -> str:
   .comp-type-cell {{ font-size: 10px; color: var(--ks-faint); white-space: nowrap; }}
   /* EV/Rev cell: the number with a thin underline bar showing where it sits in the set;
      the most-expensive name's bar is crimson so the priciest name is pre-attentive */
-  .comp-ev {{ vertical-align: middle; position: relative; padding-bottom: 12px; }}
+  .comp-ev {{ vertical-align: middle; position: relative; padding-bottom: 13px; }}
   .comp-ev .ev-num {{ display: block; }}
-  .comp-ev .evbar, .comp-ev .evbar-subj, .comp-ev .evbar-max {{
-       position: absolute; right: 12px; bottom: 6px; height: 3px; border-radius: 2px; }}
-  .comp-ev .evbar {{ background: var(--ks-kinpaku-pale); opacity: 0.8; min-width: 8px; }}
-  .comp-ev .evbar-subj {{ background: var(--ks-kinpaku); }}
-  .comp-ev .evbar-max {{ background: var(--ks-accent); }}
+  /* shared faint track = the full scale; the coloured fill shows where this name sits on it,
+     so even short bars read against a common baseline (crimson fill = priciest name) */
+  .evtrack {{ position: absolute; right: 12px; bottom: 6px; width: 88px; height: 3px;
+             background: var(--ks-rule); border-radius: 2px; overflow: hidden; }}
+  .evfill {{ position: absolute; right: 0; top: 0; height: 100%; border-radius: 2px; min-width: 3px; }}
+  .evfill.evbar {{ background: var(--ks-kinpaku-pale); }}
+  .evfill.evbar-subj {{ background: var(--ks-kinpaku); }}
+  .evfill.evbar-max {{ background: var(--ks-accent); }}
   .comp-val {{ font-size: 13px; font-weight: 700; color: var(--ks-kinpaku); }}
   .comp-val a {{ color: var(--ks-kinpaku); border-bottom: 1px solid transparent; }}
   .comp-val a:hover {{ border-bottom-color: var(--ks-kinpaku); }}
