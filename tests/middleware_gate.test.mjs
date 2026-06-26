@@ -71,8 +71,9 @@ function check(name, cond) {
   else { fail++; fails.push(name); console.log(`  ✗ ${name}`); }
 }
 
-// Build a GET /atlas/briefs/x.html request carrying the given cookie header (or none).
-function req(cookie, { url = 'https://atlas.example.com/atlas/briefs/SNOW/2026-01-01.html', method = 'GET', body } = {}) {
+// Build a GET /briefs/x.html request carrying the given cookie header (or none). Atlas serves
+// coverage at the ROOT now (alfred-analyst proxies /atlas/* here), so briefs live at /briefs/….
+function req(cookie, { url = 'https://atlas-private.vercel.app/briefs/SNOW/2026-01-01.html', method = 'GET', body } = {}) {
   const headers = {};
   if (cookie) headers.cookie = cookie;
   const init = { method, headers };
@@ -82,12 +83,13 @@ function req(cookie, { url = 'https://atlas.example.com/atlas/briefs/SNOW/2026-0
 
 // Was the response an "allow" (middleware returned undefined → request passes through)?
 const isAllowed = (res) => res === undefined || res === null;
-// Was it a redirect to /login?
+// Was it a redirect to the front-door login (alfred-analyst)? The Atlas gate sends misses to an
+// ABSOLUTE LOGIN_URL/login, never a local /login (that would loop through the proxy).
 function isLoginRedirect(res) {
   if (!res || typeof res.status !== 'number') return false;
   if (res.status !== 302 && res.status !== 307) return false;
   const loc = res.headers.get('location') || '';
-  return /\/login/.test(loc);
+  return /^https?:\/\/[^/]+\/login\b/.test(loc);
 }
 
 // Load middleware fresh with a given env (module is import-cached, but it reads process.env
@@ -187,24 +189,28 @@ await withEnv({ SUPABASE_JWT_SECRET: SECRET }, async () => {
   check('cookie with "=" in another value does not break sb_at',
     isAllowed(await middleware(req(`weird=a=b=c; sb_at=${tok}`))));
 
-  // ── 8b. Walled app: the sign-in page + its assets are OPEN; everything else is gated ──
-  const U = (p) => 'https://atlas.example.com' + p;
-  for (const open of ['/login', '/login?next=/atlas', '/config.js', '/auth.js', '/vendor/supabase.js']) {
-    check(`open path ${open} is NOT gated (no cookie)`,
+  // ── 8b. Verify-only gate: auth assets are OPEN; coverage paths are gated → front-door login ──
+  const U = (p) => 'https://atlas-private.vercel.app' + p;
+  for (const open of ['/config.js', '/auth.js', '/vendor/supabase.js']) {
+    check(`open asset ${open} is NOT gated (no cookie)`,
       isAllowed(await middleware(req(null, { url: U(open) }))));
   }
-  for (const gated of ['/', '/atlas', '/atlas/briefs/SNOW/2026-01-01.html']) {
-    check(`gated path ${gated} without cookie → /login`,
+  for (const gated of ['/', '/briefs/SNOW/2026-01-01.html']) {
+    check(`gated path ${gated} without cookie → front-door login`,
       isLoginRedirect(await middleware(req(null, { url: U(gated) }))));
     check(`gated path ${gated} WITH valid user token → ALLOWED`,
       isAllowed(await middleware(req(`sb_at=${tok}`, { url: U(gated) }))));
   }
+  // The redirect carries the proxied next= so login returns the user into the tool.
+  const r = await middleware(req(null, { url: U('/briefs/SNOW/2026-01-01.html') }));
+  check('redirect next= points back through the /atlas proxy',
+    /next=%2Fatlas%2Fbriefs/.test(r.headers.get('location') || ''));
 });
 
 // ── 9. Fallback: legacy password when no JWT secret ──
 await withEnv({ SITE_PASSWORD: 'hunter2' }, async () => {
   const res = await middleware(req(null));
-  check('legacy password mode: GET /full without cookie → 401 password page',
+  check('legacy password mode: gated GET without cookie → 401 password page',
     res && res.status === 401);
 });
 

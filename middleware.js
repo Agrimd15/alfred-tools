@@ -17,16 +17,21 @@
 // Everything travels over HTTPS only.
 
 export const config = {
-  // Wall the whole Alfred app — the launcher (/), Atlas (/atlas/*), and every brief — EXCEPT
-  // the open paths the sign-in page itself needs: /login and the three root auth assets
-  // (config.js, auth.js, vendor/supabase.js), plus Vercel's own /_vercel/*. The negative
-  // lookahead leaves those reachable so the OAuth return can run and set the session cookie.
-  matcher: ['/((?!_vercel|login|config\\.js|auth\\.js|vendor).*)'],
+  // This is the Atlas tool deployment. Gate the coverage browser (/) + every brief, EXCEPT the
+  // auth assets the coverage page loads (config.js, auth.js, vendor/supabase.js) and Vercel's
+  // /_vercel/*. Normal traffic arrives pre-authed via alfred-analyst's front-door gate + proxy;
+  // this gate is defense-in-depth for direct atlas-private.vercel.app access. Sign-in is NOT here
+  // — misses redirect to the front-door login (alfred-analyst).
+  matcher: ['/((?!_vercel|config\\.js|auth\\.js|vendor).*)'],
 };
 
+// Where sign-in lives (the Alfred front door). Misses redirect here, never to a local /login —
+// that would loop through the proxy (see alfred-analyst/README). Overridable per deployment.
+const LOGIN_ORIGIN = process.env.LOGIN_URL || 'https://alfred-analyst.com';
+
 // Open paths — never gated, even on a direct middleware call (keeps the matcher and the unit
-// test in agreement). Matches /login, /config.js, /auth.js, /vendor/*, /_vercel/*.
-const OPEN_PATH = /^\/(login(\/|$|\?)|config\.js$|auth\.js$|vendor\/|_vercel\/)/;
+// test in agreement). Matches /config.js, /auth.js, /vendor/*, /_vercel/*.
+const OPEN_PATH = /^\/(config\.js$|auth\.js$|vendor\/|_vercel\/)/;
 
 const PW_COOKIE = 'atlas_full';
 const SB_COOKIE = 'sb_at';
@@ -172,7 +177,10 @@ export default async function middleware(request) {
   if (jwtSecret) {
     const token = parseCookies(request.headers.get('cookie'))[SB_COOKIE];
     if (token && (await verifyJWT(token, jwtSecret))) return; // authorized
-    return Response.redirect(new URL('/login?next=' + encodeURIComponent(pathname + search), request.url), 302);
+    // Send unauthed (direct-access) visitors to the front-door login. `next` is the proxied
+    // path so they land back in the tool: e.g. /briefs/x → /atlas/briefs/x on the front door.
+    const next = '/atlas' + pathname + search;
+    return Response.redirect(`${LOGIN_ORIGIN}/login?next=` + encodeURIComponent(next), 302);
   }
 
   // Mode 2 — legacy shared password (only while Supabase isn't configured).

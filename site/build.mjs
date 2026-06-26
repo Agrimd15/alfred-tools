@@ -1,17 +1,16 @@
 #!/usr/bin/env node
-// Alfred site build — assembles the walled Alfred platform into site/dist.
+// Atlas site build — assembles the Atlas coverage tool into site/dist.
 //
-// Layout (Alfred = the platform, Atlas = its first tool):
-//   • dist/index.html     → Alfred LAUNCHER (tool picker)        [gated by middleware.js]
-//   • dist/atlas/         → ATLAS coverage browser, full library [gated] — index.html +
-//                           index.json + briefs/, all relative fetches resolve under /atlas/
-//   • dist/login.html     → Alfred sign-in                       [open]
-//   • dist/config.js, auth.js, vendor/supabase.js                [open] — referenced by
-//                           every page with ABSOLUTE paths, so they live once at the root
+// Atlas IS this deployment (atlas-private.vercel.app). Alfred's landing page + tool list + login
+// live in the separate alfred-analyst repo, which proxies /atlas/* → here. So this build emits the
+// coverage browser at the ROOT:
+//   • dist/index.html            → Atlas coverage browser, full library [gated by middleware.js]
+//   • dist/index.json, briefs/   → manifest + per-company briefs (relative fetches)
+//   • dist/config.js, auth.js, vendor/supabase.js → the coverage page's session/header/sign-out
 //
-// The whole app is behind the Alfred login (see middleware.js). A private instance sets the
-// Supabase env and is walled; the public alfred-tools clone sets no env, so middleware falls
-// through to OPEN and the same build serves the synced demo companies with no gate.
+// Direct atlas-private.vercel.app access is gated by middleware.js; normal traffic arrives
+// pre-authed through alfred-analyst's front-door gate + proxy. The public alfred-tools clone sets
+// no Supabase env, so middleware falls through to OPEN and serves the synced demo companies.
 //
 // Zero dependencies. Run from repo root: `node site/build.mjs`. Vercel runs the same.
 
@@ -24,11 +23,8 @@ const ROOT = path.resolve(__dirname, '..');          // repo root (data-dumps li
 const DATA = path.join(ROOT, 'data-dumps');
 const OUT = path.join(__dirname, 'dist');            // site/dist (published)
 const TEMPLATE = path.join(__dirname, 'template', 'index.html');       // Atlas coverage browser
-const LAUNCHER = path.join(__dirname, 'template', 'launcher.html');    // Alfred home / tool picker
 
-// Demo companies shipped to the PUBLIC alfred-tools repo. The site itself no longer renders a
-// separate demo view (the private app shows the full library at /atlas behind login; the public
-// clone shows whatever data is synced, ungated). This list is the single source the
+// Demo companies shipped to the PUBLIC alfred-tools repo. This list is the single source the
 // `sync-to-public.yml` workflow greps (`^const DEMO_IDS`) to decide which data-dumps/ folders
 // are public. Folder ids — Broadcom = "AVGO", Netskope = "NTSK", Databricks = "databricks".
 const DEMO_IDS = ['NTSK', 'CRWV', 'AVGO', 'APP', 'FIG', 'databricks'];
@@ -41,7 +37,6 @@ const ANALYTICS_TAG = '<script defer src="/_vercel/insights/script.js"></script>
 // only in middleware env). They're stamped into config.js so the vendored client knows the
 // project. Empty when unset → auth.js no-ops and (no jwtSecret) middleware stays open.
 const AUTH_JS = path.join(__dirname, 'template', 'auth.js');
-const LOGIN_HTML = path.join(__dirname, 'template', 'login.html');
 const VENDOR_SUPABASE = path.join(__dirname, 'vendor', 'supabase.js');
 const CONFIG_JS = `window.ALFRED_SUPABASE=${JSON.stringify({
   url: process.env.SUPABASE_URL || '',
@@ -70,13 +65,13 @@ const AUTH_INJECT = `
 
 const injectAuth = (html) => html.replace('</body>', `${AUTH_INJECT}</body>`);
 
-// Emit the open auth assets ONCE at the site root (login page + client + config + vendor).
+// Emit the auth assets at the site root (client + config + vendor). No login page here —
+// sign-in lives on alfred-analyst; these just power the coverage page's session/header/sign-out.
 function emitRootAuthAssets(outDir) {
   fs.writeFileSync(path.join(outDir, 'config.js'), CONFIG_JS);
   fs.copyFileSync(AUTH_JS, path.join(outDir, 'auth.js'));
   ensureDir(path.join(outDir, 'vendor'));
   fs.copyFileSync(VENDOR_SUPABASE, path.join(outDir, 'vendor', 'supabase.js'));
-  fs.copyFileSync(LOGIN_HTML, path.join(outDir, 'login.html'));
 }
 
 // ── Sector buckets for the filter bar. Profile `verticals` are free-form (80+ unique
@@ -237,13 +232,12 @@ function emitCoverage(outDir, list) {
 }
 
 ensureDir(OUT);
-// 1. Alfred launcher (tool picker) at the root, gated.
-fs.writeFileSync(path.join(OUT, 'index.html'), injectAuth(fs.readFileSync(LAUNCHER, 'utf8')));
-// 2. Atlas coverage tool at /atlas — the full library (one view, gated).
-const atlasBriefs = emitCoverage(path.join(OUT, 'atlas'), companies);
-// 3. Open auth assets (login + client + config + vendor) once at the root.
+// Atlas IS the deployment — coverage browser at the root (the full library, one view). Alfred's
+// landing/tool-list + login live in the separate alfred-analyst repo, which proxies /atlas/* here.
+const atlasBriefs = emitCoverage(OUT, companies);
+// Auth assets (client + config + vendor) at the root: the coverage page runs auth.js for the
+// signed-in header, token refresh, and sign-out. Sign-in itself lives on alfred-analyst.
 emitRootAuthAssets(OUT);
 
-console.log(`✓ launcher → site/dist/index.html`);
-console.log(`✓ atlas: ${companies.length} companies, ${atlasBriefs} briefs → site/dist/atlas  (gated)`);
+console.log(`✓ atlas coverage: ${companies.length} companies, ${atlasBriefs} briefs → site/dist  (gated)`);
 console.log(`✓ demo set for public sync: ${DEMO_IDS.join(', ')}`);

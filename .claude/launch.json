@@ -8,9 +8,9 @@
       "port": 4173
     },
     {
-      "name": "brief-preview",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "4180"],
+      "name": "alfred-analyst",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "C:/Users/Agrim/Documents/alfred-analyst", "-l", "4180", "--no-port-switching"],
       "port": 4180
     }
   ]

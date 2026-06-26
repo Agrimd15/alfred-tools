@@ -57,7 +57,7 @@
       if (b) b.addEventListener('click', async () => {
         await client.auth.signOut();
         clearCookie();
-        location.href = '/login';
+        location.href = '/'; // back to the Alfred home (same origin via the proxy)
       });
     } else {
       slot.innerHTML = `<a class="auth-btn" href="/login">Sign in</a>`;
@@ -75,12 +75,6 @@
     renderHeader(data.session ? data.session.user : null);
   });
 
-  // Kick off Google OAuth. `next` is where we want to end up after sign-in; we route the
-  // OAuth return through /login (an open page that runs this module) so the cookie is set
-  // BEFORE we ever hit a gated page — otherwise the callback would itself be bounced.
-  window.alfredSignIn = async function (next) {
-    const target = next || '/';
-    const redirectTo = new URL('/login?next=' + encodeURIComponent(target), location.origin).href;
-    await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
-  };
+  // Note: sign-IN happens on the Alfred front door (alfred-analyst). This module only keeps the
+  // session/cookie fresh and renders the header + sign-out on the coverage page.
 })();

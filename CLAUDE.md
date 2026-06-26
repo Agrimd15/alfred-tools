@@ -292,14 +292,20 @@ do the following automatically — do not make the user issue extra commands:
 
 ## Deploying the coverage site (Vercel)
 
-`site/build.mjs` builds the **Alfred platform** into `site/dist/`: an Alfred **launcher** at `/`
-(the tool picker), the **Atlas** coverage tool at `/atlas` (the full library), and the Alfred
-**sign-in** at `/login`. The whole app is walled by `middleware.js` — when `SUPABASE_JWT_SECRET`
-is set it requires a signed-in Google account (see `supabase/README.md`); a legacy `SITE_PASSWORD`
-is honored only while Supabase is unset, and with neither the site is open (which is how the public
-`alfred-tools` clone serves the synced `DEMO_IDS` companies ungated). To deploy: import this repo
-into Vercel, **leave the Root Directory at the repo root**, Framework = Other (build command +
-output come from `vercel.json`). HTTPS + security headers are configured out of the box.
+This repo deploys to `atlas-private.vercel.app` and **is the Atlas tool** — `site/build.mjs` emits
+the coverage browser at the **root** of `site/dist/` (`index.html` + `index.json` + `briefs/`).
+Alfred's landing page, tool list, and **sign-in live in the separate `alfred-analyst` repo**
+(alfred-analyst.com), which gates and **proxies `/atlas/* → atlas-private.vercel.app/*`** — so users
+reach Atlas at `alfred-analyst.com/atlas` after logging in there.
+
+`middleware.js` here is a **verify-only** gate (defense-in-depth for direct
+`atlas-private.vercel.app` access): with `SUPABASE_JWT_SECRET` set it requires a valid Supabase
+session cookie and redirects misses to the front-door login (`LOGIN_URL`, default
+`https://alfred-analyst.com`); a legacy `SITE_PASSWORD` is honored only while Supabase is unset; with
+neither, the site is open (how the public `alfred-tools` clone serves the synced `DEMO_IDS`
+ungated). To deploy: import this repo into Vercel, **leave the Root Directory at the repo root**,
+Framework = Other (build command + output come from `vercel.json`). Set `SUPABASE_JWT_SECRET` (+
+optionally `LOGIN_URL`). HTTPS + security headers are configured out of the box.
 
 ---
 
