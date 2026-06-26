@@ -169,15 +169,35 @@ def _is_empty(v) -> bool:
             return True
     return False
 
+def _roll_units(text: str) -> str:
+    """Roll a money figure written in millions >= 1000 up to billions so the brief never
+    shows '$2,018M' for what is really $2.0B. Fires only on comma-grouped or 4+ digit M
+    values, so '$202M' / '$924.6M' (< $1,000M) are left exactly as written."""
+    def _sub(m):
+        dollar, num = (m.group(1) or ""), m.group(2).replace(",", "")
+        try:
+            mm = float(num)
+        except ValueError:
+            return m.group(0)
+        if mm < 1000:
+            return m.group(0)
+        s = f"{mm / 1000.0:.1f}"
+        if s.endswith(".0"):
+            s = s[:-2]
+        return f"{dollar}{s}B"
+    return re.sub(r'(?:(\$)\s?)?((?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,})(?:\.[0-9]+)?)\s?M\b', _sub, text)
+
+
 def clean(text: str) -> str:
     """Enforce the no-em-dash / limited-dash house style: never emit em or en dashes,
     and convert dash-as-punctuation (em/en dashes, and spaced hyphens used as a dash)
     into commas. Hyphens inside compound words (non-GAAP, year-over-year) are kept
-    because they have no surrounding spaces."""
+    because they have no surrounding spaces. Also rolls $1,000M+ figures up to billions."""
     text = re.sub(r'\s*[—–]\s*', ', ', text)      # em / en dash -> comma
     text = re.sub(r'\s+-{1,2}\s+', ', ', text)     # spaced hyphen used as a dash -> comma
     text = re.sub(r',\s*,', ', ', text)            # collapse doubled commas
     text = re.sub(r'\s+', ' ', text)               # tighten whitespace
+    text = _roll_units(text)                        # $2,018M -> $2.0B
     return text.strip().strip(',').strip()
 
 def _risk_text(r) -> str:
@@ -688,7 +708,7 @@ def build_slide_kit(profile: dict, logo_url: str, brand_colors: list = None) -> 
     stage_str  = f" · {stage.upper()}" if stage else ""
     header_str = f"{name}{ticker_str}{stage_str}"
 
-    stats_html = "".join(f'<div class="kit-stat">{s}</div>' for s in stats)
+    stats_html = "".join(f'<div class="kit-stat">{_roll_units(str(s))}</div>' for s in stats)
     tag_html   = "".join(f'<span class="kit-tag">{v}</span>' for v in verticals)
     logo_html  = f'<img src="{logo_url}" class="kit-logo-lg" alt="{name} logo" onerror="this.style.display=\'none\'">' if logo_url else ""
     bullets_html = "".join(f'<div class="kit-bullet">{clean(bl)}</div>' for bl in bullets[:3]) if bullets else ""
@@ -931,6 +951,7 @@ def build_html(profile: dict) -> str:
         if _lead:
             head = _lead.group(2)
             sub = ", ".join(p for p in (_lead.group(1), _lead.group(3).strip(), sub) if p)
+        head, sub = _roll_units(head), _roll_units(sub)   # $2,018M -> $2B in metric cards too
         is_green = k in GREEN_KEYS
         sub_cls = "metric-sub"
         if k == "revenue" and not _is_empty(metrics.get("revenueGrowth")):
@@ -1487,7 +1508,7 @@ def build_html(profile: dict) -> str:
             d = (subj_ev / med["ev"] - 1) * 100
             rel = "premium to" if d >= 0 else "discount to"
             prem_line = (f' <strong>{subj_row["name"]} trades at {subj_ev:.1f}x vs a {med["ev"]:.1f}x '
-                         f'peer median — a {abs(d):.0f}% {rel} the median.</strong>')
+                         f'peer median, a {abs(d):.0f}% {rel} the median.</strong>')
 
         cols = {k: any(r[k] for r in norm) for k in ("ticker","type","mc","ev","rg","gm","fcf","r40")}
         has_note = any(r["note"] for r in norm)
@@ -2076,6 +2097,13 @@ def build_html(profile: dict) -> str:
   .tb-pt b {{ color: #fff; }}
   .tb-up.pos {{ color: #7fe3b0; font-weight: 600; }}
   .tb-up.neg {{ color: #ff9a8f; font-weight: 600; }}
+  /* phone: the PT sidecar drops below the verdict so the call isn't crushed to 'At th...' */
+  @media (max-width: 640px) {{
+    .thesis-bar {{ flex-wrap: wrap; padding: 10px 16px; gap: 5px 10px; }}
+    .tb-verdict {{ flex: 1 1 60%; font-size: 14px; -webkit-line-clamp: 3; }}
+    .tb-pt {{ flex: 1 1 100%; border-left: none; padding-left: 0; margin-top: 2px;
+              white-space: normal; }}
+  }}
   @media print {{ .thesis-bar {{ position: static; }} }}
 
   /* ── v2 hero: ONE big number (upside to target) + a market-snapshot rail ── */
@@ -2846,7 +2874,7 @@ def build_html(profile: dict) -> str:
   <!-- ⑯ SLIDE KIT -->
   <div class="section" id="slidekit">
     <div class="sec-label">Slide Kit</div>
-    <div class="sec-meta">Logo, stats, and copy-paste artifacts (web view only — excluded from the PDF)</div>
+    <div class="sec-meta">Logo, stats, and copy-paste artifacts (web view only, excluded from the PDF)</div>
     {slide_kit_html}
   </div>
 
