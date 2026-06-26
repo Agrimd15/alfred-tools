@@ -433,52 +433,58 @@ def build_biz_flow(profile: dict, b: dict) -> str:
     if not flow or not flow.get("valueDelivered"):
         return ""
 
-    # ── Customers column: each node can carry a "need" sub-line ──
-    cust_src = flow.get("customers")
-    if cust_src:
-        cust_html = "".join(
-            f'<div class="biz-node biz-cust"><div class="biz-node-name">{c.get("name","")}</div>'
-            + (f'<div class="biz-node-sub">{c.get("need","")}</div>' if c.get("need") else "")
-            + '</div>'
-            for c in cust_src[:5]
-        )
-    else:
-        cust_nodes = (profile.get("customers") or ["Enterprise Customers"])[:4]
-        cust_html = "".join(f'<div class="biz-node biz-cust"><div class="biz-node-name">{c}</div></div>' for c in cust_nodes)
+    # ── Inputs: customer segments (each can carry a "need" sub-line) ──
+    cust_src = flow.get("customers") or [{"name": c} for c in (profile.get("customers") or ["Enterprise customers"])[:3]]
+    cust_html = "".join(
+        f'<div class="bizv2-in"><div class="bizv2-in-name">{clean(c.get("name",""))}</div>'
+        + (f'<div class="bizv2-in-sub">{clean(c.get("need",""))}</div>' if c.get("need") else "")
+        + '</div>'
+        for c in cust_src[:3]
+    )
 
-    # ── Platform column: name + modules (what the platform actually is) ──
+    # ── The engine: the platform stack (name + modules), the visual centerpiece ──
     plat = flow.get("platform") or {}
-    plat_name = plat.get("name") or name
+    plat_name = plat.get("name") or (name + " platform stack")
     modules = plat.get("modules")
     if not modules:
         skip = {"vertical saas", "saas", "software", "b2b", "enterprise software", "ai hardware"}
-        modules = [v for v in (profile.get("verticals") or []) if v.lower() not in skip][:3] or (profile.get("verticals") or [])[:3]
-    mod_html = "".join(f'<div class="biz-mod">{m}</div>' for m in modules)
+        modules = [v for v in (profile.get("verticals") or []) if v.lower() not in skip][:5] or (profile.get("verticals") or [])[:5]
+    mod_rows = ""
+    for m in modules[:5]:
+        ms = clean(str(m))
+        mm = re.match(r'^(.+?)\s*\((.+)\)\s*$', ms)
+        if mm:
+            mod_rows += f'<div class="bizv2-mod"><b>{mm.group(1)}</b> <span>{mm.group(2)}</span></div>'
+        else:
+            mod_rows += f'<div class="bizv2-mod"><b>{ms}</b></div>'
+    core = clean(str(flow.get("core") or plat.get("core") or ""))
+    core_html = f'<div class="bizv2-core">{core}</div>' if core else ""
 
-    # ── Value Delivered column: each node can carry a "detail" sub-line ──
+    # ── Outputs: value delivered (each can carry a "detail" sub-line) ──
     out_html = "".join(
-        (f'<div class="biz-node biz-out"><div class="biz-node-name">{o.get("label","")}</div>'
-         + (f'<div class="biz-node-sub">{o.get("detail","")}</div>' if o.get("detail") else "")
+        (f'<div class="bizv2-out"><div class="bizv2-out-name">{clean(o.get("label",""))}</div>'
+         + (f'<div class="bizv2-out-sub">{clean(o.get("detail",""))}</div>' if o.get("detail") else "")
          + '</div>') if isinstance(o, dict) else
-        f'<div class="biz-node biz-out"><div class="biz-node-name">{o}</div></div>'
-        for o in flow["valueDelivered"][:5]
+        f'<div class="bizv2-out"><div class="bizv2-out-name">{clean(str(o))}</div></div>'
+        for o in flow["valueDelivered"][:3]
     )
 
     return f"""
-    <div class="biz-flow">
-      <div class="biz-col">
-        <div class="biz-col-label">CUSTOMERS &middot; WHAT THEY NEED</div>
+    <div class="bizv2">
+      <div class="bizv2-side">
+        <div class="bizv2-collabel">Who buys</div>
         {cust_html}
+        <div class="bizv2-arrow">&#8594;</div>
       </div>
-      <div class="biz-arrow">&#8594;</div>
-      <div class="biz-col biz-col-mid">
-        <div class="biz-col-label">PLATFORM</div>
-        <div class="biz-platform">{plat_name}</div>
-        {mod_html}
+      <div class="bizv2-engine">
+        <div class="bizv2-eng-eyebrow">The engine</div>
+        <div class="bizv2-eng-title">{clean(plat_name)}</div>
+        {mod_rows}
+        {core_html}
       </div>
-      <div class="biz-arrow">&#8594;</div>
-      <div class="biz-col">
-        <div class="biz-col-label">VALUE DELIVERED</div>
+      <div class="bizv2-side bizv2-side-r">
+        <div class="bizv2-collabel">The payoff</div>
+        <div class="bizv2-arrow">&#8594;</div>
         {out_html}
       </div>
     </div>"""
@@ -825,8 +831,23 @@ def build_html(profile: dict) -> str:
     GREEN_KEYS = {"revenueGrowth", "nrr", "grossMargin", "grossMarginNonGAAP",
                   "operatingMargin", "operatingMarginNonGAAP", "fcfMargin", "aiRevenue"}
 
+    _ACRONYMS = {"us", "gaap", "eps", "tcv", "rpo", "rdv", "arr", "nrr", "fcf", "ai", "ev",
+                 "ipo", "saas", "rps", "ltm", "yoy", "qoq", "uk", "emea", "apac"}
     def _humanize(k):
-        return re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', k).replace("_", " ").strip().title()
+        # split camelCase + digit boundaries, then fix acronym casing and 'Of40' -> 'of 40'
+        s = re.sub(r'(?<=[a-zA-Z])(?=[0-9])', ' ', re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', k))
+        words = s.replace("_", " ").strip().split()
+        small = {"of", "and", "the", "to", "vs", "per"}
+        out = []
+        for i, w in enumerate(words):
+            lw = w.lower()
+            if lw in _ACRONYMS:
+                out.append(w.upper())
+            elif lw in small and i:
+                out.append(lw)
+            else:
+                out.append(w[:1].upper() + w[1:])
+        return " ".join(out)
 
     def _split_stat(s):
         """Split a stat into (head, sub): a big number up top, small context below.
@@ -885,7 +906,7 @@ def build_html(profile: dict) -> str:
     # ── Financials metric cards (value + growth/context + period, never overflowing) ──
     # Collected first, then rendered as ONE hero metric (large) + a supporting grid — the v2
     # layout that replaces the old wall of same-size tiles so the eye has a single anchor.
-    metric_cards = []   # (lbl, head, sub, sub_cls, period, is_green)
+    metric_cards = []   # (key, lbl, head, sub, sub_cls, period, is_green)
     for k, v in metrics.items():
         if _is_empty(v):
             continue
@@ -918,14 +939,33 @@ def build_html(profile: dict) -> str:
             sub = ""                                # sub is just a period → prefer the tag
         elif sub_has_period:
             show_period = False                     # sub already conveys the period + context
-        metric_cards.append((lbl, head, sub, sub_cls, period if show_period else "", is_green))
+        metric_cards.append((k, lbl, head, sub, sub_cls, period if show_period else "", is_green))
 
     # Hero metric = Revenue (or ARR) when present — the engine of the story; else the first.
     for _i, _c in enumerate(metric_cards):
-        if _c[0].lower().startswith("revenue") or _c[0].lower() == "arr":
+        if _c[1].lower().startswith("revenue") or _c[1].lower() == "arr":
             if _i:
                 metric_cards.insert(0, metric_cards.pop(_i))
             break
+
+    # Importance tiers (per the design pass): size encodes importance, so the eye lands on the
+    # ~5 numbers that matter first. Tier 1 = large cards beside the hero; Tier 2 = medium grid;
+    # Tier 3 = a compact reference table (segment splits, RDV, cash, guidance) — not scan targets.
+    _T1 = {"adjoperatingmargin", "operatingmargin", "operatingmarginnongaap", "operatingmargingaap",
+           "ebitdamargin", "ruleof40", "adjfreecashflow", "freecashflow", "fcfmargin", "nrr",
+           "netrevenueretention", "grossmarginnongaap", "grossmargin", "arr", "arrrunrate", "runrate"}
+    _T3 = {"usrevenue", "uscommercialrevenue", "usgovernmentrevenue", "governmentsegment",
+           "commercialsegment", "internationalrevenue", "uscommercialrdv", "rdv", "cashposition",
+           "netcash", "totalcash", "employees", "employeecount", "dilutedshares", "sharecount"}
+    def _tier(key):
+        kn = re.sub(r"[^a-z0-9]", "", str(key).lower())
+        if "guid" in kn:
+            return 3
+        if kn in _T3:
+            return 3
+        if kn in _T1:
+            return 1
+        return 2
 
     def _delta_or_sub(sub, sub_cls):
         """SHORT signed change -> a ▲/▼ chip (never wraps); longer context stays a sub line
@@ -941,24 +981,47 @@ def build_html(profile: dict) -> str:
             return f'<div class="metric-sub pos">{s}</div>'
         return f'<div class="{sub_cls}">{s}</div>'
 
+    def _metric_card(c, size):
+        _, lbl, head, sub, sub_cls, period, is_green = c
+        vcls = "metric-value green" if is_green else "metric-value"
+        if len(str(head)) > 7:
+            vcls += " long"
+        period_html = f'<div class="metric-period">{period}</div>' if period else ""
+        return (f'<div class="metric-card {size}"><div class="metric-label">{lbl}</div>'
+                f'<div class="{vcls}">{head}</div>{_delta_or_sub(sub, sub_cls)}{period_html}</div>')
+
+    def _metric_row(c):
+        _, lbl, head, sub, sub_cls, period, _g = c
+        s = (sub or "").strip()
+        extra = _delta_or_sub(sub, sub_cls) if s else ""
+        extra = "" if extra.startswith("<div") else extra   # keep table rows to one line
+        per = f' <span class="mt-per">{period}</span>' if period else ""
+        return (f'<div class="mt-row"><span class="mt-label">{lbl}{per}</span>'
+                f'<span class="mt-val">{head} {extra}</span></div>')
+
     metrics_layout_html = ""
     if metric_cards:
-        hlbl, hhead, hsub, hsub_cls, hper, _hg = metric_cards[0]
-        hper_html = f'<div class="metric-period">{hper}</div>' if hper else ""
-        hero_card = (f'<div class="metric-hero"><div class="metric-label">{hlbl}</div>'
-                     f'<div class="metric-hero-value">{hhead}</div>'
-                     f'{_delta_or_sub(hsub, hsub_cls)}{hper_html}</div>')
-        grid_cards = ""
-        for (lbl, head, sub, sub_cls, period, is_green) in metric_cards[1:]:
-            cls = "metric-value green" if is_green else "metric-value"
-            if len(str(head)) > 7:                  # long head -> shrink, don't wrap
-                cls += " long"
-            sub_html = _delta_or_sub(sub, sub_cls)
-            period_html = f'<div class="metric-period">{period}</div>' if period else ""
-            grid_cards += (f'<div class="metric-card"><div class="metric-label">{lbl}</div>'
-                           f'<div class="{cls}">{head}</div>{sub_html}{period_html}</div>')
-        metrics_layout_html = (f'<div class="metrics-layout">{hero_card}'
-                               f'<div class="metrics-grid">{grid_cards}</div></div>')
+        hero = metric_cards[0]
+        rest = metric_cards[1:]
+        t1 = [c for c in rest if _tier(c[0]) == 1]
+        t3 = [c for c in rest if _tier(c[0]) == 3]
+        t2 = [c for c in rest if c not in t1 and c not in t3]
+        while len(t1) < 4 and t2:               # always 4 companions beside the hero
+            t1.append(t2.pop(0))
+        t1, t2 = t1[:4], (t1[4:] + t2)
+        hper_html = f'<div class="metric-period">{hero[5]}</div>' if hero[5] else ""
+        hero_card = (f'<div class="metric-hero"><div class="metric-label">{hero[1]}</div>'
+                     f'<div class="metric-hero-value">{hero[2]}</div>'
+                     f'{_delta_or_sub(hero[3], hero[4])}{hper_html}</div>')
+        lead_html = (f'<div class="metrics-layout">{hero_card}'
+                     f'<div class="metrics-grid-lead">{"".join(_metric_card(c, "lg") for c in t1)}</div></div>')
+        t2_html = (f'<div class="metrics-grid-sm">{"".join(_metric_card(c, "sm") for c in t2)}</div>'
+                   if t2 else "")
+        t3_html = ""
+        if t3:
+            t3_html = ('<div class="metrics-table-h">Segment detail, bookings &amp; guidance</div>'
+                       '<div class="metrics-table">' + "".join(_metric_row(c) for c in t3) + "</div>")
+        metrics_layout_html = lead_html + t2_html + t3_html
 
     # ── Hero stats bar — live trading multiples + headline KPIs, all SHORT ──
     # Institutional: stat values read navy (set in CSS); keep map navy for any inline use.
@@ -1044,8 +1107,14 @@ def build_html(profile: dict) -> str:
         head = s[:cap]
         cut = max(head.rfind("; "), head.rfind(", "))
         return (head[:cut].rstrip(",; ") if cut >= cap * 0.6 else head.rsplit(" ", 1)[0]).strip() + "…"
-    verdict = _first_sentence(_swot_h.get("standoutSummary") or _wm_h.get("thesis")
-                              or _swot_h.get("summary") or short_desc)
+    # Verdict for the thesis bar: strip parentheticals (they belong in the body sections,
+    # not the headline), take the first sentence, and DON'T ellipsize — the bar clamps to 2
+    # lines in CSS as a safety net, so the call never reads as cut off mid-thought.
+    _vsrc = (_swot_h.get("standoutSummary") or _wm_h.get("thesis")
+             or _swot_h.get("summary") or short_desc)
+    _vsrc = clean(re.sub(r"\s*\([^)]*\)", "", str(_vsrc or ""))).strip()
+    _vm = re.search(r"(.+?[.!?])(?:\s|$)", _vsrc)
+    verdict = (_vm.group(1) if _vm else _vsrc).strip().rstrip(".!?").strip()
     analyst_target = live_q.get("analystTarget") if live_q else None
     _up_raw = str((live_q or {}).get("analystUpside") or "").strip()
     up_disp = _up_raw if _up_raw[:1] in "+-" else (("+" + _up_raw) if _up_raw[:1].isdigit() else _up_raw)
@@ -1422,19 +1491,31 @@ def build_html(profile: dict) -> str:
         if cols["gm"]:     head += '<th class="right">Gross Margin</th>'
         if cols["fcf"]:    head += '<th class="right">FCF Margin<span class="th-unit">LTM</span></th>'
         if cols["r40"]:    head += '<th class="right">Rule of 40<span class="th-unit">growth + FCF</span></th>'
+        # EV/Rev micro-bar scale: a thin underline bar per row shows where each name sits;
+        # the most expensive name's bar is crimson, so "the subject is the priciest" is a
+        # one-glance picture instead of a digit hunt.
+        _max_ev = max([e for e in (_ev_key(r) for r in norm) if e and e >= 0] or [1.0])
         comps_rows = ""
         for r in norm:
             row_cls = ' class="subj"' if r["is_subject"] else ""
             tkr_cell = (f'<a class="comp-source-link" href="{r["sourceUrl"]}" target="_blank" rel="noopener">{r["ticker"]}</a>'
                         if r["sourceUrl"] and r["ticker"] else r["ticker"])
-            # The note rides under the company name (small, grey) so the numeric grid
-            # stays tight enough for the added FCF / Rule-of-40 columns.
-            note_sub = f'<div class="comp-note-sub">{r["note"]}</div>' if (has_note and r["note"]) else ""
+            # The note rides under the company name (small, grey); clean() strips em dashes.
+            note_sub = f'<div class="comp-note-sub">{clean(r["note"])}</div>' if (has_note and r["note"]) else ""
             cells = f'<td class="comp-name">{r["name"]}{note_sub}</td>'
             if cols["ticker"]: cells += f'<td class="mono comp-ticker">{tkr_cell}</td>'
             if cols["type"]:   cells += f'<td class="comp-type-cell">{r["type"]}</td>'
             if cols["mc"]:     cells += f'<td class="mono right">{r["mc"]}</td>'
-            if cols["ev"]:     cells += f'<td class="mono right comp-ev">{r["ev"]}</td>'
+            if cols["ev"]:
+                _ev = _ev_key(r)
+                if _ev and _ev >= 0:
+                    _w = max(5, round(_ev / _max_ev * 100))
+                    _bc = ("evbar-max" if abs(_ev - _max_ev) < 0.05
+                           else ("evbar-subj" if r["is_subject"] else "evbar"))
+                    _evhtml = f'<span class="ev-num">{r["ev"]}</span><span class="{_bc}" style="width:{_w}%"></span>'
+                else:
+                    _evhtml = r["ev"]
+                cells += f'<td class="mono right comp-ev">{_evhtml}</td>'
             if cols["rg"]:     cells += f'<td class="mono right">{r["rg"]}</td>'
             if cols["gm"]:     cells += f'<td class="mono right">{r["gm"]}</td>'
             if cols["fcf"]:    cells += f'<td class="mono right">{r["fcf"]}</td>'
@@ -1969,13 +2050,17 @@ def build_html(profile: dict) -> str:
   .asof-band strong {{ color: var(--ks-muted); }}
 
   /* ── v2 thesis bar: ticker · the call · Street PT + upside (sticky at the top) ── */
-  .thesis-bar {{ position: sticky; top: 0; z-index: 40; display: flex; align-items: center;
-                 gap: 14px; background: var(--ks-kinpaku); color: #fff; padding: 9px 40px;
+  .thesis-bar {{ position: sticky; top: 0; z-index: 40; display: flex; align-items: flex-start;
+                 gap: 14px; background: var(--ks-kinpaku); color: #fff; padding: 11px 40px;
                  font-size: 13.5px; border-bottom: 1px solid var(--ks-kinpaku-deep); }}
   .tb-ticker {{ background: var(--ks-accent); font-weight: 700; letter-spacing: 0.03em;
-                padding: 2px 9px; border-radius: 3px; font-size: 12.5px; flex-shrink: 0; }}
-  .tb-verdict {{ flex: 1; font-family: var(--ks-serif); font-size: 15px; line-height: 1.3;
-                 color: #fff; min-width: 0; }}
+                padding: 2px 9px; border-radius: 3px; font-size: 12.5px; flex-shrink: 0;
+                margin-top: 1px; }}
+  /* verdict wraps to at most 2 lines and is authored to fit — never an ellipsis cut-off */
+  .tb-verdict {{ flex: 1; font-family: var(--ks-serif); font-size: 15px; line-height: 1.34;
+                 color: rgba(255,255,255,0.96); min-width: 0;
+                 display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+                 overflow: hidden; }}
   .tb-pt {{ white-space: nowrap; flex-shrink: 0; color: #d7e0ee;
             border-left: 1px solid #34527c; padding-left: 14px; }}
   .tb-pt b {{ color: #fff; }}
@@ -2189,6 +2274,33 @@ def build_html(profile: dict) -> str:
                 font-size: 18px; flex-shrink: 0; align-self: center; }}
   @media (max-width: 720px) {{ .biz-flow {{ flex-direction: column; }} .biz-arrow {{ transform: rotate(90deg); margin: 2px auto; }} }}
 
+  /* ── Business model v2: engine-core value chain (inputs · the engine · the payoff) ── */
+  .bizv2 {{ display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 18px; align-items: center;
+            margin: 8px 0 2px; }}
+  .bizv2-side {{ display: flex; flex-direction: column; gap: 11px; }}
+  .bizv2-collabel {{ font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+                     color: var(--ks-faint); }}
+  .bizv2-side-r .bizv2-collabel {{ text-align: right; }}
+  .bizv2-in {{ border-left: 2px solid var(--ks-accent); padding: 1px 0 1px 11px; }}
+  .bizv2-out {{ border-left: 2px solid var(--ks-patina); padding: 1px 0 1px 11px; }}
+  .bizv2-in-name, .bizv2-out-name {{ font-weight: 600; font-size: 13px; color: var(--ks-champagne); }}
+  .bizv2-in-sub, .bizv2-out-sub {{ font-size: 11px; color: var(--ks-faint); line-height: 1.42; margin-top: 2px; }}
+  .bizv2-arrow {{ color: var(--ks-kinpaku-pale); font-size: 20px; line-height: 1; }}
+  .bizv2-side-r .bizv2-arrow {{ text-align: left; }}
+  .bizv2-engine {{ background: var(--ks-kinpaku); border-radius: 8px; padding: 16px 16px 13px; }}
+  .bizv2-eng-eyebrow {{ font-size: 8.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+                        color: #8fa6c4; text-align: center; margin-bottom: 3px; }}
+  .bizv2-eng-title {{ font-family: var(--ks-serif); color: #fff; font-weight: 700; font-size: 16px;
+                      text-align: center; margin-bottom: 11px; }}
+  .bizv2-mod {{ background: var(--ks-kinpaku-pale); border-radius: 4px; padding: 7px 11px; color: #fff;
+                font-size: 12px; margin-bottom: 6px; }}
+  .bizv2-mod b {{ font-weight: 700; }}
+  .bizv2-mod span {{ color: #c3d3e8; }}
+  .bizv2-core {{ text-align: center; color: #8fa6c4; font-size: 10px; margin-top: 9px; line-height: 1.4; }}
+  @media (max-width: 760px) {{ .bizv2 {{ grid-template-columns: 1fr; }}
+                               .bizv2-side-r .bizv2-collabel, .bizv2-side-r .bizv2-arrow {{ text-align: left; }}
+                               .bizv2-arrow {{ transform: rotate(90deg); margin: 2px 0; }} }}
+
   /* ── News ── */
   .news-item {{ padding: 11px 0; border-bottom: 1px solid var(--ks-rule); }}
   .news-item:last-child {{ border-bottom: none; }}
@@ -2244,6 +2356,31 @@ def build_html(profile: dict) -> str:
   .delta.up {{ background: #e7f4ec; color: var(--ks-patina); }}
   .delta.down {{ background: #fbeef0; color: var(--ks-vermilion); }}
   @media (max-width: 760px) {{ .metrics-layout {{ grid-template-columns: 1fr; }} }}
+
+  /* 3-tier financials: hero + 4 large (Tier 1) · medium grid (Tier 2) · reference table (Tier 3),
+     so size encodes importance instead of an undifferentiated wall of equal tiles */
+  .metrics-grid-lead {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }}
+  .metrics-grid-sm {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                      gap: 10px; margin-bottom: 16px; }}
+  .metric-card.lg {{ padding: 16px 18px; }}
+  .metric-card.lg .metric-value {{ font-size: 1.6rem; }}
+  .metric-card.lg .metric-label {{ font-size: 10px; }}
+  .metric-card.sm {{ padding: 12px 14px; }}
+  .metric-card.sm .metric-value {{ font-size: 1.18rem; }}
+  .metrics-table-h {{ font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+                      color: var(--ks-faint); margin: 2px 0 6px; }}
+  .metrics-table {{ column-count: 2; column-gap: 36px; margin-bottom: 16px; }}
+  .mt-row {{ display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+             padding: 7px 2px; border-bottom: 1px solid var(--ks-rule); break-inside: avoid;
+             font-size: 13px; }}
+  .mt-label {{ color: var(--ks-faint); }}
+  .mt-per {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ks-faint);
+             margin-left: 5px; }}
+  .mt-val {{ color: var(--ks-champagne); font-weight: 600; white-space: nowrap;
+             font-variant-numeric: tabular-nums; }}
+  .mt-val .delta {{ margin-top: 0; padding: 1px 7px; font-size: 11px; }}
+  @media (max-width: 680px) {{ .metrics-grid-lead {{ grid-template-columns: 1fr; }}
+                               .metrics-table {{ column-count: 1; }} }}
 
   /* ── Bull / Base / Bear scenario box (v2) ── */
   .bbb-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }}
@@ -2428,10 +2565,19 @@ def build_html(profile: dict) -> str:
   .comps-table tr:last-child td {{ border-bottom: none; }}
   .comps-table tr:hover td {{ background: var(--ks-raised); }}
   .comps-table tr.subj td {{ background: #eef3fa; font-weight: 700; color: var(--ks-champagne); }}
+  .comps-table tr.subj td:first-child {{ box-shadow: inset 3px 0 0 0 var(--ks-accent); }}
   .comp-name {{ font-weight: 700; color: var(--ks-champagne); font-size: 13px; }}
   .comp-ticker {{ color: var(--ks-kinpaku-pale); font-size: 11px; font-weight: 700; }}
   .comp-type-cell {{ font-size: 10px; color: var(--ks-faint); white-space: nowrap; }}
-  .comp-ev {{ vertical-align: middle; }}
+  /* EV/Rev cell: the number with a thin underline bar showing where it sits in the set;
+     the most-expensive name's bar is crimson so the priciest name is pre-attentive */
+  .comp-ev {{ vertical-align: middle; position: relative; padding-bottom: 12px; }}
+  .comp-ev .ev-num {{ display: block; }}
+  .comp-ev .evbar, .comp-ev .evbar-subj, .comp-ev .evbar-max {{
+       position: absolute; right: 12px; bottom: 6px; height: 3px; border-radius: 2px; }}
+  .comp-ev .evbar {{ background: var(--ks-kinpaku-pale); opacity: 0.8; min-width: 8px; }}
+  .comp-ev .evbar-subj {{ background: var(--ks-kinpaku); }}
+  .comp-ev .evbar-max {{ background: var(--ks-accent); }}
   .comp-val {{ font-size: 13px; font-weight: 700; color: var(--ks-kinpaku); }}
   .comp-val a {{ color: var(--ks-kinpaku); border-bottom: 1px solid transparent; }}
   .comp-val a:hover {{ border-bottom-color: var(--ks-kinpaku); }}
@@ -2631,7 +2777,7 @@ def build_html(profile: dict) -> str:
   {bull_bear_html}
 
   <!-- ④ BUSINESS OVERVIEW: explainer (3 levels) + bullets + value-chain diagram (only when an explicit bizFlow exists) -->
-  {'<div class="section" id="overview"><div class="sec-label">Business Overview</div>' + explainer_html + ('<div class="two-col"><div>' + to_bullets(b.get("businessOverview") or short_desc, max_bullets=max_ov_bullets) + '</div><div><div class="diagram-caption">How the business works, left to right: who buys, what the platform provides, and the payoff.</div>' + biz_flow_html + '</div></div>' if biz_flow_html else to_bullets(b.get("businessOverview") or short_desc, max_bullets=max_ov_bullets)) + _source_row(b.get("businessOverviewSources") or []) + '</div>' if (b.get("businessOverview") or short_desc) else ''}
+  {'<div class="section" id="overview"><div class="sec-label">Business Overview</div>' + explainer_html + to_bullets(b.get("businessOverview") or short_desc, max_bullets=max_ov_bullets) + (('<div class="diagram-caption">How the business works: who buys, the engine, and the payoff.</div>' + biz_flow_html) if biz_flow_html else '') + _source_row(b.get("businessOverviewSources") or []) + '</div>' if (b.get("businessOverview") or short_desc) else ''}
 
   <!-- ④a HOW BROADCOM IS DIFFERENT (vs peers) -->
   {differentiation_html}
