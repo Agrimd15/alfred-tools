@@ -1,0 +1,20 @@
+{
+  "runDate": "2026-06-27",
+  "newItemsSince": "2026-06-18",
+  "items": [
+    {
+      "date": "2026-06-24",
+      "headline": "OpenAI and Broadcom Unveil 'Jalape\u00f1o' \u2014 First Custom AI Inference Chip",
+      "whyItMatters": "...",
+      "source": "CNBC",
+      "sourceUrl": "https://www.cnbc.com/2026/06/24/openai-and-broadcom-reveal-jalapeno-first-ai-chip-in-partnership.html"
+    },
+    {
+      "date": "2026-06-18",
+      "headline": "Broadcom Completes $3.0B Debt Tender Offer",
+      "whyItMatters": "...",
+      "source": "SEC EDGAR",
+      "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1730168/000119312526275077/d149683d8k.htm"
+    }
+  ]
+}

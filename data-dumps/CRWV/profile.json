@@ -97,9 +97,9 @@
     }
   ],
   "employeeCount": "~1,000+ (rapidly growing post-IPO)",
-  "lastRunDate": "2026-06-18",
+  "lastRunDate": "2026-06-27",
   "brief": {
-    "runDate": "2026-06-18",
+    "runDate": "2026-06-27",
     "businessOverview": "CoreWeave, Inc. (NASDAQ: CRWV) is an AI cloud-computing company headquartered in Livingston, New Jersey, that builds and operates GPU-dense data centers and rents that compute to AI developers, research labs, and enterprises. Founded in 2017 by commodities traders Michael Intrator, Brian Venturo, and Brannin McBee (with Peter Salanki as CTO), it began as crypto-mining venture 'Atlantic Crypto' before pivoting in 2018-19 to buy GPUs from distressed miners and rent out compute, rebranding as CoreWeave and reorienting around Nvidia chips for AI workloads. It is the largest and cleanest public pure-play 'neocloud,' differentiated by scale (roughly 30+ data centers and a fleet on the order of 250,000 GPUs), a privileged Nvidia relationship (Nvidia disclosed a ~7% stake in May 2025), and an asset-light model that leases data-center shells from operators like Equinix and Digital Realty. CoreWeave IPO'd in March 2025 at $40/share and, after a sharp run, trades near $96 as of the 2026-06-10 close (~$42.8B market cap). The central debate is whether a ~$99.4B contracted backlog is a durable annuity or a fragile, debt-funded, customer-concentrated bet on AI capex staying insatiable.",
     "businessOverviewSources": [
       {
@@ -131,6 +131,13 @@
       }
     ],
     "recentNews": [
+      {
+        "date": "2026-06-18",
+        "headline": "CoreWeave Closes $1.25B USD + \u20ac2B EUR Senior Notes \u2014 Part of $8.5B Debt Build-Out",
+        "whyItMatters": "The combined offering (9.625% USD / 8.500% EUR, both due 2032) demonstrates continued capital markets access at tighter spreads, funding CoreWeave's aggressive GPU data center expansion.",
+        "source": "SEC EDGAR",
+        "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000291/crwv-20260618.htm"
+      },
       {
         "date": "2026-06-12",
         "headline": "CoreWeave to Join Nasdaq-100 Index on June 22",
@@ -240,7 +247,7 @@
         "name": "CoreWeave",
         "ticker": "CRWV",
         "type": "Subject",
-        "evRevenue": "13.6x",
+        "evRevenue": "12.2x",
         "revenueGrowth": "111.6%",
         "grossMargin": "69.4%",
         "note": "subject; largest public pure-play neocloud; ~$99.4B backlog and privileged Nvidia access, offset by ~$25B debt and Microsoft concentration",
@@ -250,7 +257,7 @@
       {
         "name": "Nebius Group",
         "ticker": "NBIS",
-        "evRevenue": "70.8x",
+        "evRevenue": "60.6x",
         "revenueGrowth": "683.9%",
         "grossMargin": "72.1%",
         "note": "closest pure-play neocloud peer; far smaller, faster-growing off a tiny base, with a stronger, less-levered balance sheet after its 2025 raise",
@@ -260,7 +267,7 @@
       {
         "name": "IREN",
         "ticker": "IREN",
-        "evRevenue": "29.7x",
+        "evRevenue": "24.6x",
         "revenueGrowth": "-0.0%",
         "grossMargin": "68.4%",
         "note": "bitcoin-miner-turned-neocloud, asset-heavy (owns its data centers); smaller and earlier-stage, mid-transition so reported growth screens flat",
@@ -270,7 +277,7 @@
       {
         "name": "Applied Digital",
         "ticker": "APLD",
-        "evRevenue": "44.2x",
+        "evRevenue": "38.5x",
         "revenueGrowth": "139.3%",
         "grossMargin": "45.4%",
         "note": "power-and-campus buildout sitting upstream of compute; a bet on converting contracted power into delivered GPU capacity, far smaller and less proven",
@@ -280,8 +287,8 @@
       {
         "name": "Oracle",
         "ticker": "ORCL",
-        "evRevenue": "9.7x",
-        "revenueGrowth": "21.7%",
+        "evRevenue": "8.4x",
+        "revenueGrowth": "20.6%",
         "grossMargin": "65.8%",
         "note": "the most credible large-scale competitor; OCI is building AI capacity and signing mega-contracts with a fortress balance sheet and diversified software base CoreWeave can't match",
         "source": "yfinance / Yahoo Finance",
@@ -431,6 +438,6 @@
       }
     ]
   },
-  "marketCloseAsOf": "2026-06-17",
-  "freshnessNote": "All multiples reflect the 2026-06-17 market close."
+  "marketCloseAsOf": "2026-06-26",
+  "freshnessNote": "All multiples reflect the 2026-06-26 market close."
 }

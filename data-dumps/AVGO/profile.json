@@ -90,9 +90,9 @@
     }
   ],
   "employeeCount": "~37,000 (post-VMware)",
-  "lastRunDate": "2026-06-18",
+  "lastRunDate": "2026-06-27",
   "brief": {
-    "runDate": "2026-06-18",
+    "runDate": "2026-06-27",
     "businessOverview": "Broadcom Inc. (NASDAQ: AVGO), headquartered in Palo Alto, CA and led by CEO Hock Tan, is a global semiconductor and infrastructure-software leader operating in two segments. Semiconductor Solutions (~68% of fiscal Q2 2026 revenue) spans custom AI accelerators ('XPUs'/ASICs) co-designed with hyperscalers, AI networking silicon (Tomahawk Ethernet switches, Jericho fabric routers), plus broadband, wireless (Apple is a large connectivity customer), server storage and industrial chips. Infrastructure Software (~32%) is anchored by VMware \u2014 acquired for roughly $69B in November 2023, which transformed Broadcom's software mix \u2014 alongside mainframe (CA/Brocade) and security (Symantec). The company has reoriented around the AI build-out: in fiscal Q2 2026 (ended May 3, 2026), AI semiconductor revenue hit a record $10.8B (+143% YoY), about half of total revenue, with networking ~40% of AI sales. Broadcom is the dominant merchant custom-silicon (ASIC) designer, now serving six core XPU customers including Google (TPU), Meta (MTIA), Anthropic and OpenAI. It trades near $372 as of the 2026-06-10 close (~$1.8T market cap).",
     "businessOverviewSources": [
       {
@@ -120,6 +120,27 @@
       }
     ],
     "recentNews": [
+      {
+        "date": "2026-06-24",
+        "headline": "OpenAI and Broadcom Unveil 'Jalape\u00f1o' \u2014 OpenAI's First Custom AI Inference Chip",
+        "whyItMatters": "The ASIC delivers ~50% cost savings vs. Nvidia GPUs for inference and validates Broadcom's XPU business with a sixth major hyperscaler customer, directly supporting management's $100B+ FY2027 AI revenue forecast.",
+        "source": "CNBC",
+        "sourceUrl": "https://www.cnbc.com/2026/06/24/openai-and-broadcom-reveal-jalapeno-first-ai-chip-in-partnership.html"
+      },
+      {
+        "date": "2026-06-24",
+        "headline": "Broadcom Rallies on Jalape\u00f1o as OpenAI Reduces Nvidia Dependence",
+        "whyItMatters": "The co-branded chip launch reinforces Broadcom's custom silicon moat with a sixth hyperscaler XPU customer, expanding the addressable market and providing a re-rating catalyst.",
+        "source": "Bloomberg",
+        "sourceUrl": "https://www.bloomberg.com/news/articles/2026-06-24/openai-and-broadcom-unveil-ai-chip-to-run-models-faster-cheaper"
+      },
+      {
+        "date": "2026-06-18",
+        "headline": "Broadcom Completes $3.0B Senior Notes Tender Offer \u2014 Liability Management Ahead of AI Build Cycle",
+        "whyItMatters": "Settlement of legacy senior notes due 2037/2038 (upsized from $2.5B) reduces interest costs and signals proactive balance sheet management as Broadcom invests heavily in AI infrastructure.",
+        "source": "SEC EDGAR",
+        "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1730168/000119312526275077/d149683d8k.htm"
+      },
       {
         "date": "2026-06-12",
         "headline": "Broadcom Names Amie Thuener as CFO; Kirsten Spears Retires After 12 Years",
@@ -150,17 +171,10 @@
       },
       {
         "date": "2025-12-11",
-        "headline": "Broadcom reports record FY2025: revenue $63.9B (+24%); AI sales reached $20B (+65% YoY); raises dividend 10% to $0.65",
+        "headline": "Broadcom reports record FY2025: revenue $63.9B (+24%); AI segment revenue of $20B (+65% YoY); raises dividend 10% to $0.65",
         "whyItMatters": "First full year with VMware fully consolidated and AI scaling \u2014 FCF of $26.9B underpins the dividend and buyback and frames the FY2026 AI ramp.",
         "source": "Broadcom Q4/FY2025 results (SEC EDGAR 8-K)",
         "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001730168/000173016825000116/avgo-11022025x8kxex99.htm"
-      },
-      {
-        "date": "2025-10-13",
-        "headline": "OpenAI and Broadcom announce strategic collaboration to deploy 10 GW of OpenAI-designed AI accelerators",
-        "whyItMatters": "Adds OpenAI as a marquee custom-silicon customer; production starts 2H 2026, full rollout by 2029 \u2014 materially expanding the multi-year XPU pipeline beyond Google and Meta.",
-        "source": "CNBC",
-        "sourceUrl": "https://www.cnbc.com/2025/10/13/openai-partners-with-broadcom-custom-ai-chips-alongside-nvidia-amd.html"
       }
     ],
     "earningsTakeaways": {
@@ -214,7 +228,7 @@
         "name": "Broadcom",
         "ticker": "AVGO",
         "type": "Subject",
-        "evRevenue": "25.4x",
+        "evRevenue": "23.6x",
         "revenueGrowth": "47.9%",
         "grossMargin": "76.3%",
         "note": "subject; custom AI silicon + dominant AI Ethernet networking, layered on a VMware FCF cash cow; ~46% FCF margin funds a growing dividend",
@@ -224,7 +238,7 @@
       {
         "name": "NVIDIA",
         "ticker": "NVDA",
-        "evRevenue": "19.4x",
+        "evRevenue": "18.2x",
         "revenueGrowth": "85.2%",
         "grossMargin": "74.1%",
         "note": "the merchant-GPU incumbent and primary competitive frame; faster-growing at a lower EV/Rev, the GPU+InfiniBand stack Broadcom's custom-ASIC+Ethernet alternative competes against",
@@ -234,7 +248,7 @@
       {
         "name": "Marvell Technology",
         "ticker": "MRVL",
-        "evRevenue": "29.2x",
+        "evRevenue": "26.9x",
         "revenueGrowth": "27.6%",
         "grossMargin": "51.5%",
         "note": "closest custom-silicon (ASIC) and AI-networking peer; the other merchant designer chasing hyperscaler XPU and optical sockets, lower gross margin",
@@ -244,7 +258,7 @@
       {
         "name": "AMD",
         "ticker": "AMD",
-        "evRevenue": "22.1x",
+        "evRevenue": "22.5x",
         "revenueGrowth": "37.8%",
         "grossMargin": "53.1%",
         "note": "merchant AI GPU (Instinct) and data-center CPU challenger; competes for the same hyperscaler AI compute budget",
@@ -254,7 +268,7 @@
       {
         "name": "Qualcomm",
         "ticker": "QCOM",
-        "evRevenue": "5.2x",
+        "evRevenue": "4.6x",
         "revenueGrowth": "-3.5%",
         "grossMargin": "54.8%",
         "note": "diversified mobile/edge connectivity peer; far less AI-data-center levered and far cheaper \u2014 a valuation/cyclicality contrast point",
@@ -263,7 +277,7 @@
       }
     ],
     "swot": {
-      "standoutSummary": "Broadcom is the only at-scale merchant designer pairing custom AI accelerators (XPUs) AND the dominant AI Ethernet networking stack \u2014 a hyperscaler-aligned alternative to Nvidia \u2014 layered on a VMware/software cash cow that funds a sector-leading ~46% FCF margin and a growing dividend. At ~24x EV/Rev (2026-06-10 close) it sits between faster-growing Nvidia (~19x) and lower-margin Marvell (~26x).",
+      "standoutSummary": "Broadcom is the only at-scale merchant designer pairing custom AI accelerators (XPUs) AND the dominant AI Ethernet networking stack \u2014 a hyperscaler-aligned alternative to Nvidia \u2014 layered on a VMware/software cash cow that funds a sector-leading ~46% FCF margin and a growing dividend. At a premium EV/Rev (live multiple in comps table) (2026-06-10 close) it sits between faster-growing Nvidia (~19x) and lower-margin Marvell (~26x).",
       "strengths": [
         {
           "point": "Custom-silicon moat",
@@ -313,7 +327,7 @@
         },
         {
           "point": "Valuation / expectations",
-          "detail": "~24x EV/Rev (2026-06-10 close) prices in perfection \u2014 an in-line guide already drove a ~13% drop; any AI-demand wobble de-rates the multiple fast."
+          "detail": "elevated EV/Rev (live multiple in comps table) EV/Rev (2026-06-10 close) prices in perfection \u2014 an in-line guide already drove a ~13% drop; any AI-demand wobble de-rates the multiple fast."
         },
         {
           "point": "China & cyclicality",
@@ -410,6 +424,6 @@
       }
     ]
   },
-  "marketCloseAsOf": "2026-06-17",
-  "freshnessNote": "All multiples reflect the 2026-06-17 market close."
+  "marketCloseAsOf": "2026-06-26",
+  "freshnessNote": "All multiples reflect the 2026-06-26 market close."
 }
