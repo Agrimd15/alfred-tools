@@ -233,7 +233,7 @@ def live_quote(ticker: str, stock=None, info=None) -> dict:
         ev_lo = (lo * shares + debt - cash) / rev
         ev_hi = (hi * shares + debt - cash) / rev
         if ev_lo == ev_lo and ev_hi == ev_hi:
-            ev_rev_range = f"{ev_lo:.1f}x–{ev_hi:.1f}x"
+            ev_rev_range = f"{ev_lo:.1f}x-{ev_hi:.1f}x"
     fwd_pe = info.get("forwardPE")
 
     out = {

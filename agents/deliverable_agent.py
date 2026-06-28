@@ -3411,15 +3411,33 @@ def audit_brief(html_path, profile, strict=False):
         print(f"❌  QA metrics: {m}")
     for m in met_warns:
         print(f"⚠️  QA metrics: {m}")
+    # House-style guard: the finished brief carries no em/en dashes. Scan the rendered body
+    # (outside <style>/<script>) so any hardcoded string that bypassed clean() is caught here,
+    # before publish, instead of being found later in a shipped report.
+    dash_warns = []
+    try:
+        _dbody = re.split(r"</style>", Path(html_path).read_text(encoding="utf-8"))[-1]
+        _dbody = re.sub(r"<script\b.*?</script>", "", _dbody, flags=re.S | re.I)
+        _dhits = re.findall(r"\S{0,14}\s?[—–]\s?\S{0,14}", _dbody)
+        if _dhits:
+            dash_warns.append(f"{len(_dhits)} em/en dash(es) in the rendered brief "
+                              "(house style is none, fix the source string): "
+                              + "; ".join(h.strip() for h in _dhits[:4]))
+    except Exception:
+        pass
+    if dash_warns:
+        print(f"⚠️  QA dashes: {dash_warns[0]}")
+    else:
+        print("✒️  QA dashes: none.")
     for m in errors:
         print(f"❌  QA completeness: {m}")
     for m in warns:
         print(f"⚠️  QA: {m}")
-    if not layout and not errors and not warns and not met_issues:
+    if not layout and not errors and not warns and not met_issues and not dash_warns:
         print("✅  QA completeness: comps depth + sourcing + metric tie-out OK.")
 
     return (len(layout) + len(errors) + len(met_errors)
-            + (len(warns) + len(met_warns) if strict else 0))
+            + (len(warns) + len(met_warns) + len(dash_warns) if strict else 0))
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
