@@ -89,9 +89,9 @@
     }
   ],
   "employeeCount": "~1,500+ (rapidly scaling)",
-  "lastRunDate": "2026-06-18",
+  "lastRunDate": "2026-06-28",
   "brief": {
-    "runDate": "2026-06-18",
+    "runDate": "2026-06-28",
     "businessOverview": "Figma, Inc. (NYSE: FIG) makes browser-native, multiplayer software for designing digital products. Its core product, Figma Design, lets designers, developers, product managers, and marketers collaborate live in the same file from any browser \u2014 the 'Google Docs for design' that disrupted desktop incumbents Adobe XD and Sketch. The platform has expanded well beyond design canvases into FigJam (online whiteboarding), Dev Mode (design-to-code handoff), Figma Slides (presentations), Figma Sites (web/app builder), Figma Draw, and a fast-growing AI layer \u2014 Figma Make (prompt-to-prototype, built on Anthropic's Claude) and Figma Weave (AI media creation, from the ~$200M October 2025 Weavy acquisition). Co-founded in 2012 by CEO Dylan Field (a Thiel Fellow) and Evan Wallace, Figma is headquartered in San Francisco and serves 95% of the Fortune 500. Its defining pre-IPO event was the collapse of Adobe's $20B acquisition, abandoned in December 2023 over EU/UK antitrust opposition (Adobe paid a $1B reverse-termination fee). Figma IPO'd on the NYSE on July 31, 2025 at $33/share \u2014 opening at $85, halted past $112, closing day one at $115.50 (+250%) \u2014 then de-rated severely to near $20 by the 2026-06-10 close (~$8.8B market cap) as lockups expired and the market repriced AI risk.",
     "businessOverviewSources": [
       {
@@ -119,6 +119,13 @@
       }
     ],
     "recentNews": [
+      {
+        "date": "2026-06-24",
+        "headline": "Figma adds code layers, animations, and AI features in new update",
+        "whyItMatters": "Figma deepened its design-to-code capabilities with code layer support, animation, and AI-powered plugin generation, strengthening its platform moat against Framer and Adobe in the design-to-dev handoff market.",
+        "source": "TechCrunch",
+        "sourceUrl": "https://techcrunch.com/2026/06/24/figma-adds-code-layers-support-for-animations-more-ai-features-in-new-update/"
+      },
       {
         "date": "2026-05-14",
         "headline": "Figma Q1 FY2026 revenue re-accelerates to +46% ($333.4M); NDR 139%; stock jumps ~13%",
@@ -212,8 +219,8 @@
       {
         "name": "Adobe",
         "ticker": "ADBE",
-        "evRevenue": "3.2x",
-        "revenueGrowth": "12.0%",
+        "evRevenue": "3.3x",
+        "revenueGrowth": "12.7%",
         "grossMargin": "89.4%",
         "note": "the incumbent Figma displaced and tried (and failed) to buy for $20B; far larger and more profitable but slower-growing \u2014 Figma is the higher-growth, design-native challenger",
         "source": "yfinance / Yahoo Finance",
@@ -222,7 +229,7 @@
       {
         "name": "Atlassian",
         "ticker": "TEAM",
-        "evRevenue": "2.2x",
+        "evRevenue": "2.0x",
         "revenueGrowth": "31.7%",
         "grossMargin": "84.8%",
         "note": "closest collaboration-software comp by motion (bottoms-up, seat/usage-led expansion across software teams), but dev-workflow-centric rather than design-centric",
@@ -243,7 +250,7 @@
         "name": "Salesforce",
         "ticker": "CRM",
         "evRevenue": "3.7x",
-        "revenueGrowth": "",
+        "revenueGrowth": "13.3%",
         "grossMargin": "77.6%",
         "note": "broad enterprise-SaaS benchmark for scaled, profitable software; far larger and slower-growing, framing Figma as a still-early, premium-growth name versus mature platform peers",
         "source": "yfinance / Yahoo Finance",
@@ -393,6 +400,100 @@
       }
     ]
   },
-  "marketCloseAsOf": "2026-06-17",
-  "freshnessNote": "All multiples reflect the 2026-06-17 market close."
+  "marketCloseAsOf": "2026-06-26",
+  "freshnessNote": "All multiples reflect the 2026-06-26 market close.",
+  "trading": {
+    "priceAsOf": "2026-06-26",
+    "stockPrice": "$19",
+    "marketCap": "$8.3B",
+    "enterpriseValue": "$6.7B",
+    "totalRevenueLTM": "$1.2B",
+    "revenueGrowthYoY": "46.1%",
+    "grossMargin": "79.8%",
+    "operatingMarginGAAP": "-41.2%",
+    "ebitdaMargin": "-124.7%",
+    "fcfPerShare": 813476480,
+    "totalDebt": "$56M",
+    "totalCash": "$1.6B",
+    "evRevenueLTM": "5.8x",
+    "evBasis": "recomputed: last close \u00d7 shares + net debt",
+    "forwardPE": 55.2,
+    "priceToSalesLTM": 8.5,
+    "52wHigh": 142.92,
+    "52wLow": 16.6,
+    "dayChange": "10.6%",
+    "volume": 31661263,
+    "avgVolume": 19113261,
+    "analystTargetPrice": 36.11111,
+    "analystTargetHigh": 60.0,
+    "analystTargetLow": 22.0,
+    "analystRating": "buy",
+    "numberOfAnalysts": 9,
+    "shortName": "Figma, Inc.",
+    "sector": "Technology",
+    "industry": "Software - Application",
+    "sharesOutstanding": 445682595
+  },
+  "comps": [
+    {
+      "ticker": "FIG",
+      "name": "Figma, Inc.",
+      "priceAsOf": "2026-06-26",
+      "marketCap": "$8.3B",
+      "evRevenueLTM": "5.8x",
+      "revenueGrowth": "46.1%",
+      "grossMargin": "79.8%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/FIG"
+    },
+    {
+      "ticker": "ADBE",
+      "name": "Adobe Inc.",
+      "priceAsOf": "2026-06-26",
+      "marketCap": "$80.6B",
+      "evRevenueLTM": "3.3x",
+      "revenueGrowth": "12.7%",
+      "grossMargin": "89.4%",
+      "analystRating": "hold",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/ADBE"
+    },
+    {
+      "ticker": "TEAM",
+      "name": "Atlassian Corporation",
+      "priceAsOf": "2026-06-26",
+      "marketCap": "$12.6B",
+      "evRevenueLTM": "2.0x",
+      "revenueGrowth": "31.7%",
+      "grossMargin": "84.8%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/TEAM"
+    },
+    {
+      "ticker": "MNDY",
+      "name": "monday.com Ltd.",
+      "priceAsOf": "2026-06-26",
+      "marketCap": "$3.7B",
+      "evRevenueLTM": "2.1x",
+      "revenueGrowth": "24.5%",
+      "grossMargin": "89.1%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/MNDY"
+    },
+    {
+      "ticker": "CRM",
+      "name": "Salesforce, Inc.",
+      "priceAsOf": "2026-06-26",
+      "marketCap": "$129.7B",
+      "evRevenueLTM": "3.7x",
+      "revenueGrowth": "13.3%",
+      "grossMargin": "77.6%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/CRM"
+    }
+  ]
 }
