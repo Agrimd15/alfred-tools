@@ -669,7 +669,7 @@ def fetch_brand_colors(website: str, max_colors: int = 5) -> list[str]:
 
 def _brand_colors_html(colors: list) -> str:
     if not colors:
-        return '<div class="kit-url" style="color:var(--ks-faint);font-size:10px">fetching colors failed — check website URL in profile</div>'
+        return '<div class="kit-url" style="color:var(--ks-faint);font-size:10px">fetching colors failed, check website URL in profile</div>'
     swatches = "".join(
         f'<div class="kit-swatch-wrap" title="{c}">'
         f'<div class="kit-swatch" style="background:{c}"></div>'
