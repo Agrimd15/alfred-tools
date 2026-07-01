@@ -316,6 +316,87 @@ def relative_performance(ticker: str, bench: str = "QQQ") -> dict:
         return {}
 
 
+def income_statement(ticker: str, stock=None) -> dict | None:
+    """Latest fiscal-year income statement reduced to the flows for a revenue -> profit
+    Sankey. All values in $. Returns None when the data is missing OR the company is
+    unprofitable (a Sankey of a loss does not read as a clean left-to-right flow), so the
+    caller omits the chart gracefully (same pattern as the optional Gartner map). Residuals
+    are derived so every split ties exactly: revenue = COGS + gross profit, gross profit =
+    opex + operating income, pretax = net income + tax, with net non-operating income/expense
+    bridging operating income to pretax."""
+    if yf is None:
+        return None
+    try:
+        stock = stock or yf.Ticker(ticker.upper().strip())
+        fin = stock.income_stmt
+        if fin is None or getattr(fin, "empty", True):
+            return None
+        col = fin.columns[0]
+        def g(*keys):
+            for k in keys:
+                if k in fin.index:
+                    v = fin.loc[k, col]
+                    if v is not None and v == v:
+                        return float(v)
+            return None
+        # Prior fiscal year (columns[1]) for YoY deltas on the Sankey nodes — graceful (None when absent).
+        pcol = fin.columns[1] if len(fin.columns) > 1 else None
+        def gp_(*keys):
+            if pcol is None:
+                return None
+            for k in keys:
+                if k in fin.index:
+                    v = fin.loc[k, pcol]
+                    if v is not None and v == v:
+                        return float(v)
+            return None
+        rev = g("Total Revenue", "Operating Revenue")
+        cogs = g("Cost Of Revenue", "Reconciled Cost Of Revenue")
+        gp = g("Gross Profit")
+        opinc = g("Operating Income", "Total Operating Income As Reported")
+        pretax = g("Pretax Income")
+        ni = g("Net Income", "Net Income Common Stockholders")
+        if not rev or rev <= 0:
+            return None
+        if gp is None and cogs is not None:
+            gp = rev - cogs
+        if cogs is None and gp is not None:
+            cogs = rev - gp
+        # The Sankey only reads cleanly for a profitable cascade — omit otherwise.
+        if None in (cogs, gp, opinc, ni) or min(gp, opinc, ni) <= 0:
+            return None
+        cogs = rev - gp                    # derive residuals so each split balances exactly
+        opex = gp - opinc
+        if opex < 0:
+            return None
+        if pretax is None:
+            pretax = ni
+        if pretax < ni:                    # a tax benefit (ni > pretax) — flatten, don't draw a negative
+            pretax = ni
+        tax = pretax - ni
+        # Prior-year totals so the Sankey can print YoY % on the profit nodes. Derive gross-profit
+        # residual the same way (rev - cogs) when only one of the two is reported; leave None if the
+        # prior column is missing or revenue is non-positive so YoY is simply omitted, never faked.
+        revP = gp_("Total Revenue", "Operating Revenue")
+        gpP = gp_("Gross Profit")
+        cogsP = gp_("Cost Of Revenue", "Reconciled Cost Of Revenue")
+        if gpP is None and revP is not None and cogsP is not None:
+            gpP = revP - cogsP
+        opincP = gp_("Operating Income", "Total Operating Income As Reported")
+        niP = gp_("Net Income", "Net Income Common Stockholders")
+        if not revP or revP <= 0:
+            revP = gpP = opincP = niP = None
+        return {
+            "period": f"FY{col.year}", "revenue": rev, "costOfRevenue": cogs, "grossProfit": gp,
+            "operatingExpense": opex, "operatingIncome": opinc, "otherNet": pretax - opinc,
+            "pretax": pretax, "tax": tax, "netIncome": ni, "source": "yfinance income statement",
+            "revenuePrev": revP, "grossProfitPrev": gpP, "operatingIncomePrev": opincP,
+            "netIncomePrev": niP,
+        }
+    except Exception:
+        return None
+
+
 def get_xbrl_facts(ticker: str) -> dict:
     """As-reported revenue and net income from SEC XBRL companyfacts — primary-of-record
     figures straight from the filings, the highest-trust source for revenueHistory.

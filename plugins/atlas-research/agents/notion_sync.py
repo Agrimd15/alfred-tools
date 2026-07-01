@@ -6,7 +6,7 @@ Pushes an Atlas coverage run into a Notion database (e.g. a "tech startup tracke
 upserting one row per company and linking back to the published brief on the
 coverage site. The row carries the company name, description, competitors and
 founders pulled from `data-dumps/<ID>/profile.json`; the link points at the live
-brief at <SITE>/full/briefs/<ID>/<DATE>.html. Re-running updates the existing row
+brief at <SITE>/atlas/briefs/<ID>/<DATE>.html. Re-running updates the existing row
 in place (matched on the company name), so daily runs never duplicate it.
 
 Zero extra dependencies — uses only the Python standard library (urllib), so it
@@ -174,7 +174,7 @@ def brief_url(folder_id, run_date):
     """Public URL of the brief on the coverage site, if ATLAS_SITE_URL is set."""
     if not (ATLAS_SITE_URL and run_date):
         return None
-    return f"{ATLAS_SITE_URL}/full/briefs/{folder_id}/{run_date}.html"
+    return f"{ATLAS_SITE_URL}/atlas/briefs/{folder_id}/{run_date}.html"
 
 
 def gather(folder_id):

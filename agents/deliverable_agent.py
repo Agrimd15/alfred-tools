@@ -321,7 +321,23 @@ def build_bar_chart(series: list, eyebrow: str = "REVENUE TRAJECTORY",
     TOP, plot_h, bar_w, gap, pad = 38, 118, 78, 32, 30
     base_y = TOP + plot_h                       # baseline the bars sit on
     total_w = len(series) * (bar_w + gap) + pad
-    svg_h = base_y + 34                          # room for the year labels below
+    # A verbose year like "FY2022 (ended Dec 2022)" is far wider than one bar and used to
+    # overrun its neighbours. Split it onto two lines — the bold period above, the
+    # parenthetical qualifier smaller/fainter below — so labels never collide. Reserve the
+    # extra vertical room only when at least one label actually has a qualifier line.
+    has_sub = any(re.search(r"\(.*\)", str(r.get("year", ""))) for r in series)
+    svg_h = base_y + (50 if has_sub else 32)     # room for the year labels below
+
+    def _year_label(cx, year):
+        year = str(year or "").strip()
+        m = re.match(r"^(.*?)\s*\((.*)\)\s*$", year)
+        top, sub = (m.group(1).strip(), m.group(2).strip()) if m else (year, "")
+        out = (f'<text x="{cx}" y="{base_y + 22}" text-anchor="middle" font-size="12" '
+               f'fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">{top}</text>')
+        if sub:
+            out += (f'<text x="{cx}" y="{base_y + 37}" text-anchor="middle" font-size="9.5" '
+                    f'fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">{sub}</text>')
+        return out
     bars = ""
     for i, r in enumerate(series):
         bar_h = max(6, int((r["value"] / max_val) * plot_h))
@@ -340,7 +356,7 @@ def build_bar_chart(series: list, eyebrow: str = "REVENUE TRAJECTORY",
         <rect x="{x}" y="{y}" width="{bar_w}" height="{bar_h}" fill="{accent}" rx="3" opacity="{opacity:.2f}"/>
         <text x="{x + bar_w//2}" y="{y - 9}" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">{r.get("label","")}</text>
         {growth}
-        <text x="{x + bar_w//2}" y="{base_y + 22}" text-anchor="middle" font-size="11.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">{r.get("year","")}</text>"""
+        {_year_label(x + bar_w//2, r.get("year",""))}"""
     seen, footnotes = set(), []
     for r in series:
         src, url = r.get("source",""), r.get("sourceUrl","")
@@ -367,27 +383,27 @@ def build_arr_chart(rev_history: list) -> str:
     return build_bar_chart(rev_history, eyebrow="ANNUAL REVENUE ($B)", accent="var(--ks-kinpaku)")
 
 
-def build_quarterly_trend(ticker: str) -> str:
+def build_quarterly_trend(ticker: str) -> dict:
     """
-    Combined quarterly-revenue unit for the Financials section: a bar chart of the
-    last ~5 quarters' revenue sitting directly above the matrix (Revenue, QoQ, Gross
-    Margin), both oldest -> newest and both driven by the SAME live yfinance pull so
-    the picture and the precise numbers can never disagree. The chart replaces the
-    old standalone revenue-trajectory bars (which duplicated this table); putting them
-    together gives an MD the trajectory and the exact figures in one place, ending on
-    the most recent reported quarter. Returns '' for private companies or when
-    quarterly data is unavailable, so it degrades silently and never breaks a brief.
+    Live last-~5-quarters revenue unit, returned as SEPARATE parts so the caller can
+    place them in the redesigned Revenue Trajectory section: the quarterly bar chart
+    sits side-by-side with the annual chart (filling the full width), and the matrix
+    (Revenue, QoQ, Gross Margin) spans full width below. Chart and table are driven by
+    the SAME live yfinance pull, oldest -> newest, so the picture and the precise
+    numbers can never disagree. Returns {"chart": ..., "table": ...} (either may be '')
+    or {} for private companies / when quarterly data is unavailable, so it degrades
+    silently and never breaks a brief.
     """
     if not ticker or not re.fullmatch(_TICKER_RE, ticker):
-        return ""
+        return {}
     try:
         from data_agent import quarterly_trend
         t = quarterly_trend(ticker)
     except Exception:
-        return ""
+        return {}
     qs = (t or {}).get("quarters") or []
     if len(qs) < 2:
-        return ""
+        return {}
     qs = list(reversed(qs))                                  # oldest -> newest
 
     # Bar chart from the SAME quarters (revenue in $B), so visual + table always tie.
@@ -435,11 +451,275 @@ def build_quarterly_trend(ticker: str) -> str:
         '<div class="chart-sources"><span class="chart-source-label">Source:</span> '
         f'<a class="chart-source-link" href="{url}" target="_blank" rel="noopener">{src}</a>'
         f' &nbsp;&middot;&nbsp; {basis}.{yoy_txt}</div>')
-    return (
-        f'<div class="qtrend-wrap">{chart_html}'
+    table_html = (
+        f'<div class="qtrend-wrap">'
         f'<div class="chart-eyebrow">LAST {len(qs)} QUARTERS</div>'
         f'<div class="table-scroll"><table class="qtrend-table"><thead><tr><th class="qtrend-rowlbl"></th>{heads}</tr></thead>'
         f'<tbody>{rows}</tbody></table></div>{caption}</div>')
+    return {"chart": chart_html, "table": table_html}
+
+
+def build_sankey(stmt: dict, name: str) -> str:
+    """Income-statement Sankey (revenue → costs → profit) hand-drawn as a self-contained inline
+    SVG from the live income statement, in the App-Economy-Insights house style: smooth
+    semi-transparent gradient ribbons (not flat slabs), GREEN = profit kept, SALMON/RED = money
+    spent, AMBER = the non-operating bridge, with each node carrying name + value, a margin % on
+    the profit nodes and a YoY chip when a prior year is available. No external service and no
+    network call — it is part of the page, so it prints vector-crisp and works offline. Returns ''
+    when stmt is None (private / unprofitable / missing) so the section omits the chart gracefully,
+    like the optional Gartner map. Handles BOTH non-operating shapes: otherNet > 0 → interest/other
+    INCOME bridging operating income UP to pretax (e.g. PLTR); otherNet < 0 → interest/other EXPENSE
+    bridging DOWN (e.g. AVGO/MSFT). Every flow stays balanced."""
+    if not stmt:
+        return ""
+    try:
+        import html as _html
+        rev = stmt["revenue"]; cogs = stmt["costOfRevenue"]; gp = stmt["grossProfit"]
+        opex = stmt["operatingExpense"]; oi = stmt["operatingIncome"]; other = stmt["otherNet"]
+        pretax = stmt["pretax"]; tax = stmt["tax"]; ni = stmt["netIncome"]
+        if min(rev, gp, oi, ni) <= 0:
+            return ""
+        eps = rev * 0.004
+        income = other > eps          # interest/other INCOME bridges UP to pretax
+        expense = other < -eps        # interest/other EXPENSE bridges DOWN to pretax
+        otherAbs = abs(other) if (income or expense) else 0.0
+
+        # ── value / margin / YoY formatting ──────────────────────────────────────────
+        def fval(x):
+            ax = abs(x)
+            if ax >= 1e12: return f"${x/1e12:.2f}T"
+            if ax >= 1e9:  return f"${x/1e9:.1f}B"
+            if ax >= 1e6:  return f"${round(x/1e6)}M"
+            return f"${round(x/1e3)}K"
+        def margin(x):
+            return f"{round(x/rev*100)}% margin"
+        def yoy(cur, prev):
+            if prev is None or prev == 0:
+                return None
+            d = (cur - prev) / abs(prev) * 100
+            sign = "+" if d >= 0 else "−"
+            return f"{sign}{abs(d):.0f}% Y/Y"
+        revP = stmt.get("revenuePrev"); gpP = stmt.get("grossProfitPrev")
+        oiP = stmt.get("operatingIncomePrev"); niP = stmt.get("netIncomePrev")
+
+        # ── palette ──────────────────────────────────────────────────────────────────
+        INK   = "#1f2733"      # node + label ink
+        SUB   = "#6b7480"      # secondary label ink
+        GRAY  = "#5a6473"      # revenue node (neutral)
+        GREEN = "#1f9d57"      # profit kept (gross / operating)
+        GREENn= "#15834a"      # net profit (darkest green = the bottom line)
+        SALMON= "#e08a82"      # cost of revenue / opex
+        SALMd = "#d87166"      # tax (a touch deeper)
+        AMBER = "#e3a64a"      # non-operating bridge
+        BG    = "#fbfbf8"      # off-white canvas
+        col_rib = {GRAY:"#7b8392", GREEN:"#2bb069", GREENn:"#1f9d57",
+                   SALMON:"#ecaaa3", SALMd:"#e08a82", AMBER:"#ecc079"}
+
+        # ── geometry ─────────────────────────────────────────────────────────────────
+        VBW, VBH = 1240, 470
+        TOP, BOT = 64, 40              # vertical breathing room (top leaves room for stage captions)
+        L = 250                        # revenue node left edge (room for its left-side label)
+        R = 858                        # right exit column left edge (room for exit labels at right)
+        NW = 13                        # node bar width
+        usableH = VBH - TOP - BOT
+
+        # Total height is scaled to revenue; small vertical gaps are inserted between stacked
+        # sibling nodes so the ribbons feeding them read as DISTINCT streams, not one slab.
+        # We pick a gap in $ as a small fraction of revenue, then scale (rev + total gaps) to fit.
+        # The right exit column has the most internal gaps (interest, tax, net profit), so scale by
+        # its gap count to guarantee the tallest column still fits the band.
+        gap = rev * 0.020
+        n_exit_gaps = 1 + (1 if expense else 0) + (1 if tax > eps else 0)  # ni + intr + tax splits
+        gaps_max = max(n_exit_gaps, 1)
+        sc = usableH / (rev + gaps_max * gap)
+        def H(v): return v * sc       # $ -> px height
+
+        # ── columns (x of each node's LEFT edge) ─────────────────────────────────────
+        cREV = L
+        cGP  = 470
+        cOI  = 670
+        cEXIT = R                      # right exit column for costs + net profit
+        gpx = gap * sc                 # gap in px
+
+        nodes = {}
+        # Revenue column: a single revenue node (full height). When there is non-operating INCOME
+        # we add a small 'Other income' source node just BELOW revenue (it joins the flow at pretax).
+        revH = H(rev)
+        nodes["rev"] = {"col":"rev","x":cREV,"y0":TOP,"y1":TOP+revH,"color":GRAY,
+                        "title":"Revenue","val":rev,"margin":None,"yoy":yoy(rev,revP),"side":"left"}
+        yb = TOP + revH
+        if income:
+            nodes["oth"] = {"col":"rev","x":cREV,"y0":yb+gpx,"y1":yb+gpx+H(otherAbs),"color":AMBER,
+                            "title":"Interest & other income","val":otherAbs,"margin":None,
+                            "yoy":None,"side":"left"}
+
+        # Gross-profit column: COGS (top) then Gross profit (below a gap).
+        cogsH, gpH = H(cogs), H(gp)
+        nodes["cogs"] = {"col":"gp","x":cGP,"y0":TOP,"y1":TOP+cogsH,"color":SALMON,
+                         "title":"Cost of revenue","val":cogs,"margin":None,"yoy":None,"side":"exit"}
+        gpY0 = TOP + cogsH + gpx
+        nodes["gp"] = {"col":"gp","x":cGP,"y0":gpY0,"y1":gpY0+gpH,"color":GREEN,
+                       "title":"Gross profit","val":gp,"margin":margin(gp),"yoy":yoy(gp,gpP),"side":"top"}
+
+        # Operating-income column: OpEx (top, aligned under COGS) then Operating profit.
+        opexH, oiH = H(opex), H(oi)
+        # OpEx sits directly continuing from gross profit's top; stack opex then oi within the gp band.
+        opexY0 = gpY0
+        nodes["opex"] = {"col":"oi","x":cOI,"y0":opexY0,"y1":opexY0+opexH,"color":SALMON,
+                         "title":"Operating expenses","val":opex,"margin":None,"yoy":None,"side":"exit"}
+        oiY0 = opexY0 + opexH + gpx
+        nodes["oi"] = {"col":"oi","x":cOI,"y0":oiY0,"y1":oiY0+oiH,"color":GREEN,
+                       "title":"Operating profit","val":oi,"margin":margin(oi),"yoy":yoy(oi,oiP),"side":"top"}
+
+        # Right exit column. The streams arriving here keep their vertical order so NO ribbon
+        # crosses another: costs peel off the TOP (interest expense, then taxes), and Net profit
+        # settles at the BOTTOM. We lay the exit stack as one contiguous group, then shift it so
+        # Net profit's vertical centre lines up with the dominant inflow (operating profit), which
+        # keeps every ribbon short and near-horizontal.
+        exit_items = []                # top → bottom
+        if expense:
+            exit_items.append(("intr","Interest & other expense",otherAbs,AMBER,None))
+        if tax > eps:
+            exit_items.append(("tax","Taxes",tax,SALMd,None))
+        exit_items.append(("ni","Net profit",ni,GREENn,yoy(ni,niP)))
+        exit_h = sum(H(v) for _,_,v,_,_ in exit_items) + gpx * (len(exit_items) - 1)
+        # net-profit centre should align with operating-profit centre (the main forward stream)
+        oi_cy = (oiY0 + (oiY0 + oiH)) / 2
+        ni_h = H(ni)
+        # y0 of the exit stack so that the LAST item (net profit) is centred on oi_cy
+        ey = oi_cy + ni_h / 2 - exit_h
+        ey = max(ey, TOP)                                   # clamp inside the canvas
+        ey = min(ey, TOP + usableH - exit_h)
+        for k,title,v,c,yy in exit_items:
+            h = H(v)
+            mgn = margin(v) if k == "ni" else None
+            nodes[k] = {"col":"exit","x":cEXIT,"y0":ey,"y1":ey+h,"color":c,
+                        "title":title,"val":v,"margin":mgn,"yoy":yy,"side":"exit"}
+            ey += h + gpx
+
+        # ── links (source key, target key, value) ────────────────────────────────────
+        # Emit links in the SAME top→bottom order the exit nodes are stacked so the running
+        # output offset on `oi` peels them off without crossing.
+        links = [("rev","cogs",cogs), ("rev","gp",gp), ("gp","opex",opex), ("gp","oi",oi)]
+        if income:
+            # operating profit + other income both feed net profit; tax peels off the top.
+            if tax > eps: links.append(("oi","tax",tax))
+            links.append(("oi","ni",oi - (tax if tax > eps else 0)))
+            links.append(("oth","ni",otherAbs - (0)))
+        else:
+            if expense: links.append(("oi","intr",otherAbs))
+            if tax > eps: links.append(("oi","tax",tax))
+            links.append(("oi","ni",ni))
+
+        # running offsets so multiple ribbons stack cleanly at each node face
+        out_off = {k: nodes[k]["y0"] for k in nodes}
+        in_off  = {k: nodes[k]["y0"] for k in nodes}
+
+        defs, ribbons = [], []
+        gid = 0
+        for src, tgt, val in links:
+            if val <= 0 or src not in nodes or tgt not in nodes:
+                continue
+            sN, tN = nodes[src], nodes[tgt]
+            sx = sN["x"] + NW; tx = tN["x"]
+            h = H(val)
+            sy0 = out_off[src]; sy1 = sy0 + h; out_off[src] = sy1
+            ty0 = in_off[tgt];  ty1 = ty0 + h; in_off[tgt]  = ty1
+            # horizontal control points: ease out of the source, into the target
+            dx = tx - sx
+            c1 = sx + dx * 0.42; c2 = tx - dx * 0.42
+            # gradient flowing source-color → target-color
+            gid += 1
+            sc_ = col_rib.get(sN["color"], "#9aa0aa"); tc_ = col_rib.get(tN["color"], "#9aa0aa")
+            defs.append(f'<linearGradient id="rib{gid}" x1="0" y1="0" x2="1" y2="0">'
+                        f'<stop offset="0" stop-color="{sc_}"/><stop offset="1" stop-color="{tc_}"/>'
+                        f'</linearGradient>')
+            d = (f'M{sx:.1f} {sy0:.1f} '
+                 f'C{c1:.1f} {sy0:.1f} {c2:.1f} {ty0:.1f} {tx:.1f} {ty0:.1f} '
+                 f'L{tx:.1f} {ty1:.1f} '
+                 f'C{c2:.1f} {ty1:.1f} {c1:.1f} {sy1:.1f} {sx:.1f} {sy1:.1f} Z')
+            ribbons.append(f'<path d="{d}" fill="url(#rib{gid})" fill-opacity="0.44"/>')
+
+        # ── node bars ────────────────────────────────────────────────────────────────
+        node_svg = []
+        for k, n in nodes.items():
+            x, y0, y1 = n["x"], n["y0"], n["y1"]
+            h = max(y1 - y0, 2.0)
+            node_svg.append(f'<rect x="{x:.1f}" y="{y0:.1f}" width="{NW}" height="{h:.1f}" rx="3" '
+                            f'fill="{n["color"]}"/>')
+            # subtle inner highlight on the node bar (gives the flat bar a touch of dimension)
+            node_svg.append(f'<rect x="{x:.1f}" y="{y0:.1f}" width="3.2" height="{h:.1f}" rx="2" '
+                            f'fill="#ffffff" fill-opacity="0.22"/>')
+
+        # ── labels (compute, then de-collide exit-column labels, then emit) ──────────
+        # Each entry: dict with x, anchor, cy (preferred centre), and the two text lines.
+        specs = []
+        for k, n in nodes.items():
+            x, y0, y1 = n["x"], n["y0"], n["y1"]
+            cy = y0 + (y1 - y0) / 2
+            title, val = n["title"], n["val"]
+            sub_bits = [b for b in (n.get("margin"), n.get("yoy")) if b]
+            sub = "  ·  ".join(sub_bits)
+            is_net = (k == "ni")
+            tcol = GREENn if n["color"] in (GREEN, GREENn) else INK
+            side = n["side"]
+            if side == "left":
+                lx, anchor = x - 11, "end"
+            else:                                   # "top" (profit) and "exit" both label to the right
+                lx, anchor = x + NW + 12, "start"
+            specs.append({"k": k, "side": side, "x": lx, "anchor": anchor, "cy": cy,
+                          "line1": f"{title}  {fval(val)}", "sub": sub,
+                          "fs": "15" if is_net else "13.5", "col": tcol})
+
+        # De-collide the right-hand exit labels (interest / taxes / net profit can stack on tiny
+        # nodes and overlap). Sort by centre and push any pair closer than MINGAP apart.
+        MINGAP = 30.0
+        ex = sorted([s for s in specs if s["side"] == "exit"], key=lambda s: s["cy"])
+        for i in range(1, len(ex)):
+            if ex[i]["cy"] - ex[i-1]["cy"] < MINGAP:
+                ex[i]["cy"] = ex[i-1]["cy"] + MINGAP
+        # keep them inside the canvas
+        for s in ex:
+            s["cy"] = min(max(s["cy"], TOP + 6), VBH - BOT - 6)
+
+        label_svg = []
+        for s in specs:
+            ty = s["cy"]
+            if s["sub"]:
+                label_svg.append(
+                    f'<text x="{s["x"]:.1f}" y="{ty-7:.1f}" text-anchor="{s["anchor"]}" '
+                    f'font-size="{s["fs"]}" font-weight="700" fill="{s["col"]}">'
+                    f'{_html.escape(s["line1"])}</text>'
+                    f'<text x="{s["x"]:.1f}" y="{ty+10:.1f}" text-anchor="{s["anchor"]}" '
+                    f'font-size="11.5" font-weight="600" fill="{SUB}">{_html.escape(s["sub"])}</text>')
+            else:
+                label_svg.append(
+                    f'<text x="{s["x"]:.1f}" y="{ty+1:.1f}" text-anchor="{s["anchor"]}" '
+                    f'font-size="{s["fs"]}" font-weight="700" fill="{s["col"]}">'
+                    f'{_html.escape(s["line1"])}</text>')
+
+        # ── stage captions across the top ────────────────────────────────────────────
+        caps = [(cREV + NW, "REVENUE"), (cGP + NW, "GROSS"), (cOI + NW, "OPERATING"), (cEXIT + NW, "NET")]
+        cap_svg = "".join(
+            f'<text x="{cx:.1f}" y="{TOP-26:.1f}" font-size="10.5" font-weight="700" '
+            f'letter-spacing="1.4" fill="#aab0ba">{lbl}</text>' for cx, lbl in caps)
+
+        svg = (
+            f'<svg viewBox="0 0 {VBW} {VBH}" xmlns="http://www.w3.org/2000/svg" role="img" '
+            f'aria-label="{_html.escape(name)} income statement flow: revenue through costs to net profit" '
+            f'font-family="Inter, Arial, sans-serif" class="sankey-svg">'
+            f'<defs>{"".join(defs)}</defs>'
+            f'<rect x="0" y="0" width="{VBW}" height="{VBH}" rx="14" fill="{BG}"/>'
+            f'{cap_svg}{"".join(ribbons)}{"".join(node_svg)}{"".join(label_svg)}</svg>')
+
+        per = stmt.get("period", "")
+        return (f'<div class="sankey-wrap"><div class="chart-eyebrow">Income statement flow'
+                f'{(" · " + per) if per else ""}</div><div class="sankey-scroll">{svg}</div>'
+                f'<div class="chart-sources">Source: yfinance income statement (most recent fiscal year). '
+                f'Green = profit kept · salmon = costs · amber = non-operating. Margins shown as % of revenue.'
+                f'</div></div>')
+    except Exception:
+        return ""
 
 
 def build_biz_flow(profile: dict, b: dict) -> str:
@@ -1360,15 +1640,24 @@ def build_html(profile: dict) -> str:
                               f'<div class="sec-label">Bull · Base · Bear</div>'
                               f'<div class="bbb-grid">{cells}</div></div>')
 
-    # ── Visuals ──
+    # ── Visuals: combined Revenue Trajectory ──
+    # One revenue story, full-width: the annual bars and the live quarterly bars sit
+    # side-by-side (each ~half, so together they fill the row instead of stranding empty
+    # space), with the last-N-quarters matrix table spanning full width beneath them.
+    # The quarterly chart used to live alone in the Financials section; pulling it up
+    # next to the annual chart is the "combine the revenue section" redesign.
     arr_chart_html     = build_arr_chart(rev_history)
+    qtrend             = build_quarterly_trend(ticker_sym)      # {} for private / no data
+    q_chart_html       = qtrend.get("chart", "")
+    q_table_html       = qtrend.get("table", "")
     ai_hist            = profile.get("aiRevenueHistory") or []
     ai_chart_html      = build_bar_chart(
         ai_hist, eyebrow="AI SEMICONDUCTOR REVENUE ($B)", accent="var(--ks-accent)",
         growth_color="var(--ks-patina)",
         caption="Forward quarters marked E reflect company guidance, not reported actuals.")
-    charts_html        = (f'<div class="chart-row">{arr_chart_html}{ai_chart_html}</div>'
-                          if (arr_chart_html and ai_chart_html) else (arr_chart_html or ai_chart_html))
+    rev_charts         = "".join(c for c in (arr_chart_html, q_chart_html, ai_chart_html) if c)
+    charts_html        = (f'<div class="chart-row rev-charts">{rev_charts}</div>{q_table_html}'
+                          if rev_charts else "")
     biz_flow_html      = build_biz_flow(profile, b)
     funding_tl_html    = build_funding_timeline(funding_rounds)
     slide_kit_html     = build_slide_kit(profile, logo_url, brand_colors)
@@ -1896,14 +2185,21 @@ def build_html(profile: dict) -> str:
         if meta_txt and metrics_layout_html:
             meta_txt += ". Each metric is tagged with the period it covers; LTM and as-of figures are labeled individually."
         meta_row = f'<div class="sec-meta">{meta_txt}</div>' if meta_txt else ""
-        # Live last-4-quarters trend (public tickers) so the section shows trajectory,
-        # not just the latest quarter's cards. Silently empty for private companies.
-        qtrend_html = build_quarterly_trend(ticker_sym)
+        # Income-statement Sankey (revenue -> costs -> profit): public profitable tickers only,
+        # rendered from the live income statement. Omits silently for private/unprofitable names
+        # and if the render service is unreachable (graceful, like the optional Gartner map).
+        sankey_html = ""
+        if ticker_sym and re.fullmatch(_TICKER_RE, ticker_sym or ""):
+            try:
+                from data_agent import income_statement
+                sankey_html = build_sankey(income_statement(ticker_sym), name)
+            except Exception:
+                sankey_html = ""
         earnings_section_html = (
             f'<div class="section" id="earnings">'
             f'<div class="sec-label">Financials &amp; Key Metrics</div>{meta_row}'
             f'{metrics_layout_html}'
-            f'{qtrend_html}'
+            f'{sankey_html}'
             f'{earn_ul}'
             f'{_source_row(et)}'
             f'</div>'
@@ -2411,11 +2707,13 @@ def build_html(profile: dict) -> str:
   .mt-row {{ display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
              padding: 7px 2px; border-bottom: 1px solid var(--ks-rule); break-inside: avoid;
              font-size: 13px; }}
-  .mt-label {{ color: var(--ks-faint); }}
+  .mt-label {{ color: var(--ks-faint); flex-shrink: 0; }}
   .mt-per {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ks-faint);
              margin-left: 5px; }}
-  .mt-val {{ color: var(--ks-champagne); font-weight: 600; white-space: nowrap;
-             font-variant-numeric: tabular-nums; }}
+  /* value wraps (right-aligned) instead of forcing the page wide on a phone when a metric
+     carries a long compound value, e.g. "Revenue $90.5-91.0M; non-GAAP EPS $X" guidance */
+  .mt-val {{ color: var(--ks-champagne); font-weight: 600; text-align: right;
+             overflow-wrap: anywhere; min-width: 0; font-variant-numeric: tabular-nums; }}
   .mt-val .delta {{ margin-top: 0; padding: 1px 7px; font-size: 11px; }}
   @media (max-width: 680px) {{ .metrics-grid-lead {{ grid-template-columns: 1fr; }}
                                .metrics-table {{ column-count: 1; }} }}
@@ -2474,6 +2772,14 @@ def build_html(profile: dict) -> str:
   .chart-eyebrow {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.18em;
                     color: var(--ks-faint); margin-bottom: 12px;
                     font-family: var(--ks-sans); }}
+
+  /* ── Income-statement Sankey (inline SVG, scales to width) ── */
+  .sankey-wrap {{ margin: 16px 0 8px; }}
+  /* inline SVG: fills the section on desktop; on a phone it keeps a readable min-width and
+     the wrapper scrolls horizontally (same pattern as the comps table) */
+  .sankey-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
+  .sankey-svg {{ display: block; width: 100%; min-width: 860px; height: auto;
+                 border: 1px solid var(--ks-rule); border-radius: 6px; }}
 
   /* ── Funding timeline (flex cards) ── */
   .tl-flex  {{ display: flex; align-items: center; gap: 0; overflow-x: auto;

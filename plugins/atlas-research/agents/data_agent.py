@@ -36,25 +36,28 @@ except ImportError:
 else:
     _YF_IMPORT_ERROR = None
 
-# The agent proxy re-terminates TLS with its own CA and rejects curl_cffi's default
-# "chrome" fingerprint. Patch _request_once (called on every curl request) to force
-# "chrome110" impersonation and point BoringSSL at the proxy CA bundle.
-try:
-    import curl_cffi.requests as _cffi_requests
-    import os as _os
-    _CCR_CA = "/root/.ccr/ca-bundle.crt"
-    _cffi_orig_req = _cffi_requests.Session._request_once
-
-    def _cffi_patched_req(self, *a, **kw):
-        if not getattr(self, "impersonate", None) or self.impersonate == "chrome":
-            self.impersonate = "chrome110"
-        if _os.path.exists(_CCR_CA) and kw.get("verify") in (None, True):
-            kw["verify"] = _CCR_CA
-        return _cffi_orig_req(self, *a, **kw)
-
-    _cffi_requests.Session._request_once = _cffi_patched_req
-except Exception:
-    pass
+# ── curl_cffi / egress-proxy TLS fix ──────────────────────────────────────────
+# In the cloud sandbox, outbound HTTPS is re-terminated by a policy egress proxy
+# whose CA lives at /root/.ccr/ca-bundle.crt. yfinance's default session is
+# curl_cffi Session(impersonate="chrome"); that fingerprint trips a BoringSSL
+# "invalid library" handshake error through the proxy. Forcing
+# impersonate="chrome110" and pointing verify at the proxy CA bundle restores
+# live pulls. Fully a no-op off-sandbox (no CA bundle / curl_cffi backend).
+if yf is not None:
+    try:
+        import yfinance._http as _yf_http
+        import yfinance.data as _yf_data
+        _ATLAS_CA = os.environ.get("CURL_CA_BUNDLE") or os.environ.get("REQUESTS_CA_BUNDLE")
+        if getattr(_yf_http, "HAS_CURL_CFFI", False):
+            def _atlas_new_session():
+                kw = {"impersonate": "chrome110"}
+                if _ATLAS_CA and os.path.exists(_ATLAS_CA):
+                    kw["verify"] = _ATLAS_CA
+                return _yf_http._backend.Session(**kw)
+            _yf_http.new_session = _atlas_new_session
+            _yf_data.new_session = _atlas_new_session
+    except Exception:
+        pass
 
 FMP_KEY  = os.environ.get("FMP_API_KEY", "")
 FMP_BASE = "https://financialmodelingprep.com/stable"
@@ -230,7 +233,7 @@ def live_quote(ticker: str, stock=None, info=None) -> dict:
         ev_lo = (lo * shares + debt - cash) / rev
         ev_hi = (hi * shares + debt - cash) / rev
         if ev_lo == ev_lo and ev_hi == ev_hi:
-            ev_rev_range = f"{ev_lo:.1f}x–{ev_hi:.1f}x"
+            ev_rev_range = f"{ev_lo:.1f}x-{ev_hi:.1f}x"
     fwd_pe = info.get("forwardPE")
 
     out = {
@@ -311,6 +314,87 @@ def relative_performance(ticker: str, bench: str = "QQQ") -> dict:
                 "source": "yfinance / Yahoo Finance"}
     except Exception:
         return {}
+
+
+def income_statement(ticker: str, stock=None) -> dict | None:
+    """Latest fiscal-year income statement reduced to the flows for a revenue -> profit
+    Sankey. All values in $. Returns None when the data is missing OR the company is
+    unprofitable (a Sankey of a loss does not read as a clean left-to-right flow), so the
+    caller omits the chart gracefully (same pattern as the optional Gartner map). Residuals
+    are derived so every split ties exactly: revenue = COGS + gross profit, gross profit =
+    opex + operating income, pretax = net income + tax, with net non-operating income/expense
+    bridging operating income to pretax."""
+    if yf is None:
+        return None
+    try:
+        stock = stock or yf.Ticker(ticker.upper().strip())
+        fin = stock.income_stmt
+        if fin is None or getattr(fin, "empty", True):
+            return None
+        col = fin.columns[0]
+        def g(*keys):
+            for k in keys:
+                if k in fin.index:
+                    v = fin.loc[k, col]
+                    if v is not None and v == v:
+                        return float(v)
+            return None
+        # Prior fiscal year (columns[1]) for YoY deltas on the Sankey nodes — graceful (None when absent).
+        pcol = fin.columns[1] if len(fin.columns) > 1 else None
+        def gp_(*keys):
+            if pcol is None:
+                return None
+            for k in keys:
+                if k in fin.index:
+                    v = fin.loc[k, pcol]
+                    if v is not None and v == v:
+                        return float(v)
+            return None
+        rev = g("Total Revenue", "Operating Revenue")
+        cogs = g("Cost Of Revenue", "Reconciled Cost Of Revenue")
+        gp = g("Gross Profit")
+        opinc = g("Operating Income", "Total Operating Income As Reported")
+        pretax = g("Pretax Income")
+        ni = g("Net Income", "Net Income Common Stockholders")
+        if not rev or rev <= 0:
+            return None
+        if gp is None and cogs is not None:
+            gp = rev - cogs
+        if cogs is None and gp is not None:
+            cogs = rev - gp
+        # The Sankey only reads cleanly for a profitable cascade — omit otherwise.
+        if None in (cogs, gp, opinc, ni) or min(gp, opinc, ni) <= 0:
+            return None
+        cogs = rev - gp                    # derive residuals so each split balances exactly
+        opex = gp - opinc
+        if opex < 0:
+            return None
+        if pretax is None:
+            pretax = ni
+        if pretax < ni:                    # a tax benefit (ni > pretax) — flatten, don't draw a negative
+            pretax = ni
+        tax = pretax - ni
+        # Prior-year totals so the Sankey can print YoY % on the profit nodes. Derive gross-profit
+        # residual the same way (rev - cogs) when only one of the two is reported; leave None if the
+        # prior column is missing or revenue is non-positive so YoY is simply omitted, never faked.
+        revP = gp_("Total Revenue", "Operating Revenue")
+        gpP = gp_("Gross Profit")
+        cogsP = gp_("Cost Of Revenue", "Reconciled Cost Of Revenue")
+        if gpP is None and revP is not None and cogsP is not None:
+            gpP = revP - cogsP
+        opincP = gp_("Operating Income", "Total Operating Income As Reported")
+        niP = gp_("Net Income", "Net Income Common Stockholders")
+        if not revP or revP <= 0:
+            revP = gpP = opincP = niP = None
+        return {
+            "period": f"FY{col.year}", "revenue": rev, "costOfRevenue": cogs, "grossProfit": gp,
+            "operatingExpense": opex, "operatingIncome": opinc, "otherNet": pretax - opinc,
+            "pretax": pretax, "tax": tax, "netIncome": ni, "source": "yfinance income statement",
+            "revenuePrev": revP, "grossProfitPrev": gpP, "operatingIncomePrev": opincP,
+            "netIncomePrev": niP,
+        }
+    except Exception:
+        return None
 
 
 def get_xbrl_facts(ticker: str) -> dict:
@@ -654,11 +738,13 @@ RAMP_DEMAND_SIGNAL_SCHEMA = {
 def get_comps(tickers: list[str]) -> list:
     """Every comp pulled in the same run via the shared live_quote helper, so
     all multiples share one consistent last-close anchor (or visibly flag if
-    a ticker's data is stale relative to the rest). Fetched sequentially to
-    avoid Yahoo Finance rate-limiting in cloud/proxied environments."""
+    a ticker's data is stale relative to the rest). Quotes are fetched in
+    parallel — each is ~2 slow Yahoo round-trips, so a 6-name comp set would
+    otherwise dominate the run time."""
     if not tickers:
         return []
-    quotes = [live_quote(t) for t in tickers]
+    with ThreadPoolExecutor(max_workers=min(8, len(tickers))) as pool:
+        quotes = list(pool.map(live_quote, tickers))
     out = []
     for t, q in zip(tickers, quotes):
         if "error" in q:

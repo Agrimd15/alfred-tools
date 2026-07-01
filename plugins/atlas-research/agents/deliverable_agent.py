@@ -169,15 +169,35 @@ def _is_empty(v) -> bool:
             return True
     return False
 
+def _roll_units(text: str) -> str:
+    """Roll a money figure written in millions >= 1000 up to billions so the brief never
+    shows '$2,018M' for what is really $2.0B. Fires only on comma-grouped or 4+ digit M
+    values, so '$202M' / '$924.6M' (< $1,000M) are left exactly as written."""
+    def _sub(m):
+        dollar, num = (m.group(1) or ""), m.group(2).replace(",", "")
+        try:
+            mm = float(num)
+        except ValueError:
+            return m.group(0)
+        if mm < 1000:
+            return m.group(0)
+        s = f"{mm / 1000.0:.1f}"
+        if s.endswith(".0"):
+            s = s[:-2]
+        return f"{dollar}{s}B"
+    return re.sub(r'(?:(\$)\s?)?((?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,})(?:\.[0-9]+)?)\s?M\b', _sub, text)
+
+
 def clean(text: str) -> str:
     """Enforce the no-em-dash / limited-dash house style: never emit em or en dashes,
     and convert dash-as-punctuation (em/en dashes, and spaced hyphens used as a dash)
     into commas. Hyphens inside compound words (non-GAAP, year-over-year) are kept
-    because they have no surrounding spaces."""
+    because they have no surrounding spaces. Also rolls $1,000M+ figures up to billions."""
     text = re.sub(r'\s*[—–]\s*', ', ', text)      # em / en dash -> comma
     text = re.sub(r'\s+-{1,2}\s+', ', ', text)     # spaced hyphen used as a dash -> comma
     text = re.sub(r',\s*,', ', ', text)            # collapse doubled commas
     text = re.sub(r'\s+', ' ', text)               # tighten whitespace
+    text = _roll_units(text)                        # $2,018M -> $2.0B
     return text.strip().strip(',').strip()
 
 def _risk_text(r) -> str:
@@ -205,7 +225,7 @@ def _source_row(item_or_list, label_singular="Source"):
         raw = item_or_list or []
     links = []
     for s in raw:
-        sname = (s.get("name") or s.get("source") or "").strip()
+        sname = clean(s.get("name") or s.get("source") or "").strip()   # strip em dashes in cites
         surl = (s.get("url") or s.get("sourceUrl") or "").strip()
         if surl:
             links.append(f'<a class="news-source-link" href="{surl}" target="_blank" rel="noopener">{sname or surl}</a>')
@@ -249,6 +269,16 @@ def _embed_image(src, base_dirs=None):
     return None
 
 
+def _runin(p: str) -> str:
+    """Bold a leading run-in label: 'What it sells: four platforms...' -> the label, then
+    detail. Only fires on a short (≤5-word) label followed by a colon, so a normal sentence
+    with a mid-clause colon is left alone. This is what makes a bullet list 'layer-cake'."""
+    m = re.match(r'^([A-Z][^:.]{1,34}):\s+(\S.*)$', p)
+    if m and len(m.group(1).split()) <= 5:
+        return f'<b class="run-in">{m.group(1)}:</b> {m.group(2)}'
+    return p
+
+
 def to_bullets(text, max_bullets: int = 0) -> str:
     """Convert a paragraph string or list of strings into HTML bullet points."""
     if not text:
@@ -260,7 +290,7 @@ def to_bullets(text, max_bullets: int = 0) -> str:
             parts = parts[:max_bullets]
         if not parts:
             return ""
-        return "<ul class='body-list'>" + "".join(f"<li>{p}.</li>" for p in parts) + "</ul>"
+        return "<ul class='body-list'>" + "".join(f"<li>{_runin(p)}.</li>" for p in parts) + "</ul>"
     # Otherwise split paragraph string
     text = clean(text)
     # Only split after lowercase letter or digit followed by ". " then uppercase/digit
@@ -271,7 +301,7 @@ def to_bullets(text, max_bullets: int = 0) -> str:
         return f"<p class='body-p'>{text}</p>"
     if max_bullets:
         parts = parts[:max_bullets]
-    return "<ul class='body-list'>" + "".join(f"<li>{p}.</li>" for p in parts) + "</ul>"
+    return "<ul class='body-list'>" + "".join(f"<li>{_runin(p)}.</li>" for p in parts) + "</ul>"
 
 
 # ── Visual helpers ────────────────────────────────────────────────────────────
@@ -408,8 +438,271 @@ def build_quarterly_trend(ticker: str) -> str:
     return (
         f'<div class="qtrend-wrap">{chart_html}'
         f'<div class="chart-eyebrow">LAST {len(qs)} QUARTERS</div>'
-        f'<table class="qtrend-table"><thead><tr><th class="qtrend-rowlbl"></th>{heads}</tr></thead>'
-        f'<tbody>{rows}</tbody></table>{caption}</div>')
+        f'<div class="table-scroll"><table class="qtrend-table"><thead><tr><th class="qtrend-rowlbl"></th>{heads}</tr></thead>'
+        f'<tbody>{rows}</tbody></table></div>{caption}</div>')
+
+
+def build_sankey(stmt: dict, name: str) -> str:
+    """Income-statement Sankey (revenue → costs → profit) hand-drawn as a self-contained inline
+    SVG from the live income statement, in the App-Economy-Insights house style: smooth
+    semi-transparent gradient ribbons (not flat slabs), GREEN = profit kept, SALMON/RED = money
+    spent, AMBER = the non-operating bridge, with each node carrying name + value, a margin % on
+    the profit nodes and a YoY chip when a prior year is available. No external service and no
+    network call — it is part of the page, so it prints vector-crisp and works offline. Returns ''
+    when stmt is None (private / unprofitable / missing) so the section omits the chart gracefully,
+    like the optional Gartner map. Handles BOTH non-operating shapes: otherNet > 0 → interest/other
+    INCOME bridging operating income UP to pretax (e.g. PLTR); otherNet < 0 → interest/other EXPENSE
+    bridging DOWN (e.g. AVGO/MSFT). Every flow stays balanced."""
+    if not stmt:
+        return ""
+    try:
+        import html as _html
+        rev = stmt["revenue"]; cogs = stmt["costOfRevenue"]; gp = stmt["grossProfit"]
+        opex = stmt["operatingExpense"]; oi = stmt["operatingIncome"]; other = stmt["otherNet"]
+        pretax = stmt["pretax"]; tax = stmt["tax"]; ni = stmt["netIncome"]
+        if min(rev, gp, oi, ni) <= 0:
+            return ""
+        eps = rev * 0.004
+        income = other > eps          # interest/other INCOME bridges UP to pretax
+        expense = other < -eps        # interest/other EXPENSE bridges DOWN to pretax
+        otherAbs = abs(other) if (income or expense) else 0.0
+
+        # ── value / margin / YoY formatting ──────────────────────────────────────────
+        def fval(x):
+            ax = abs(x)
+            if ax >= 1e12: return f"${x/1e12:.2f}T"
+            if ax >= 1e9:  return f"${x/1e9:.1f}B"
+            if ax >= 1e6:  return f"${round(x/1e6)}M"
+            return f"${round(x/1e3)}K"
+        def margin(x):
+            return f"{round(x/rev*100)}% margin"
+        def yoy(cur, prev):
+            if prev is None or prev == 0:
+                return None
+            d = (cur - prev) / abs(prev) * 100
+            sign = "+" if d >= 0 else "−"
+            return f"{sign}{abs(d):.0f}% Y/Y"
+        revP = stmt.get("revenuePrev"); gpP = stmt.get("grossProfitPrev")
+        oiP = stmt.get("operatingIncomePrev"); niP = stmt.get("netIncomePrev")
+
+        # ── palette ──────────────────────────────────────────────────────────────────
+        INK   = "#1f2733"      # node + label ink
+        SUB   = "#6b7480"      # secondary label ink
+        GRAY  = "#5a6473"      # revenue node (neutral)
+        GREEN = "#1f9d57"      # profit kept (gross / operating)
+        GREENn= "#15834a"      # net profit (darkest green = the bottom line)
+        SALMON= "#e08a82"      # cost of revenue / opex
+        SALMd = "#d87166"      # tax (a touch deeper)
+        AMBER = "#e3a64a"      # non-operating bridge
+        BG    = "#fbfbf8"      # off-white canvas
+        col_rib = {GRAY:"#7b8392", GREEN:"#2bb069", GREENn:"#1f9d57",
+                   SALMON:"#ecaaa3", SALMd:"#e08a82", AMBER:"#ecc079"}
+
+        # ── geometry ─────────────────────────────────────────────────────────────────
+        VBW, VBH = 1240, 470
+        TOP, BOT = 64, 40              # vertical breathing room (top leaves room for stage captions)
+        L = 250                        # revenue node left edge (room for its left-side label)
+        R = 858                        # right exit column left edge (room for exit labels at right)
+        NW = 13                        # node bar width
+        usableH = VBH - TOP - BOT
+
+        # Total height is scaled to revenue; small vertical gaps are inserted between stacked
+        # sibling nodes so the ribbons feeding them read as DISTINCT streams, not one slab.
+        # We pick a gap in $ as a small fraction of revenue, then scale (rev + total gaps) to fit.
+        # The right exit column has the most internal gaps (interest, tax, net profit), so scale by
+        # its gap count to guarantee the tallest column still fits the band.
+        gap = rev * 0.020
+        n_exit_gaps = 1 + (1 if expense else 0) + (1 if tax > eps else 0)  # ni + intr + tax splits
+        gaps_max = max(n_exit_gaps, 1)
+        sc = usableH / (rev + gaps_max * gap)
+        def H(v): return v * sc       # $ -> px height
+
+        # ── columns (x of each node's LEFT edge) ─────────────────────────────────────
+        cREV = L
+        cGP  = 470
+        cOI  = 670
+        cEXIT = R                      # right exit column for costs + net profit
+        gpx = gap * sc                 # gap in px
+
+        nodes = {}
+        # Revenue column: a single revenue node (full height). When there is non-operating INCOME
+        # we add a small 'Other income' source node just BELOW revenue (it joins the flow at pretax).
+        revH = H(rev)
+        nodes["rev"] = {"col":"rev","x":cREV,"y0":TOP,"y1":TOP+revH,"color":GRAY,
+                        "title":"Revenue","val":rev,"margin":None,"yoy":yoy(rev,revP),"side":"left"}
+        yb = TOP + revH
+        if income:
+            nodes["oth"] = {"col":"rev","x":cREV,"y0":yb+gpx,"y1":yb+gpx+H(otherAbs),"color":AMBER,
+                            "title":"Interest & other income","val":otherAbs,"margin":None,
+                            "yoy":None,"side":"left"}
+
+        # Gross-profit column: COGS (top) then Gross profit (below a gap).
+        cogsH, gpH = H(cogs), H(gp)
+        nodes["cogs"] = {"col":"gp","x":cGP,"y0":TOP,"y1":TOP+cogsH,"color":SALMON,
+                         "title":"Cost of revenue","val":cogs,"margin":None,"yoy":None,"side":"exit"}
+        gpY0 = TOP + cogsH + gpx
+        nodes["gp"] = {"col":"gp","x":cGP,"y0":gpY0,"y1":gpY0+gpH,"color":GREEN,
+                       "title":"Gross profit","val":gp,"margin":margin(gp),"yoy":yoy(gp,gpP),"side":"top"}
+
+        # Operating-income column: OpEx (top, aligned under COGS) then Operating profit.
+        opexH, oiH = H(opex), H(oi)
+        # OpEx sits directly continuing from gross profit's top; stack opex then oi within the gp band.
+        opexY0 = gpY0
+        nodes["opex"] = {"col":"oi","x":cOI,"y0":opexY0,"y1":opexY0+opexH,"color":SALMON,
+                         "title":"Operating expenses","val":opex,"margin":None,"yoy":None,"side":"exit"}
+        oiY0 = opexY0 + opexH + gpx
+        nodes["oi"] = {"col":"oi","x":cOI,"y0":oiY0,"y1":oiY0+oiH,"color":GREEN,
+                       "title":"Operating profit","val":oi,"margin":margin(oi),"yoy":yoy(oi,oiP),"side":"top"}
+
+        # Right exit column. The streams arriving here keep their vertical order so NO ribbon
+        # crosses another: costs peel off the TOP (interest expense, then taxes), and Net profit
+        # settles at the BOTTOM. We lay the exit stack as one contiguous group, then shift it so
+        # Net profit's vertical centre lines up with the dominant inflow (operating profit), which
+        # keeps every ribbon short and near-horizontal.
+        exit_items = []                # top → bottom
+        if expense:
+            exit_items.append(("intr","Interest & other expense",otherAbs,AMBER,None))
+        if tax > eps:
+            exit_items.append(("tax","Taxes",tax,SALMd,None))
+        exit_items.append(("ni","Net profit",ni,GREENn,yoy(ni,niP)))
+        exit_h = sum(H(v) for _,_,v,_,_ in exit_items) + gpx * (len(exit_items) - 1)
+        # net-profit centre should align with operating-profit centre (the main forward stream)
+        oi_cy = (oiY0 + (oiY0 + oiH)) / 2
+        ni_h = H(ni)
+        # y0 of the exit stack so that the LAST item (net profit) is centred on oi_cy
+        ey = oi_cy + ni_h / 2 - exit_h
+        ey = max(ey, TOP)                                   # clamp inside the canvas
+        ey = min(ey, TOP + usableH - exit_h)
+        for k,title,v,c,yy in exit_items:
+            h = H(v)
+            mgn = margin(v) if k == "ni" else None
+            nodes[k] = {"col":"exit","x":cEXIT,"y0":ey,"y1":ey+h,"color":c,
+                        "title":title,"val":v,"margin":mgn,"yoy":yy,"side":"exit"}
+            ey += h + gpx
+
+        # ── links (source key, target key, value) ────────────────────────────────────
+        # Emit links in the SAME top→bottom order the exit nodes are stacked so the running
+        # output offset on `oi` peels them off without crossing.
+        links = [("rev","cogs",cogs), ("rev","gp",gp), ("gp","opex",opex), ("gp","oi",oi)]
+        if income:
+            # operating profit + other income both feed net profit; tax peels off the top.
+            if tax > eps: links.append(("oi","tax",tax))
+            links.append(("oi","ni",oi - (tax if tax > eps else 0)))
+            links.append(("oth","ni",otherAbs - (0)))
+        else:
+            if expense: links.append(("oi","intr",otherAbs))
+            if tax > eps: links.append(("oi","tax",tax))
+            links.append(("oi","ni",ni))
+
+        # running offsets so multiple ribbons stack cleanly at each node face
+        out_off = {k: nodes[k]["y0"] for k in nodes}
+        in_off  = {k: nodes[k]["y0"] for k in nodes}
+
+        defs, ribbons = [], []
+        gid = 0
+        for src, tgt, val in links:
+            if val <= 0 or src not in nodes or tgt not in nodes:
+                continue
+            sN, tN = nodes[src], nodes[tgt]
+            sx = sN["x"] + NW; tx = tN["x"]
+            h = H(val)
+            sy0 = out_off[src]; sy1 = sy0 + h; out_off[src] = sy1
+            ty0 = in_off[tgt];  ty1 = ty0 + h; in_off[tgt]  = ty1
+            # horizontal control points: ease out of the source, into the target
+            dx = tx - sx
+            c1 = sx + dx * 0.42; c2 = tx - dx * 0.42
+            # gradient flowing source-color → target-color
+            gid += 1
+            sc_ = col_rib.get(sN["color"], "#9aa0aa"); tc_ = col_rib.get(tN["color"], "#9aa0aa")
+            defs.append(f'<linearGradient id="rib{gid}" x1="0" y1="0" x2="1" y2="0">'
+                        f'<stop offset="0" stop-color="{sc_}"/><stop offset="1" stop-color="{tc_}"/>'
+                        f'</linearGradient>')
+            d = (f'M{sx:.1f} {sy0:.1f} '
+                 f'C{c1:.1f} {sy0:.1f} {c2:.1f} {ty0:.1f} {tx:.1f} {ty0:.1f} '
+                 f'L{tx:.1f} {ty1:.1f} '
+                 f'C{c2:.1f} {ty1:.1f} {c1:.1f} {sy1:.1f} {sx:.1f} {sy1:.1f} Z')
+            ribbons.append(f'<path d="{d}" fill="url(#rib{gid})" fill-opacity="0.44"/>')
+
+        # ── node bars ────────────────────────────────────────────────────────────────
+        node_svg = []
+        for k, n in nodes.items():
+            x, y0, y1 = n["x"], n["y0"], n["y1"]
+            h = max(y1 - y0, 2.0)
+            node_svg.append(f'<rect x="{x:.1f}" y="{y0:.1f}" width="{NW}" height="{h:.1f}" rx="3" '
+                            f'fill="{n["color"]}"/>')
+            # subtle inner highlight on the node bar (gives the flat bar a touch of dimension)
+            node_svg.append(f'<rect x="{x:.1f}" y="{y0:.1f}" width="3.2" height="{h:.1f}" rx="2" '
+                            f'fill="#ffffff" fill-opacity="0.22"/>')
+
+        # ── labels (compute, then de-collide exit-column labels, then emit) ──────────
+        # Each entry: dict with x, anchor, cy (preferred centre), and the two text lines.
+        specs = []
+        for k, n in nodes.items():
+            x, y0, y1 = n["x"], n["y0"], n["y1"]
+            cy = y0 + (y1 - y0) / 2
+            title, val = n["title"], n["val"]
+            sub_bits = [b for b in (n.get("margin"), n.get("yoy")) if b]
+            sub = "  ·  ".join(sub_bits)
+            is_net = (k == "ni")
+            tcol = GREENn if n["color"] in (GREEN, GREENn) else INK
+            side = n["side"]
+            if side == "left":
+                lx, anchor = x - 11, "end"
+            else:                                   # "top" (profit) and "exit" both label to the right
+                lx, anchor = x + NW + 12, "start"
+            specs.append({"k": k, "side": side, "x": lx, "anchor": anchor, "cy": cy,
+                          "line1": f"{title}  {fval(val)}", "sub": sub,
+                          "fs": "15" if is_net else "13.5", "col": tcol})
+
+        # De-collide the right-hand exit labels (interest / taxes / net profit can stack on tiny
+        # nodes and overlap). Sort by centre and push any pair closer than MINGAP apart.
+        MINGAP = 30.0
+        ex = sorted([s for s in specs if s["side"] == "exit"], key=lambda s: s["cy"])
+        for i in range(1, len(ex)):
+            if ex[i]["cy"] - ex[i-1]["cy"] < MINGAP:
+                ex[i]["cy"] = ex[i-1]["cy"] + MINGAP
+        # keep them inside the canvas
+        for s in ex:
+            s["cy"] = min(max(s["cy"], TOP + 6), VBH - BOT - 6)
+
+        label_svg = []
+        for s in specs:
+            ty = s["cy"]
+            if s["sub"]:
+                label_svg.append(
+                    f'<text x="{s["x"]:.1f}" y="{ty-7:.1f}" text-anchor="{s["anchor"]}" '
+                    f'font-size="{s["fs"]}" font-weight="700" fill="{s["col"]}">'
+                    f'{_html.escape(s["line1"])}</text>'
+                    f'<text x="{s["x"]:.1f}" y="{ty+10:.1f}" text-anchor="{s["anchor"]}" '
+                    f'font-size="11.5" font-weight="600" fill="{SUB}">{_html.escape(s["sub"])}</text>')
+            else:
+                label_svg.append(
+                    f'<text x="{s["x"]:.1f}" y="{ty+1:.1f}" text-anchor="{s["anchor"]}" '
+                    f'font-size="{s["fs"]}" font-weight="700" fill="{s["col"]}">'
+                    f'{_html.escape(s["line1"])}</text>')
+
+        # ── stage captions across the top ────────────────────────────────────────────
+        caps = [(cREV + NW, "REVENUE"), (cGP + NW, "GROSS"), (cOI + NW, "OPERATING"), (cEXIT + NW, "NET")]
+        cap_svg = "".join(
+            f'<text x="{cx:.1f}" y="{TOP-26:.1f}" font-size="10.5" font-weight="700" '
+            f'letter-spacing="1.4" fill="#aab0ba">{lbl}</text>' for cx, lbl in caps)
+
+        svg = (
+            f'<svg viewBox="0 0 {VBW} {VBH}" xmlns="http://www.w3.org/2000/svg" role="img" '
+            f'aria-label="{_html.escape(name)} income statement flow: revenue through costs to net profit" '
+            f'font-family="Inter, Arial, sans-serif" class="sankey-svg">'
+            f'<defs>{"".join(defs)}</defs>'
+            f'<rect x="0" y="0" width="{VBW}" height="{VBH}" rx="14" fill="{BG}"/>'
+            f'{cap_svg}{"".join(ribbons)}{"".join(node_svg)}{"".join(label_svg)}</svg>')
+
+        per = stmt.get("period", "")
+        return (f'<div class="sankey-wrap"><div class="chart-eyebrow">Income statement flow'
+                f'{(" · " + per) if per else ""}</div><div class="sankey-scroll">{svg}</div>'
+                f'<div class="chart-sources">Source: yfinance income statement (most recent fiscal year). '
+                f'Green = profit kept · salmon = costs · amber = non-operating. Margins shown as % of revenue.'
+                f'</div></div>')
+    except Exception:
+        return ""
 
 
 def build_biz_flow(profile: dict, b: dict) -> str:
@@ -423,52 +716,58 @@ def build_biz_flow(profile: dict, b: dict) -> str:
     if not flow or not flow.get("valueDelivered"):
         return ""
 
-    # ── Customers column: each node can carry a "need" sub-line ──
-    cust_src = flow.get("customers")
-    if cust_src:
-        cust_html = "".join(
-            f'<div class="biz-node biz-cust"><div class="biz-node-name">{c.get("name","")}</div>'
-            + (f'<div class="biz-node-sub">{c.get("need","")}</div>' if c.get("need") else "")
-            + '</div>'
-            for c in cust_src[:5]
-        )
-    else:
-        cust_nodes = (profile.get("customers") or ["Enterprise Customers"])[:4]
-        cust_html = "".join(f'<div class="biz-node biz-cust"><div class="biz-node-name">{c}</div></div>' for c in cust_nodes)
+    # ── Inputs: customer segments (each can carry a "need" sub-line) ──
+    cust_src = flow.get("customers") or [{"name": c} for c in (profile.get("customers") or ["Enterprise customers"])[:3]]
+    cust_html = "".join(
+        f'<div class="bizv2-in"><div class="bizv2-in-name">{clean(c.get("name",""))}</div>'
+        + (f'<div class="bizv2-in-sub">{clean(c.get("need",""))}</div>' if c.get("need") else "")
+        + '</div>'
+        for c in cust_src[:3]
+    )
 
-    # ── Platform column: name + modules (what the platform actually is) ──
+    # ── The engine: the platform stack (name + modules), the visual centerpiece ──
     plat = flow.get("platform") or {}
-    plat_name = plat.get("name") or name
+    plat_name = plat.get("name") or (name + " platform stack")
     modules = plat.get("modules")
     if not modules:
         skip = {"vertical saas", "saas", "software", "b2b", "enterprise software", "ai hardware"}
-        modules = [v for v in (profile.get("verticals") or []) if v.lower() not in skip][:3] or (profile.get("verticals") or [])[:3]
-    mod_html = "".join(f'<div class="biz-mod">{m}</div>' for m in modules)
+        modules = [v for v in (profile.get("verticals") or []) if v.lower() not in skip][:5] or (profile.get("verticals") or [])[:5]
+    mod_rows = ""
+    for m in modules[:5]:
+        ms = clean(str(m))
+        mm = re.match(r'^(.+?)\s*\((.+)\)\s*$', ms)
+        if mm:
+            mod_rows += f'<div class="bizv2-mod"><b>{mm.group(1)}</b> <span>{mm.group(2)}</span></div>'
+        else:
+            mod_rows += f'<div class="bizv2-mod"><b>{ms}</b></div>'
+    core = clean(str(flow.get("core") or plat.get("core") or ""))
+    core_html = f'<div class="bizv2-core">{core}</div>' if core else ""
 
-    # ── Value Delivered column: each node can carry a "detail" sub-line ──
+    # ── Outputs: value delivered (each can carry a "detail" sub-line) ──
     out_html = "".join(
-        (f'<div class="biz-node biz-out"><div class="biz-node-name">{o.get("label","")}</div>'
-         + (f'<div class="biz-node-sub">{o.get("detail","")}</div>' if o.get("detail") else "")
+        (f'<div class="bizv2-out"><div class="bizv2-out-name">{clean(o.get("label",""))}</div>'
+         + (f'<div class="bizv2-out-sub">{clean(o.get("detail",""))}</div>' if o.get("detail") else "")
          + '</div>') if isinstance(o, dict) else
-        f'<div class="biz-node biz-out"><div class="biz-node-name">{o}</div></div>'
-        for o in flow["valueDelivered"][:5]
+        f'<div class="bizv2-out"><div class="bizv2-out-name">{clean(str(o))}</div></div>'
+        for o in flow["valueDelivered"][:3]
     )
 
     return f"""
-    <div class="biz-flow">
-      <div class="biz-col">
-        <div class="biz-col-label">CUSTOMERS &middot; WHAT THEY NEED</div>
+    <div class="bizv2">
+      <div class="bizv2-side">
+        <div class="bizv2-collabel">Who buys</div>
         {cust_html}
+        <div class="bizv2-arrow">&#8594;</div>
       </div>
-      <div class="biz-arrow">&#8594;</div>
-      <div class="biz-col biz-col-mid">
-        <div class="biz-col-label">PLATFORM</div>
-        <div class="biz-platform">{plat_name}</div>
-        {mod_html}
+      <div class="bizv2-engine">
+        <div class="bizv2-eng-eyebrow">The engine</div>
+        <div class="bizv2-eng-title">{clean(plat_name)}</div>
+        {mod_rows}
+        {core_html}
       </div>
-      <div class="biz-arrow">&#8594;</div>
-      <div class="biz-col">
-        <div class="biz-col-label">VALUE DELIVERED</div>
+      <div class="bizv2-side bizv2-side-r">
+        <div class="bizv2-collabel">The payoff</div>
+        <div class="bizv2-arrow">&#8594;</div>
         {out_html}
       </div>
     </div>"""
@@ -633,7 +932,7 @@ def fetch_brand_colors(website: str, max_colors: int = 5) -> list[str]:
 
 def _brand_colors_html(colors: list) -> str:
     if not colors:
-        return '<div class="kit-url" style="color:var(--ks-faint);font-size:10px">fetching colors failed — check website URL in profile</div>'
+        return '<div class="kit-url" style="color:var(--ks-faint);font-size:10px">fetching colors failed, check website URL in profile</div>'
     swatches = "".join(
         f'<div class="kit-swatch-wrap" title="{c}">'
         f'<div class="kit-swatch" style="background:{c}"></div>'
@@ -672,7 +971,7 @@ def build_slide_kit(profile: dict, logo_url: str, brand_colors: list = None) -> 
     stage_str  = f" · {stage.upper()}" if stage else ""
     header_str = f"{name}{ticker_str}{stage_str}"
 
-    stats_html = "".join(f'<div class="kit-stat">{s}</div>' for s in stats)
+    stats_html = "".join(f'<div class="kit-stat">{clean(str(s))}</div>' for s in stats)
     tag_html   = "".join(f'<span class="kit-tag">{v}</span>' for v in verticals)
     logo_html  = f'<img src="{logo_url}" class="kit-logo-lg" alt="{name} logo" onerror="this.style.display=\'none\'">' if logo_url else ""
     bullets_html = "".join(f'<div class="kit-bullet">{clean(bl)}</div>' for bl in bullets[:3]) if bullets else ""
@@ -815,8 +1114,23 @@ def build_html(profile: dict) -> str:
     GREEN_KEYS = {"revenueGrowth", "nrr", "grossMargin", "grossMarginNonGAAP",
                   "operatingMargin", "operatingMarginNonGAAP", "fcfMargin", "aiRevenue"}
 
+    _ACRONYMS = {"us", "gaap", "eps", "tcv", "rpo", "rdv", "arr", "nrr", "fcf", "ai", "ev",
+                 "ipo", "saas", "rps", "ltm", "yoy", "qoq", "uk", "emea", "apac"}
     def _humanize(k):
-        return re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', k).replace("_", " ").strip().title()
+        # split camelCase + digit boundaries, then fix acronym casing and 'Of40' -> 'of 40'
+        s = re.sub(r'(?<=[a-zA-Z])(?=[0-9])', ' ', re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', k))
+        words = s.replace("_", " ").strip().split()
+        small = {"of", "and", "the", "to", "vs", "per"}
+        out = []
+        for i, w in enumerate(words):
+            lw = w.lower()
+            if lw in _ACRONYMS:
+                out.append(w.upper())
+            elif lw in small and i:
+                out.append(lw)
+            else:
+                out.append(w[:1].upper() + w[1:])
+        return " ".join(out)
 
     def _split_stat(s):
         """Split a stat into (head, sub): a big number up top, small context below.
@@ -873,7 +1187,9 @@ def build_html(profile: dict) -> str:
     section_pd = _section_period_short(et)
 
     # ── Financials metric cards (value + growth/context + period, never overflowing) ──
-    metrics_cards_html = ""
+    # Collected first, then rendered as ONE hero metric (large) + a supporting grid — the v2
+    # layout that replaces the old wall of same-size tiles so the eye has a single anchor.
+    metric_cards = []   # (key, lbl, head, sub, sub_cls, period, is_green)
     for k, v in metrics.items():
         if _is_empty(v):
             continue
@@ -889,9 +1205,17 @@ def build_html(profile: dict) -> str:
         head, sub = _split_stat(v)
         if _is_empty(head):                         # e.g. "Not disclosed (private)" -> drop
             continue
-        cls = "metric-value green" if k in GREEN_KEYS else "metric-value"
-        if len(str(head)) > 7:                      # long head -> shrink, don't wrap
-            cls += " long"
+        # A value written as "Adjusted EPS $0.33" duplicates the card's own label and reads
+        # crowded — peel the leading "Adjusted/GAAP/Diluted <word>" descriptor into the sub so
+        # the big number is just the figure. Only fires when the head LEADS with a descriptor
+        # word + a number, so real values like "60% adjusted" or "$870.5M" are untouched.
+        _lead = re.match(r'^(Adjusted|Adj|GAAP|Non-GAAP|Diluted|Basic)\s+\w+\s+(\$?-?[\d][\d.,]*%?)\b\s*(.*)$',
+                         head, re.I)
+        if _lead:
+            head = _lead.group(2)
+            sub = ", ".join(p for p in (_lead.group(1), _lead.group(3).strip(), sub) if p)
+        head, sub = _roll_units(head), _roll_units(sub)   # $2,018M -> $2B in metric cards too
+        is_green = k in GREEN_KEYS
         sub_cls = "metric-sub"
         if k == "revenue" and not _is_empty(metrics.get("revenueGrowth")):
             sub = _growth_sub(metrics["revenueGrowth"])
@@ -908,10 +1232,89 @@ def build_html(profile: dict) -> str:
             sub = ""                                # sub is just a period → prefer the tag
         elif sub_has_period:
             show_period = False                     # sub already conveys the period + context
-        sub_html = f'<div class="{sub_cls}">{sub}</div>' if sub else ""
-        period_html = f'<div class="metric-period">{period}</div>' if show_period else ""
-        metrics_cards_html += (f'<div class="metric-card"><div class="metric-label">{lbl}</div>'
-                               f'<div class="{cls}">{head}</div>{sub_html}{period_html}</div>')
+        metric_cards.append((k, lbl, head, sub, sub_cls, period if show_period else "", is_green))
+
+    # Hero metric = Revenue (or ARR) when present — the engine of the story; else the first.
+    for _i, _c in enumerate(metric_cards):
+        if _c[1].lower().startswith("revenue") or _c[1].lower() == "arr":
+            if _i:
+                metric_cards.insert(0, metric_cards.pop(_i))
+            break
+
+    # Importance tiers (per the design pass): size encodes importance, so the eye lands on the
+    # ~5 numbers that matter first. Tier 1 = large cards beside the hero; Tier 2 = medium grid;
+    # Tier 3 = a compact reference table (segment splits, RDV, cash, guidance) — not scan targets.
+    _T1 = {"adjoperatingmargin", "operatingmargin", "operatingmarginnongaap", "operatingmargingaap",
+           "ebitdamargin", "ruleof40", "adjfreecashflow", "freecashflow", "fcfmargin", "nrr",
+           "netrevenueretention", "grossmarginnongaap", "grossmargin", "arr", "arrrunrate", "runrate"}
+    _T3 = {"usrevenue", "uscommercialrevenue", "usgovernmentrevenue", "governmentsegment",
+           "commercialsegment", "internationalrevenue", "uscommercialrdv", "rdv", "cashposition",
+           "netcash", "totalcash", "employees", "employeecount", "dilutedshares", "sharecount"}
+    def _tier(key):
+        kn = re.sub(r"[^a-z0-9]", "", str(key).lower())
+        if "guid" in kn:
+            return 3
+        if kn in _T3:
+            return 3
+        if kn in _T1:
+            return 1
+        return 2
+
+    def _delta_or_sub(sub, sub_cls):
+        """SHORT signed change -> a ▲/▼ chip (never wraps); longer context stays a sub line
+        (which can wrap) so a chip never overflows its card."""
+        s = (sub or "").strip()
+        if not s:
+            return ""
+        is_pos = s.startswith("+") or "pos" in sub_cls
+        is_neg = bool(re.match(r"-\d", s))
+        if (is_pos or is_neg) and len(s) <= 16:
+            return f'<span class="delta {"up" if is_pos else "down"}">{"▲" if is_pos else "▼"} {s}</span>'
+        if is_pos:
+            return f'<div class="metric-sub pos">{s}</div>'
+        return f'<div class="{sub_cls}">{s}</div>'
+
+    def _metric_card(c, size):
+        _, lbl, head, sub, sub_cls, period, is_green = c
+        vcls = "metric-value green" if is_green else "metric-value"
+        if len(str(head)) > 7:
+            vcls += " long"
+        period_html = f'<div class="metric-period">{period}</div>' if period else ""
+        return (f'<div class="metric-card {size}"><div class="metric-label">{lbl}</div>'
+                f'<div class="{vcls}">{head}</div>{_delta_or_sub(sub, sub_cls)}{period_html}</div>')
+
+    def _metric_row(c):
+        _, lbl, head, sub, sub_cls, period, _g = c
+        s = (sub or "").strip()
+        extra = _delta_or_sub(sub, sub_cls) if s else ""
+        extra = "" if extra.startswith("<div") else extra   # keep table rows to one line
+        per = f' <span class="mt-per">{period}</span>' if period else ""
+        return (f'<div class="mt-row"><span class="mt-label">{lbl}{per}</span>'
+                f'<span class="mt-val">{head} {extra}</span></div>')
+
+    metrics_layout_html = ""
+    if metric_cards:
+        hero = metric_cards[0]
+        rest = metric_cards[1:]
+        t1 = [c for c in rest if _tier(c[0]) == 1]
+        t3 = [c for c in rest if _tier(c[0]) == 3]
+        t2 = [c for c in rest if c not in t1 and c not in t3]
+        while len(t1) < 4 and t2:               # always 4 companions beside the hero
+            t1.append(t2.pop(0))
+        t1, t2 = t1[:4], (t1[4:] + t2)
+        hper_html = f'<div class="metric-period">{hero[5]}</div>' if hero[5] else ""
+        hero_card = (f'<div class="metric-hero"><div class="metric-label">{hero[1]}</div>'
+                     f'<div class="metric-hero-value">{hero[2]}</div>'
+                     f'{_delta_or_sub(hero[3], hero[4])}{hper_html}</div>')
+        lead_html = (f'<div class="metrics-layout">{hero_card}'
+                     f'<div class="metrics-grid-lead">{"".join(_metric_card(c, "lg") for c in t1)}</div></div>')
+        t2_html = (f'<div class="metrics-grid-sm">{"".join(_metric_card(c, "sm") for c in t2)}</div>'
+                   if t2 else "")
+        t3_html = ""
+        if t3:
+            t3_html = ('<div class="metrics-table-h">Segment detail, bookings &amp; guidance</div>'
+                       '<div class="metrics-table">' + "".join(_metric_row(c) for c in t3) + "</div>")
+        metrics_layout_html = lead_html + t2_html + t3_html
 
     # ── Hero stats bar — live trading multiples + headline KPIs, all SHORT ──
     # Institutional: stat values read navy (set in CSS); keep map navy for any inline use.
@@ -973,14 +1376,101 @@ def build_html(profile: dict) -> str:
     # NOTE: stage is intentionally NOT a hero card — it already shows as a header
     # badge, and a lone "Stage" stat stretched into its own full-width row.
 
-    hero_cards = ""
-    for label, val, sub, clr in hero_items[:8]:
-        sub_cls = " pos" if sub and sub.strip().startswith("+") else ""
-        sub_html = f'<div class="hero-sub{sub_cls}">{sub}</div>' if sub else ""
-        val_cls = "hero-value long" if len(str(val)) > 7 else "hero-value"   # shrink, don't wrap
-        hero_cards += (f'<div class="hero-card"><div class="hero-label">{label}</div>'
-                       f'<div class="{val_cls}" style="color:{color_map.get(clr,"var(--ks-champagne)")}">{val}</div>{sub_html}</div>')
-    hero_html = f'<div class="hero-stats">{hero_cards}</div>' if hero_cards else ""
+    # ── Shared live extras (computed once; used by the hero rail AND the ctx strip) ──
+    rel_perf, sbc_pct = None, None
+    if live_q:
+        try:
+            from data_agent import sbc_pct_revenue, relative_performance
+            sbc_pct = sbc_pct_revenue(ticker_sym, live_q.get("totalRevenueNum"))
+            rel_perf = relative_performance(ticker_sym)
+        except Exception:
+            pass
+
+    # ── Verdict + Street target that anchor the v2 hero (composed, never invented) ──
+    _swot_h = b.get("swot") or profile.get("swot") or {}
+    _wm_h = b.get("whatMatters") or profile.get("whatMatters") or {}
+    def _first_sentence(t, cap=210):
+        """First complete sentence; if longer than cap, end on a clean clause/word boundary
+        with an ellipsis — never clipped mid-word."""
+        t = clean(str(t or "")).strip()
+        m = re.search(r'(.+?[.!?])(?:\s|$)', t)
+        s = (m.group(1) if m else t).strip().rstrip(".!?").strip()
+        if len(s) <= cap:
+            return s
+        head = s[:cap]
+        cut = max(head.rfind("; "), head.rfind(", "))
+        return (head[:cut].rstrip(",; ") if cut >= cap * 0.6 else head.rsplit(" ", 1)[0]).strip() + "…"
+    # Verdict for the thesis bar: strip parentheticals (they belong in the body sections,
+    # not the headline), take the first sentence, and DON'T ellipsize — the bar clamps to 2
+    # lines in CSS as a safety net, so the call never reads as cut off mid-thought.
+    _vsrc = (_swot_h.get("standoutSummary") or _wm_h.get("thesis")
+             or _swot_h.get("summary") or short_desc)
+    _vsrc = clean(re.sub(r"\s*\([^)]*\)", "", str(_vsrc or ""))).strip()
+    _vm = re.search(r"(.+?[.!?])(?:\s|$)", _vsrc)
+    verdict = (_vm.group(1) if _vm else _vsrc).strip().rstrip(".!?").strip()
+    analyst_target = live_q.get("analystTarget") if live_q else None
+    _up_raw = str((live_q or {}).get("analystUpside") or "").strip()
+    up_disp = _up_raw if _up_raw[:1] in "+-" else (("+" + _up_raw) if _up_raw[:1].isdigit() else _up_raw)
+    up_pos = up_disp.startswith("+")
+
+    # ── Thesis bar: ticker · the call · Street PT + upside (the line that never scrolls off) ──
+    thesis_bar_html = ""
+    if verdict or analyst_target:
+        tb_right = ""
+        if analyst_target:
+            tb_right = (f'<span class="tb-pt">Street PT <b>{analyst_target}</b>'
+                        + (f' <span class="tb-up {"pos" if up_pos else "neg"}">{up_disp}</span>' if up_disp else "")
+                        + "</span>")
+        tb_tkr = (f'<span class="tb-ticker">{ticker_sym}</span>'
+                  if ticker_sym and re.fullmatch(_TICKER_RE, ticker_sym or "") else "")
+        thesis_bar_html = (f'<div class="thesis-bar">{tb_tkr}'
+                           f'<span class="tb-verdict">{verdict}</span>{tb_right}</div>')
+
+    # ── Hero ── v2 hero (public, with a live Street target): ONE big number (upside to
+    # target) + a compact market-snapshot rail. Falls back to the KPI stat-card grid for
+    # private names or when there is no analyst target.
+    use_v2_hero = bool(live_q and analyst_target and up_disp)
+    if use_v2_hero:
+        bench_lbl = bench_val = None
+        if rel_perf:
+            _v1y = rel_perf["periods"].get("1Y", {}).get("spreadPp")
+            if _v1y is not None:
+                bench_lbl, bench_val = f"vs {rel_perf['benchmark']}", f"{_v1y:+.0f}pp 1Y"
+        rail = []
+        if live_q.get("closePrice") is not None:
+            rail.append(("Price", f"${live_q['closePrice']:,.2f}"))
+        if live_q.get("marketCap"):
+            rail.append(("Mkt cap", live_q["marketCap"]))
+        rail.append(("Street PT", analyst_target))
+        if live_q.get("evRevenueLTM"):
+            rail.append(("EV / Rev", live_q["evRevenueLTM"]))
+        if live_q.get("analystRating"):
+            rail.append(("Consensus", str(live_q["analystRating"]).title()))
+        if bench_lbl:
+            rail.append((bench_lbl, bench_val))
+        rail_html = "".join(
+            f'<div class="hr-cell"><span class="hr-label">{l}</span>'
+            f'<span class="hr-value">{v}</span></div>' for l, v in rail[:6])
+        n_an = live_q.get("numberOfAnalysts")
+        eyebrow = (f"{n_an} analysts · " if n_an else "") + "consensus view"
+        sec = (f"at {live_q['evRevenueLTM']} EV/Rev (LTM)"
+               if live_q.get("evRevenueLTM") else (live_q.get("analystRating") or ""))
+        hero_html = (f'<div class="hero-v2"><div class="hero-lead">'
+                     f'<div class="hero-eyebrow">{eyebrow}</div>'
+                     f'<div class="hero-bignum {"pos" if up_pos else "neg"}">{up_disp}</div>'
+                     f'<div class="hero-bigcap">upside to the Street target<br>'
+                     f'<span class="hero-bigcap-2">{sec}</span></div></div>'
+                     f'<div class="hero-rail">{rail_html}</div></div>')
+    else:
+        hero_cards = ""
+        for label, val, sub, clr in hero_items[:8]:
+            sub_cls = " pos" if sub and sub.strip().startswith("+") else ""
+            sub_html = f'<div class="hero-sub{sub_cls}">{sub}</div>' if sub else ""
+            val_cls = "hero-value long" if len(str(val)) > 7 else "hero-value"   # shrink, don't wrap
+            hero_cards += (f'<div class="hero-card"><div class="hero-label">{label}</div>'
+                           f'<div class="{val_cls}" style="color:{color_map.get(clr,"var(--ks-champagne)")}">{val}</div>{sub_html}</div>')
+        hero_html = f'<div class="hero-stats">{hero_cards}</div>' if hero_cards else ""
+
     # One as-of anchor for the whole strip; figures on a different window are labeled
     # individually (per the Metric Clarity Mandate), so only the exception carries a tag.
     if hero_html and hero_asof:
@@ -988,13 +1478,14 @@ def build_html(profile: dict) -> str:
                       f'(yfinance; EV/Rev recomputed from last close × shares + net debt). '
                       f'Figures covering a different window are labeled individually.</div>')
 
-    # ── Street & balance-sheet context strip (public tickers, all live) ──
-    # The second read after the hero: consensus target + upside, forward P/E, where the
-    # multiple sits in its 52-week band, short interest, net cash, SBC drag, and
-    # performance vs the software-heavy benchmark. Each card degrades silently.
+    # ── Street & balance-sheet context strip (deeper context below the hero) ──
+    # The second read after the hero: forward P/E, where the multiple sits in its 52-week
+    # band, short interest, net cash, SBC drag, and performance vs the benchmark. When the
+    # v2 hero is shown, the target + 1Y-vs-benchmark already live in the rail, so they are
+    # dropped here to avoid repeating them. Each card degrades silently.
     ctx_items = []
     if live_q:
-        if live_q.get("analystTarget"):
+        if live_q.get("analystTarget") and not use_v2_hero:
             up = live_q.get("analystUpside") or ""
             up = (("+" + up) if up[:1].isdigit() else up) + " vs close" if up else ""
             bits = [x for x in (up, live_q.get("analystRating"),
@@ -1010,22 +1501,16 @@ def build_html(profile: dict) -> str:
         if live_q.get("netCash"):
             lbl = "Net Cash" if not str(live_q["netCash"]).startswith("-") else "Net Debt"
             ctx_items.append((lbl, str(live_q["netCash"]).lstrip("-"), "cash − total debt"))
-        try:
-            from data_agent import sbc_pct_revenue, relative_performance
-            _sbc = sbc_pct_revenue(ticker_sym, live_q.get("totalRevenueNum"))
-            if _sbc:
-                ctx_items.append(("SBC % of Rev", _sbc, "LTM, the dilution drag"))
-            _rp = relative_performance(ticker_sym)
-            if _rp:
-                p = _rp["periods"]
-                def _pp(k):
-                    v = p.get(k, {}).get("spreadPp")
-                    return f"{v:+.0f}pp" if v is not None else ""
-                if _pp("1Y"):
-                    ctx_items.append((f"vs {_rp['benchmark']}", f"{_pp('1Y')} 1Y",
-                                      f"1M {_pp('1M')} · YTD {_pp('YTD')}"))
-        except Exception:
-            pass
+        if sbc_pct:
+            ctx_items.append(("SBC % of Rev", sbc_pct, "LTM, the dilution drag"))
+        if rel_perf and not use_v2_hero:
+            p = rel_perf["periods"]
+            def _pp(k):
+                v = p.get(k, {}).get("spreadPp")
+                return f"{v:+.0f}pp" if v is not None else ""
+            if _pp("1Y"):
+                ctx_items.append((f"vs {rel_perf['benchmark']}", f"{_pp('1Y')} 1Y",
+                                  f"1M {_pp('1M')} · YTD {_pp('YTD')}"))
     ctx_html = ""
     if ctx_items:
         cards = "".join(
@@ -1061,8 +1546,11 @@ def build_html(profile: dict) -> str:
             if re.search(r"guid", _k, re.I) and not _is_empty(_v):
                 wm_catalyst = f"Guidance: {clean(str(_v))}"
                 break
-    wm_rows = [(lbl, txt) for lbl, txt in (("Thesis", wm_thesis), ("Key debate", wm_debate),
-                                           ("Next catalyst", wm_catalyst)) if txt]
+    # The thesis already leads the page in the sticky thesis bar, so drop it here when that
+    # bar is shown — the band then carries only the live debate + next catalyst (no repeat).
+    _wm_pairs = (("Key debate", wm_debate), ("Next catalyst", wm_catalyst)) if thesis_bar_html \
+        else (("Thesis", wm_thesis), ("Key debate", wm_debate), ("Next catalyst", wm_catalyst))
+    wm_rows = [(lbl, txt) for lbl, txt in _wm_pairs if txt]
     what_matters_html = ""
     if wm_rows:
         _wm_rows_html = "".join(
@@ -1070,6 +1558,70 @@ def build_html(profile: dict) -> str:
             f'<span class="wm-text">{txt}</span></div>' for lbl, txt in wm_rows)
         what_matters_html = (f'<div class="what-matters"><div class="wm-head">What Matters</div>'
                              f'{_wm_rows_html}</div>')
+
+    # ── Bull / Base / Bear scenario box (v2) — the explicit view an MD wants. Renders only
+    # when the run authored brief.bullBearBase; silently absent otherwise (graceful for older
+    # briefs). Each scenario: {target|label, detail, street?}. Base is usually the live Street
+    # target. Never fabricated here — the research/synthesis step writes the bull & bear cases.
+    bbb = (b.get("bullBearBase") or b.get("scenarios") or {})
+    # Compose a default from what's already sourced when the run didn't author one: Base = the
+    # live Street target (factual), Bear = the top risk, Bull = the top opportunity/strength. No
+    # price target is invented for the wings — they carry the case, not a fabricated number. An
+    # explicitly authored brief.bullBearBase always wins.
+    if not bbb and analyst_target:
+        def _swot_first(val):
+            if isinstance(val, str):
+                return val
+            if isinstance(val, list) and val:
+                it = val[0]
+                if isinstance(it, str):
+                    return it
+                if isinstance(it, dict):
+                    p, dd = it.get("point") or it.get("label") or "", it.get("detail") or ""
+                    return f"{p}: {dd}" if (p and dd) else (p or dd)
+            return ""
+        _risks = b.get("keyRisks") or []
+        _bear_txt = _first_sentence(_risk_text(_risks[0]), cap=190) if _risks else ""
+        _bull_src = _swot_first(_swot_h.get("opportunities")) or _swot_first(_swot_h.get("strengths"))
+        _bull_txt = _first_sentence(_bull_src, cap=190)
+        # Base case is a DISTINCT consensus-valuation line (not a repeat of the thesis bar).
+        _rating = str(live_q.get("analystRating") or "").title()
+        _n = live_q.get("numberOfAnalysts")
+        _bbits = [x for x in (f"Street consensus {_rating}" if _rating else "",
+                              f"{_n} analysts" if _n else "") if x]
+        if live_q.get("closePrice") is not None:
+            _tail = f"the {analyst_target} target sits {up_disp} above the ${live_q['closePrice']:,.2f} close"
+        else:
+            _tail = f"the {analyst_target} target implies {up_disp}"
+        _base_txt = (", ".join(_bbits) + "; " + _tail) if _bbits else (_tail[0].upper() + _tail[1:])
+        if _bear_txt or _bull_txt or _base_txt:
+            bbb = {
+                "bear": ({"detail": _bear_txt} if _bear_txt else {}),
+                "base": {"label": analyst_target + (f" ({up_disp})" if up_disp else ""),
+                         "street": True, "detail": _base_txt},
+                "bull": ({"detail": _bull_txt} if _bull_txt else {}),
+            }
+    bull_bear_html = ""
+    if isinstance(bbb, dict) and bbb:
+        cells = ""
+        for key, lbl, cls in (("bear", "Bear", "bbb-bear"), ("base", "Base", "bbb-base"),
+                              ("bull", "Bull", "bbb-bull")):
+            sc = bbb.get(key)
+            if isinstance(sc, str):
+                sc = {"detail": sc}
+            if not isinstance(sc, dict) or not (sc.get("detail") or sc.get("target") or sc.get("label")):
+                continue
+            tgt = clean(str(sc.get("label") or sc.get("target") or ""))
+            det = clean(str(sc.get("detail") or ""))
+            tag = ' <span class="bbb-tag">Street</span>' if (key == "base" and sc.get("street")) else ""
+            cells += (f'<div class="bbb-cell {cls}"><div class="bbb-head">'
+                      f'<span class="bbb-name">{lbl}{tag}</span>'
+                      f'<span class="bbb-target">{tgt}</span></div>'
+                      f'<div class="bbb-detail">{det}</div></div>')
+        if cells:
+            bull_bear_html = (f'<div class="section" id="scenarios">'
+                              f'<div class="sec-label">Bull · Base · Bear</div>'
+                              f'<div class="bbb-grid">{cells}</div></div>')
 
     # ── Visuals ──
     arr_chart_html     = build_arr_chart(rev_history)
@@ -1219,7 +1771,7 @@ def build_html(profile: dict) -> str:
             d = (subj_ev / med["ev"] - 1) * 100
             rel = "premium to" if d >= 0 else "discount to"
             prem_line = (f' <strong>{subj_row["name"]} trades at {subj_ev:.1f}x vs a {med["ev"]:.1f}x '
-                         f'peer median — a {abs(d):.0f}% {rel} the median.</strong>')
+                         f'peer median, a {abs(d):.0f}% {rel} the median.</strong>')
 
         cols = {k: any(r[k] for r in norm) for k in ("ticker","type","mc","ev","rg","gm","fcf","r40")}
         has_note = any(r["note"] for r in norm)
@@ -1232,19 +1784,32 @@ def build_html(profile: dict) -> str:
         if cols["gm"]:     head += '<th class="right">Gross Margin</th>'
         if cols["fcf"]:    head += '<th class="right">FCF Margin<span class="th-unit">LTM</span></th>'
         if cols["r40"]:    head += '<th class="right">Rule of 40<span class="th-unit">growth + FCF</span></th>'
+        # EV/Rev micro-bar scale: a thin underline bar per row shows where each name sits;
+        # the most expensive name's bar is crimson, so "the subject is the priciest" is a
+        # one-glance picture instead of a digit hunt.
+        _max_ev = max([e for e in (_ev_key(r) for r in norm) if e and e >= 0] or [1.0])
         comps_rows = ""
         for r in norm:
             row_cls = ' class="subj"' if r["is_subject"] else ""
             tkr_cell = (f'<a class="comp-source-link" href="{r["sourceUrl"]}" target="_blank" rel="noopener">{r["ticker"]}</a>'
                         if r["sourceUrl"] and r["ticker"] else r["ticker"])
-            # The note rides under the company name (small, grey) so the numeric grid
-            # stays tight enough for the added FCF / Rule-of-40 columns.
-            note_sub = f'<div class="comp-note-sub">{r["note"]}</div>' if (has_note and r["note"]) else ""
+            # The note rides under the company name (small, grey); clean() strips em dashes.
+            note_sub = f'<div class="comp-note-sub">{clean(r["note"])}</div>' if (has_note and r["note"]) else ""
             cells = f'<td class="comp-name">{r["name"]}{note_sub}</td>'
             if cols["ticker"]: cells += f'<td class="mono comp-ticker">{tkr_cell}</td>'
             if cols["type"]:   cells += f'<td class="comp-type-cell">{r["type"]}</td>'
             if cols["mc"]:     cells += f'<td class="mono right">{r["mc"]}</td>'
-            if cols["ev"]:     cells += f'<td class="mono right comp-ev">{r["ev"]}</td>'
+            if cols["ev"]:
+                _ev = _ev_key(r)
+                if _ev and _ev >= 0:
+                    _w = max(5, round(_ev / _max_ev * 100))
+                    _bc = ("evbar-max" if abs(_ev - _max_ev) < 0.05
+                           else ("evbar-subj" if r["is_subject"] else "evbar"))
+                    _evhtml = (f'<span class="ev-num">{r["ev"]}</span>'
+                               f'<span class="evtrack"><span class="evfill {_bc}" style="width:{_w}%"></span></span>')
+                else:
+                    _evhtml = r["ev"]
+                cells += f'<td class="mono right comp-ev">{_evhtml}</td>'
             if cols["rg"]:     cells += f'<td class="mono right">{r["rg"]}</td>'
             if cols["gm"]:     cells += f'<td class="mono right">{r["gm"]}</td>'
             if cols["fcf"]:    cells += f'<td class="mono right">{r["fcf"]}</td>'
@@ -1285,10 +1850,10 @@ def build_html(profile: dict) -> str:
                 f'{caption}</div>')
         scatter_html = build_comps_scatter(norm) if live_asof_dates else ""
         comps_html = f"""
-    <table class="comps-table">
+    <div class="table-scroll"><table class="comps-table">
       <thead><tr>{head}</tr></thead>
       <tbody>{comps_rows}</tbody>
-    </table>{scatter_html}{comps_source_html}""" if comps_rows else ""
+    </table></div>{scatter_html}{comps_source_html}""" if comps_rows else ""
 
     # ── Risks ──  Only bold a label when there's a genuine short "Label: body";
     # otherwise render the whole risk as plain text. (The old split(':') echoed the
@@ -1532,7 +2097,7 @@ def build_html(profile: dict) -> str:
     if swot_html:                               toc_items.append(("swot",      "SWOT"))
     if gartner_html:                            toc_items.append(("gartner",   "Gartner"))
     if filings_section_html:                     toc_items.append(("filings",   "Filings"))
-    if funding_rounds or total_raised or stage: toc_items.append(("funding",   "Funding"))
+    if funding_rounds:                          toc_items.append(("funding",   "Funding"))
     if investors:                               toc_items.append(("investors", "Investors"))
     if bullets:                                 toc_items.append(("bullets",   "Bullets"))
     if dqs:                                     toc_items.append(("diligence", "Diligence"))
@@ -1591,16 +2156,27 @@ def build_html(profile: dict) -> str:
         if q_date:
             meta_bits.append(f"reported {q_date}")
         meta_txt = "; ".join(meta_bits)
-        if meta_txt and metrics_cards_html:
+        if meta_txt and metrics_layout_html:
             meta_txt += ". Each metric is tagged with the period it covers; LTM and as-of figures are labeled individually."
         meta_row = f'<div class="sec-meta">{meta_txt}</div>' if meta_txt else ""
         # Live last-4-quarters trend (public tickers) so the section shows trajectory,
         # not just the latest quarter's cards. Silently empty for private companies.
         qtrend_html = build_quarterly_trend(ticker_sym)
+        # Income-statement Sankey (revenue -> costs -> profit): public profitable tickers only,
+        # rendered from the live income statement. Omits silently for private/unprofitable names
+        # and if the render service is unreachable (graceful, like the optional Gartner map).
+        sankey_html = ""
+        if ticker_sym and re.fullmatch(_TICKER_RE, ticker_sym or ""):
+            try:
+                from data_agent import income_statement
+                sankey_html = build_sankey(income_statement(ticker_sym), name)
+            except Exception:
+                sankey_html = ""
         earnings_section_html = (
             f'<div class="section" id="earnings">'
             f'<div class="sec-label">Financials &amp; Key Metrics</div>{meta_row}'
-            f'<div class="metrics-grid">{metrics_cards_html}</div>'
+            f'{metrics_layout_html}'
+            f'{sankey_html}'
             f'{qtrend_html}'
             f'{earn_ul}'
             f'{_source_row(et)}'
@@ -1628,6 +2204,7 @@ def build_html(profile: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{name} · Atlas Research Brief</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap');
   /* Institutional (light) design tokens: sell-side research note */
   :root {{
     --ks-lacquer:      #ffffff;            /* paper */
@@ -1648,19 +2225,31 @@ def build_html(profile: dict) -> str:
     --ks-faint:        #727a89;
     --ks-rule:         #dce0e7;            /* hairline */
     --ks-rule-strong:  #c2c8d2;
-    --ks-serif:        Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --ks-sans:         'Inter', Arial, "Helvetica Neue", Helvetica, sans-serif;
+    --ks-serif:        'Source Serif 4', Georgia, "Iowan Old Style", "Times New Roman", serif;
     --ks-ease:         cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* ── Type scale: ONE size per role so the same kind of text is the same
+       size in every section (no half-pixel drift across the report) ── */
+    --fs-lede:   18px;     /* serif lede + section callouts                 */
+    --fs-body:   15px;     /* ALL flowing body: bullets, list items, prose  */
+    --lh-body:   1.6;      /* matching body line-height                     */
+    --fs-dense:  13.5px;   /* data tables + dense reference text            */
   }}
 
   /* ── Base ── */
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-         background: var(--ks-lacquer); color: var(--ks-body); font-size: 14px; line-height: 1.55;
-         font-variant-numeric: tabular-nums; }}
+  body {{ font-family: var(--ks-sans);
+         background: var(--ks-lacquer); color: var(--ks-body); font-size: 15px; line-height: 1.6;
+         font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+         -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }}
+  /* charts scale down proportionally on narrow screens instead of letterboxing */
+  .chart-wrap svg {{ max-width: 100%; height: auto; }}
+  /* wide tables scroll inside themselves — never pan the whole page sideways */
+  .table-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
   a {{ color: inherit; text-decoration: none; }}
   p {{ color: var(--ks-body); line-height: 1.6; margin-bottom: 6px; }}
   strong {{ color: var(--ks-champagne); }}
-  .mono {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-variant-numeric: tabular-nums; }}
+  .mono {{ font-family: var(--ks-sans); font-variant-numeric: tabular-nums; }}
   .right {{ text-align: right; }}
 
   .wrapper {{ width: 100%; max-width: 1400px; margin: 0 auto; background: var(--ks-lacquer);
@@ -1680,17 +2269,17 @@ def build_html(profile: dict) -> str:
                    display: block; }}
   .header-badges {{ display: flex; align-items: center; gap: 7px; margin-top: 6px; flex-wrap: wrap; }}
   .ticker-badge {{ background: transparent; color: var(--ks-kinpaku);
-                   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+                   font-family: var(--ks-sans);
                    font-size: 10.5px; font-weight: 700; padding: 0; border-radius: 0;
                    letter-spacing: 0.16em; text-transform: uppercase; }}
   .stage-badge {{ background: var(--ks-raised); border: 1px solid var(--ks-rule);
                   color: var(--ks-muted); font-size: 10px; font-weight: 600; padding: 2px 8px;
                   border-radius: 2px; letter-spacing: 0.12em;
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                  font-family: var(--ks-sans); }}
   .draft-badge {{ background: var(--ks-kinpaku); border: 1px solid var(--ks-kinpaku);
                   color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 9px;
                   border-radius: 2px; letter-spacing: 0.15em;
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                  font-family: var(--ks-sans); }}
   .header-meta {{ font-size: 11.5px; color: var(--ks-faint); }}
   .header-meta a {{ color: var(--ks-kinpaku-pale); }}
   /* ── Version history (header disclosure) ── */
@@ -1715,10 +2304,10 @@ def build_html(profile: dict) -> str:
   .verticals {{ margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }}
   .vertical-tag {{ background: var(--ks-graphite); border: 1px solid var(--ks-rule);
                    color: var(--ks-muted); font-size: 10px; padding: 2px 9px; border-radius: 3px;
-                   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.06em; }}
+                   font-family: var(--ks-sans); letter-spacing: 0.06em; }}
   .trading-bar {{ background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
                   padding: 9px 14px; margin-top: 14px; font-size: 11px; color: var(--ks-faint);
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                  font-family: var(--ks-sans); }}
   .trading-bar strong {{ color: var(--ks-champagne); margin-right: 4px; }}
 
   /* ── Hero stats bar ── */
@@ -1732,12 +2321,12 @@ def build_html(profile: dict) -> str:
   .hero-card:last-child {{ border-right: none; }}
   .hero-label {{ font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.13em;
                  color: var(--ks-faint); margin-bottom: 6px; white-space: nowrap;
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   /* big number stays on ONE line; a long head shrinks to fit rather than wrapping */
-  .hero-value {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 1.5rem; font-weight: 700;
+  .hero-value {{ font-family: var(--ks-sans); font-size: 1.5rem; font-weight: 700;
                  line-height: 1.1; color: var(--ks-kinpaku); white-space: nowrap; }}
   .hero-value.long {{ font-size: 1.1rem; letter-spacing: -0.01em; }}
-  .hero-sub {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px;
+  .hero-sub {{ font-family: var(--ks-sans); font-size: 10.5px;
                color: var(--ks-faint); margin-top: 4px; line-height: 1.3; }}
   .hero-sub.pos {{ color: var(--ks-patina); }}
   /* narrow screens: let the 5-col strip reflow (print/desktop keep 5 across) */
@@ -1752,30 +2341,87 @@ def build_html(profile: dict) -> str:
   .ctx-card:last-child {{ border-right: none; }}
   .ctx-label {{ font-size: 8.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em;
                 color: var(--ks-faint); margin-bottom: 4px; white-space: nowrap;
-                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
-  .ctx-value {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 1.0rem;
+                font-family: var(--ks-sans); }}
+  .ctx-value {{ font-family: var(--ks-sans); font-size: 1.0rem;
                 font-weight: 700; color: var(--ks-muted); white-space: nowrap; }}
   .ctx-sub {{ font-size: 9.5px; color: var(--ks-faint); margin-top: 3px; line-height: 1.3;
-              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+              font-family: var(--ks-sans); }}
   @media (max-width: 820px) {{ .ctx-card {{ flex-basis: 33.333%; }} }}
 
   /* ── As-of anchor: ONE dated line for the whole trading strip ── */
   .asof-band {{ background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule);
                 padding: 6px 18px; font-size: 10px; color: var(--ks-faint);
-                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.03em; }}
+                font-family: var(--ks-sans); letter-spacing: 0.03em; }}
   .asof-band strong {{ color: var(--ks-muted); }}
+
+  /* ── v2 thesis bar: ticker · the call · Street PT + upside (sticky at the top) ── */
+  .thesis-bar {{ position: sticky; top: 0; z-index: 40; display: flex; align-items: flex-start;
+                 gap: 14px; background: var(--ks-kinpaku); color: #fff; padding: 11px 40px;
+                 font-size: 13.5px; border-bottom: 1px solid var(--ks-kinpaku-deep); }}
+  .tb-ticker {{ background: var(--ks-accent); font-weight: 700; letter-spacing: 0.03em;
+                padding: 2px 9px; border-radius: 3px; font-size: 12.5px; flex-shrink: 0;
+                margin-top: 1px; }}
+  /* verdict wraps to at most 2 lines and is authored to fit — never an ellipsis cut-off */
+  .tb-verdict {{ flex: 1; font-family: var(--ks-serif); font-size: 15px; line-height: 1.34;
+                 color: rgba(255,255,255,0.96); min-width: 0;
+                 display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+                 overflow: hidden; }}
+  .tb-pt {{ white-space: nowrap; flex-shrink: 0; color: #d7e0ee;
+            border-left: 1px solid #34527c; padding-left: 14px; }}
+  .tb-pt b {{ color: #fff; }}
+  .tb-up.pos {{ color: #7fe3b0; font-weight: 600; }}
+  .tb-up.neg {{ color: #ff9a8f; font-weight: 600; }}
+  /* phone: the PT sidecar drops below the verdict so the call isn't crushed to 'At th...' */
+  @media (max-width: 640px) {{
+    .thesis-bar {{ flex-wrap: wrap; padding: 10px 16px; gap: 5px 10px; }}
+    .tb-verdict {{ flex: 1 1 60%; font-size: 14px; -webkit-line-clamp: 3; }}
+    .tb-pt {{ flex: 1 1 100%; border-left: none; padding-left: 0; margin-top: 2px;
+              white-space: normal; }}
+  }}
+  @media print {{ .thesis-bar {{ position: static; }} }}
+
+  /* ── v2 hero: ONE big number (upside to target) + a market-snapshot rail ── */
+  .hero-v2 {{ display: flex; gap: 26px; align-items: center; flex-wrap: wrap;
+              background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule);
+              padding: 20px 40px; }}
+  .hero-lead {{ flex: 0 0 auto; }}
+  .hero-eyebrow {{ font-size: 10px; font-weight: 600; text-transform: uppercase;
+                   letter-spacing: 0.13em; color: var(--ks-faint); margin-bottom: 4px; }}
+  .hero-bignum {{ font-family: var(--ks-serif); font-size: clamp(2.8rem, 6vw, 3.6rem);
+                  font-weight: 700; line-height: 0.95; font-variant-numeric: tabular-nums;
+                  letter-spacing: -0.02em; }}
+  .hero-bignum.pos {{ color: var(--ks-patina); }}
+  .hero-bignum.neg {{ color: var(--ks-vermilion); }}
+  .hero-bigcap {{ font-size: 12.5px; color: var(--ks-faint); margin-top: 6px; line-height: 1.4; }}
+  .hero-bigcap-2 {{ color: var(--ks-muted); }}
+  .hero-rail {{ flex: 1; min-width: 280px; display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0;
+                border: 1px solid var(--ks-rule-strong); border-radius: 6px; overflow: hidden;
+                background: var(--ks-lacquer); }}
+  .hr-cell {{ display: flex; flex-direction: column; gap: 3px; padding: 10px 14px;
+              border-right: 1px solid var(--ks-rule); border-bottom: 1px solid var(--ks-rule); }}
+  .hr-cell:nth-child(3n) {{ border-right: none; }}
+  .hr-cell:nth-last-child(-n+3) {{ border-bottom: none; }}
+  .hr-label {{ font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+               letter-spacing: 0.1em; color: var(--ks-faint); white-space: nowrap; }}
+  .hr-value {{ font-size: 16px; font-weight: 700; color: var(--ks-kinpaku);
+               white-space: nowrap; font-variant-numeric: tabular-nums; }}
+  @media (max-width: 680px) {{ .hero-v2 {{ padding-left: 16px; padding-right: 16px; }}
+                               .hero-rail {{ grid-template-columns: repeat(2, minmax(0,1fr)); }}
+                               .hr-cell:nth-child(3n) {{ border-right: 1px solid var(--ks-rule); }}
+                               .hr-cell:nth-child(2n) {{ border-right: none; }} }}
 
   /* ── "What matters" band: thesis · key debate · next catalyst ── */
   .what-matters {{ border-bottom: 1px solid var(--ks-rule); padding: 16px 40px 14px;
                    background: var(--ks-lacquer); border-left: 3px solid var(--ks-kinpaku); }}
-  .wm-head {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10px;
+  .wm-head {{ font-family: var(--ks-sans); font-size: 10px;
               font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
               color: var(--ks-accent); margin-bottom: 9px; }}
   .wm-row {{ display: flex; gap: 14px; padding: 4px 0; align-items: baseline; }}
   .wm-label {{ flex: 0 0 96px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em;
                text-transform: uppercase; color: var(--ks-kinpaku); white-space: nowrap;
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; padding-top: 2px; }}
-  .wm-text {{ font-size: 13.5px; line-height: 1.55; color: var(--ks-body); }}
+               font-family: var(--ks-sans); padding-top: 2px; }}
+  .wm-text {{ font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ks-body); }}
 
   /* ── TOC ── */
   .toc {{ background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule-strong);
@@ -1784,34 +2430,34 @@ def build_html(profile: dict) -> str:
   .toc-link {{ font-size: 10px; font-weight: 600; color: var(--ks-faint); padding: 3px 10px;
                border-radius: 20px; border: 1px solid var(--ks-rule); background: transparent;
                transition: background 150ms var(--ks-ease), color 150ms var(--ks-ease);
-               white-space: nowrap; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+               white-space: nowrap; font-family: var(--ks-sans);
                letter-spacing: 0.04em; }}
   .toc-link:hover {{ background: var(--ks-kinpaku); color: var(--ks-lacquer-deep); border-color: var(--ks-kinpaku); }}
 
   /* ── Sections ── */
   .section {{ border-bottom: 1px solid var(--ks-rule); padding: 24px 40px; scroll-margin-top: 48px; }}
   .section:last-of-type {{ border-bottom: none; }}
-  .sec-label {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10px; font-weight: 700;
+  .sec-label {{ font-family: var(--ks-sans); font-size: 10px; font-weight: 700;
                 letter-spacing: 0.15em; text-transform: uppercase; color: var(--ks-accent);
                 margin-bottom: 15px; padding-bottom: 7px; border-bottom: 1px solid var(--ks-rule); }}
   /* normal-weight metadata line under a section label (quarter, as-of, captions) —
      keeps the eyebrow itself short and uncluttered instead of wrapping inline */
-  .sec-meta {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px;
+  .sec-meta {{ font-family: var(--ks-sans); font-size: 10.5px;
                color: var(--ks-faint); margin: -9px 0 14px; letter-spacing: 0.03em; line-height: 1.4; }}
 
   /* ── Two-col layout (overview) ── */
   .two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }}
   @media (max-width: 760px) {{ .two-col {{ grid-template-columns: 1fr; }} }}
   .diagram-caption {{ font-size: 11px; color: var(--ks-faint); margin-bottom: 10px; line-height: 1.4;
-                      font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                      font-family: var(--ks-sans); }}
 
   /* ── "Understand the business" explainer (lede + plain / technical / simple) ── */
   .explain-lede {{ margin-bottom: 16px; padding: 14px 18px; background: var(--ks-graphite);
                    border-left: 3px solid var(--ks-accent); border-radius: 0 6px 6px 0; }}
   .explain-lede-label {{ display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.15em;
                          text-transform: uppercase; color: var(--ks-accent); margin-bottom: 5px;
-                         font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
-  .explain-lede-text {{ font-family: var(--ks-serif); font-size: 17.5px; line-height: 1.5;
+                         font-family: var(--ks-sans); }}
+  .explain-lede-text {{ font-family: var(--ks-serif); font-size: var(--fs-lede); line-height: 1.5;
                         color: var(--ks-champagne); }}
   .explain-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }}
   @media (max-width: 820px) {{ .explain-grid {{ grid-template-columns: 1fr; }} }}
@@ -1821,14 +2467,14 @@ def build_html(profile: dict) -> str:
   .explain-2 {{ border-top-color: var(--ks-patina); }}
   .explain-label {{ font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase;
                     color: var(--ks-kinpaku); margin-bottom: 2px;
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                    font-family: var(--ks-sans); }}
   .explain-sublabel {{ font-size: 10.5px; color: var(--ks-faint); margin-bottom: 8px;
-                       font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                       font-family: var(--ks-sans); }}
   .explain-1 .explain-label {{ color: var(--ks-accent); }}
   .explain-2 .explain-label {{ color: var(--ks-patina); }}
-  .explain-text {{ font-size: 14px; line-height: 1.6; color: var(--ks-body); }}
+  .explain-text {{ font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ks-body); }}
   .explain-list {{ list-style: none; padding: 0; margin: 0; }}
-  .explain-list li {{ position: relative; padding: 5px 0 5px 16px; font-size: 14px; line-height: 1.5;
+  .explain-list li {{ position: relative; padding: 5px 0 5px 16px; font-size: var(--fs-body); line-height: var(--lh-body);
                       color: var(--ks-body); }}
   .explain-list li:before {{ content: ""; position: absolute; left: 2px; top: 10px; width: 5px; height: 5px;
                              border-radius: 50%; background: var(--ks-kinpaku); }}
@@ -1840,13 +2486,13 @@ def build_html(profile: dict) -> str:
                   border-left: 3px solid var(--ks-kinpaku); padding: 14px 16px; margin-bottom: 24px; }}
   .gloss-head {{ font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase;
                  color: var(--ks-kinpaku); margin-bottom: 10px;
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   .gloss-list {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 24px; margin: 0; }}
   @media (max-width: 820px) {{ .gloss-list {{ grid-template-columns: 1fr; }} }}
   .gloss-item {{ margin: 0; padding: 7px 0; border-top: 1px solid var(--ks-rule); }}
   .gloss-item:first-child, .gloss-list > .gloss-item:nth-child(2) {{ border-top: 0; }}
   .gloss-term {{ font-size: 13px; font-weight: 700; color: var(--ks-champagne);
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   .gloss-exp {{ font-weight: 400; font-style: italic; font-size: 12px; color: var(--ks-faint); }}
   .gloss-def {{ font-size: 13px; line-height: 1.5; color: var(--ks-body); margin: 2px 0 0 0; }}
 
@@ -1855,7 +2501,7 @@ def build_html(profile: dict) -> str:
   .diff-table th {{ text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
                     text-transform: uppercase; color: var(--ks-faint); padding: 0 14px 8px 0;
                     border-bottom: 1.5px solid var(--ks-kinpaku);
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; vertical-align: bottom; }}
+                    font-family: var(--ks-sans); vertical-align: bottom; }}
   .diff-table td {{ padding: 11px 14px 11px 0; border-bottom: 1px solid var(--ks-rule);
                     vertical-align: top; color: var(--ks-body); line-height: 1.55; }}
   .diff-table tr:last-child td {{ border-bottom: none; }}
@@ -1866,7 +2512,7 @@ def build_html(profile: dict) -> str:
     .diff-table thead {{ display: none; }} .diff-table .diff-player {{ white-space: normal; padding-top: 12px; }} }}
 
   /* ── SWOT analysis (2×2 quadrant) ── */
-  .swot-standout {{ font-size: 14.5px; line-height: 1.7; color: var(--ks-body);
+  .swot-standout {{ font-size: var(--fs-body); line-height: 1.7; color: var(--ks-body);
                     background: var(--ks-graphite); border-left: 3px solid var(--ks-kinpaku);
                     padding: 12px 16px; border-radius: 0 6px 6px 0; margin-bottom: 18px; }}
   .swot-standout-label {{ font-weight: 700; color: var(--ks-champagne); }}
@@ -1883,12 +2529,12 @@ def build_html(profile: dict) -> str:
                 border-bottom: 1px solid var(--ks-rule); }}
   .swot-title {{ font-size: 11px; font-weight: 700; letter-spacing: 0.11em;
                  text-transform: uppercase; color: var(--ks-champagne);
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   .swot-sub {{ font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase;
-               color: var(--ks-faint); font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+               color: var(--ks-faint); font-family: var(--ks-sans); }}
   .swot-list {{ list-style: none; margin: 0; padding: 0; }}
-  .swot-list li {{ position: relative; padding: 0 0 7px 15px; font-size: 13.5px;
-                   line-height: 1.55; color: var(--ks-body); }}
+  .swot-list li {{ position: relative; padding: 0 0 7px 15px; font-size: var(--fs-body);
+                   line-height: var(--lh-body); color: var(--ks-body); }}
   .swot-list li:last-child {{ padding-bottom: 0; }}
   .swot-list li::before {{ content: ""; position: absolute; left: 1px; top: 8px;
                            width: 5px; height: 5px; border-radius: 50%;
@@ -1908,10 +2554,11 @@ def build_html(profile: dict) -> str:
   /* ── Body bullet list ── */
   .body-list {{ list-style: none; padding: 0; margin: 0; }}
   .body-list li {{ padding: 9px 0 9px 18px; position: relative; color: var(--ks-body);
-                   font-size: 15.5px; line-height: 1.6; border-bottom: 1px solid var(--ks-rule); }}
+                   font-size: var(--fs-body); line-height: var(--lh-body); border-bottom: 1px solid var(--ks-rule); }}
   .body-list li:last-child {{ border-bottom: none; }}
   .body-list li:before {{ content: ""; position: absolute; left: 2px; top: 14px;
                           width: 5px; height: 5px; border-radius: 50%; background: var(--ks-kinpaku); }}
+  .body-list .run-in {{ color: var(--ks-kinpaku); font-weight: 700; }}
 
   /* ── Business flow diagram ── */
   .biz-flow {{ display: flex; align-items: stretch; gap: 0; margin: 6px 0; }}
@@ -1919,7 +2566,7 @@ def build_html(profile: dict) -> str:
   .biz-col-mid {{ flex: 1.05; }}
   .biz-col-label {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em;
                     color: var(--ks-faint); margin-bottom: 3px; line-height: 1.3;
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                    font-family: var(--ks-sans); }}
   .biz-node {{ padding: 9px 11px; border-radius: 4px; }}
   .biz-node-name {{ font-size: 12.5px; font-weight: 600; line-height: 1.25;
                     overflow-wrap: anywhere; }}
@@ -1939,18 +2586,45 @@ def build_html(profile: dict) -> str:
                 font-size: 18px; flex-shrink: 0; align-self: center; }}
   @media (max-width: 720px) {{ .biz-flow {{ flex-direction: column; }} .biz-arrow {{ transform: rotate(90deg); margin: 2px auto; }} }}
 
+  /* ── Business model v2: engine-core value chain (inputs · the engine · the payoff) ── */
+  .bizv2 {{ display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 18px; align-items: center;
+            margin: 8px 0 2px; }}
+  .bizv2-side {{ display: flex; flex-direction: column; gap: 11px; }}
+  .bizv2-collabel {{ font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+                     color: var(--ks-faint); }}
+  .bizv2-side-r .bizv2-collabel {{ text-align: right; }}
+  .bizv2-in {{ border-left: 2px solid var(--ks-accent); padding: 1px 0 1px 11px; }}
+  .bizv2-out {{ border-left: 2px solid var(--ks-patina); padding: 1px 0 1px 11px; }}
+  .bizv2-in-name, .bizv2-out-name {{ font-weight: 600; font-size: 13px; color: var(--ks-champagne); }}
+  .bizv2-in-sub, .bizv2-out-sub {{ font-size: 11px; color: var(--ks-faint); line-height: 1.42; margin-top: 2px; }}
+  .bizv2-arrow {{ color: var(--ks-kinpaku-pale); font-size: 20px; line-height: 1; }}
+  .bizv2-side-r .bizv2-arrow {{ text-align: left; }}
+  .bizv2-engine {{ background: var(--ks-kinpaku); border-radius: 8px; padding: 16px 16px 13px; }}
+  .bizv2-eng-eyebrow {{ font-size: 8.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+                        color: #8fa6c4; text-align: center; margin-bottom: 3px; }}
+  .bizv2-eng-title {{ font-family: var(--ks-serif); color: #fff; font-weight: 700; font-size: 16px;
+                      text-align: center; margin-bottom: 11px; }}
+  .bizv2-mod {{ background: var(--ks-kinpaku-pale); border-radius: 4px; padding: 7px 11px; color: #fff;
+                font-size: 12px; margin-bottom: 6px; }}
+  .bizv2-mod b {{ font-weight: 700; }}
+  .bizv2-mod span {{ color: #c3d3e8; }}
+  .bizv2-core {{ text-align: center; color: #8fa6c4; font-size: 10px; margin-top: 9px; line-height: 1.4; }}
+  @media (max-width: 760px) {{ .bizv2 {{ grid-template-columns: 1fr; }}
+                               .bizv2-side-r .bizv2-collabel, .bizv2-side-r .bizv2-arrow {{ text-align: left; }}
+                               .bizv2-arrow {{ transform: rotate(90deg); margin: 2px 0; }} }}
+
   /* ── News ── */
   .news-item {{ padding: 11px 0; border-bottom: 1px solid var(--ks-rule); }}
   .news-item:last-child {{ border-bottom: none; }}
   .news-row {{ display: flex; gap: 14px; align-items: flex-start; }}
   .news-date {{ font-size: 10px; color: var(--ks-faint); white-space: nowrap; min-width: 74px;
-                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; padding-top: 2px; }}
+                font-family: var(--ks-sans); padding-top: 2px; }}
   .news-headline {{ font-size: 15.5px; font-weight: 600; color: var(--ks-champagne); line-height: 1.4; }}
-  .news-why {{ font-size: 14px; color: var(--ks-muted); margin-top: 6px; margin-left: 88px; line-height: 1.6; }}
+  .news-why {{ font-size: var(--fs-body); color: var(--ks-muted); margin-top: 6px; margin-left: 88px; line-height: var(--lh-body); }}
 
   /* ── Financials / metrics ── */
   .fin-meta {{ font-size: 11px; color: var(--ks-faint); margin-bottom: 14px;
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.05em; }}
+               font-family: var(--ks-sans); letter-spacing: 0.05em; }}
   /* auto-fill (not auto-fit): a partial last row keeps card width + stays left-aligned */
   .metrics-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
                    gap: 10px; margin-bottom: 18px; }}
@@ -1960,41 +2634,102 @@ def build_html(profile: dict) -> str:
      cards aligned whether the label is 1 or 2 lines */
   .metric-label {{ font-size: 9.5px; font-weight: 500; color: var(--ks-faint); text-transform: uppercase;
                    letter-spacing: 0.12em; margin-bottom: 6px; line-height: 1.3; min-height: 1.9em;
-                   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                   font-family: var(--ks-sans); }}
   /* big number stays on ONE line; a long/sentence-like head shrinks AND wraps inside the
      card instead of overflowing into the neighbouring tile */
-  .metric-value {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 1.15rem; font-weight: 700;
+  .metric-value {{ font-family: var(--ks-sans); font-size: 1.15rem; font-weight: 700;
                    color: var(--ks-kinpaku); line-height: 1.2; white-space: nowrap; }}
   .metric-value.long {{ font-size: 0.95rem; letter-spacing: -0.01em; white-space: normal;
                         overflow-wrap: anywhere; line-height: 1.3; }}
   .metric-value.green {{ color: var(--ks-patina); }}
   .metric-sub {{ font-size: 10.5px; color: var(--ks-faint); margin-top: 4px; line-height: 1.35;
-                 font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                 font-family: var(--ks-sans); }}
   .metric-sub.pos {{ color: var(--ks-patina); font-weight: 600; }}
   /* period tag: the time window each metric covers, so a number is never undated */
   .metric-period {{ font-size: 9px; color: var(--ks-faint); margin-top: 5px; line-height: 1.3;
                     letter-spacing: 0.04em; text-transform: uppercase; white-space: normal;
                     overflow-wrap: anywhere; padding-top: 4px; border-top: 1px solid var(--ks-rule);
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                    font-family: var(--ks-sans); }}
+
+  /* v2: ONE hero metric (large, serif) + supporting grid, so the eye has an anchor */
+  .metrics-layout {{ display: grid; grid-template-columns: minmax(210px, 1.25fr) 2.75fr;
+                     gap: 10px; margin-bottom: 18px; align-items: stretch; }}
+  .metrics-layout .metrics-grid {{ margin-bottom: 0; }}
+  .metric-hero {{ background: var(--ks-raised); border: 1px solid var(--ks-rule-strong);
+                  border-radius: 6px; padding: 18px 20px; display: flex; flex-direction: column;
+                  justify-content: center; min-width: 0; }}
+  .metric-hero-value {{ font-family: var(--ks-serif); font-size: clamp(2rem, 4.2vw, 2.75rem);
+                        font-weight: 700; color: var(--ks-kinpaku); line-height: 1.04;
+                        white-space: nowrap; letter-spacing: -0.01em; margin: 2px 0; }}
+  /* signed-change chip: preattentive ▲/▼ + colour, faster to read than a clause */
+  .delta {{ display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px;
+            border-radius: 20px; margin-top: 7px; white-space: nowrap; align-self: flex-start;
+            font-family: var(--ks-sans); }}
+  .delta.up {{ background: #e7f4ec; color: var(--ks-patina); }}
+  .delta.down {{ background: #fbeef0; color: var(--ks-vermilion); }}
+  @media (max-width: 760px) {{ .metrics-layout {{ grid-template-columns: 1fr; }} }}
+
+  /* 3-tier financials: hero + 4 large (Tier 1) · medium grid (Tier 2) · reference table (Tier 3),
+     so size encodes importance instead of an undifferentiated wall of equal tiles */
+  .metrics-grid-lead {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }}
+  .metrics-grid-sm {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                      gap: 10px; margin-bottom: 16px; }}
+  .metric-card.lg {{ padding: 16px 18px; }}
+  .metric-card.lg .metric-value {{ font-size: 1.6rem; }}
+  .metric-card.lg .metric-label {{ font-size: 10px; }}
+  .metric-card.sm {{ padding: 12px 14px; }}
+  .metric-card.sm .metric-value {{ font-size: 1.18rem; }}
+  .metrics-table-h {{ font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+                      color: var(--ks-faint); margin: 2px 0 6px; }}
+  .metrics-table {{ column-count: 2; column-gap: 36px; margin-bottom: 16px; }}
+  .mt-row {{ display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+             padding: 7px 2px; border-bottom: 1px solid var(--ks-rule); break-inside: avoid;
+             font-size: 13px; }}
+  .mt-label {{ color: var(--ks-faint); flex-shrink: 0; }}
+  .mt-per {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ks-faint);
+             margin-left: 5px; }}
+  /* value wraps (right-aligned) instead of forcing the page wide on a phone when a metric
+     carries a long compound value, e.g. "Revenue $90.5-91.0M; non-GAAP EPS $X" guidance */
+  .mt-val {{ color: var(--ks-champagne); font-weight: 600; text-align: right;
+             overflow-wrap: anywhere; min-width: 0; font-variant-numeric: tabular-nums; }}
+  .mt-val .delta {{ margin-top: 0; padding: 1px 7px; font-size: 11px; }}
+  @media (max-width: 680px) {{ .metrics-grid-lead {{ grid-template-columns: 1fr; }}
+                               .metrics-table {{ column-count: 1; }} }}
+
+  /* ── Bull / Base / Bear scenario box (v2) ── */
+  .bbb-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }}
+  .bbb-cell {{ border-top: 3px solid var(--ks-rule-strong); background: var(--ks-raised);
+               border-radius: 0 0 4px 4px; padding: 12px 14px; }}
+  .bbb-bear {{ border-top-color: var(--ks-vermilion); background: #fcf4f5; }}
+  .bbb-base {{ border-top-color: var(--ks-kinpaku); background: #f3f7fc; }}
+  .bbb-bull {{ border-top-color: var(--ks-patina); background: #f3faf6; }}
+  .bbb-head {{ display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+               font-weight: 700; color: var(--ks-champagne); }}
+  .bbb-name {{ font-size: 13px; }}
+  .bbb-tag {{ font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+              color: var(--ks-faint); }}
+  .bbb-target {{ font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }}
+  .bbb-detail {{ font-size: 13px; color: var(--ks-muted); margin-top: 5px; line-height: 1.45; }}
+  @media (max-width: 680px) {{ .bbb-grid {{ grid-template-columns: 1fr; }} }}
 
   /* ── Quarterly trend matrix (Revenue / QoQ / Gross Margin × last 4 quarters) ── */
   .qtrend-wrap {{ margin: 4px 0 6px; }}
   .qtrend-table {{ width: 100%; border-collapse: collapse; margin-top: 8px; }}
   .qtrend-table th, .qtrend-table td {{ padding: 7px 12px; border-bottom: 1px solid var(--ks-rule);
                    font-size: 13px; }}
-  .qtrend-table thead th {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10px;
+  .qtrend-table thead th {{ font-family: var(--ks-sans); font-size: 10px;
                    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
                    color: var(--ks-faint); border-bottom: 1px solid var(--ks-rule-strong); }}
   .qtrend-table td.mono {{ color: var(--ks-champagne); font-weight: 600; }}
   .qtrend-table td.pos {{ color: var(--ks-patina); }}
   .qtrend-table td.neg {{ color: var(--ks-vermilion); }}
-  .qtrend-rowlbl {{ text-align: left; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  .qtrend-rowlbl {{ text-align: left; font-family: var(--ks-sans);
                    font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;
                    color: var(--ks-faint); white-space: nowrap; }}
   .qtrend-table tbody tr:last-child td {{ border-bottom: none; }}
   .earn-bullets {{ list-style: none; padding: 0; margin: 0; }}
-  .earn-bullets li {{ padding: 8px 0 8px 16px; position: relative; font-size: 14.5px;
-                      color: var(--ks-body); border-bottom: 1px solid var(--ks-rule); line-height: 1.65; }}
+  .earn-bullets li {{ padding: 8px 0 8px 16px; position: relative; font-size: var(--fs-body);
+                      color: var(--ks-body); border-bottom: 1px solid var(--ks-rule); line-height: var(--lh-body); }}
   .earn-bullets li:before {{ content: ""; position: absolute; left: 2px; top: 14px;
                              width: 5px; height: 5px; border-radius: 50%; background: var(--ks-patina); }}
   .earn-bullets li:last-child {{ border-bottom: none; }}
@@ -2014,7 +2749,15 @@ def build_html(profile: dict) -> str:
   .chart-wrap {{ margin: 4px 0 8px; }}
   .chart-eyebrow {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.18em;
                     color: var(--ks-faint); margin-bottom: 12px;
-                    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                    font-family: var(--ks-sans); }}
+
+  /* ── Income-statement Sankey (inline SVG, scales to width) ── */
+  .sankey-wrap {{ margin: 16px 0 8px; }}
+  /* inline SVG: fills the section on desktop; on a phone it keeps a readable min-width and
+     the wrapper scrolls horizontally (same pattern as the comps table) */
+  .sankey-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
+  .sankey-svg {{ display: block; width: 100%; min-width: 860px; height: auto;
+                 border: 1px solid var(--ks-rule); border-radius: 6px; }}
 
   /* ── Funding timeline (flex cards) ── */
   .tl-flex  {{ display: flex; align-items: center; gap: 0; overflow-x: auto;
@@ -2023,12 +2766,12 @@ def build_html(profile: dict) -> str:
                padding: 10px 12px; min-width: 88px; text-align: center; flex-shrink: 0; }}
   .tl-arrow {{ color: var(--ks-kinpaku); font-size: 14px; padding: 0 4px; flex-shrink: 0; }}
   .tl-round {{ font-size: 8px; text-transform: uppercase; letter-spacing: 0.10em;
-               color: var(--ks-faint); font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+               color: var(--ks-faint); font-family: var(--ks-sans);
                margin-bottom: 3px; }}
   .tl-amt   {{ font-size: 12px; font-weight: 700; color: var(--ks-kinpaku);
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+               font-family: var(--ks-sans); }}
   .tl-val   {{ font-size: 10px; color: var(--ks-patina);
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; margin-top: 2px; }}
+               font-family: var(--ks-sans); margin-top: 2px; }}
   .tl-date  {{ font-size: 9px; color: var(--ks-faint); margin-top: 1px; }}
   .tl-leads {{ font-size: 9px; color: var(--ks-muted); margin-top: 3px; line-height: 1.3; }}
 
@@ -2043,13 +2786,13 @@ def build_html(profile: dict) -> str:
   .news-source-nolink {{ color: var(--ks-faint); }}
   /* legacy: keep so old references do not break */
   .news-source {{ font-size: 9.5px; font-weight: 600; color: var(--ks-faint); margin-left: 8px;
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.05em;
+                  font-family: var(--ks-sans); letter-spacing: 0.05em;
                   background: var(--ks-raised); border: 1px solid var(--ks-rule);
                   padding: 1px 6px; border-radius: 3px; vertical-align: middle; }}
 
   /* ── body-p (single paragraph, no bullets) ── */
   /* prose measure: full-width lines are unreadable at 1400px — cap at ~75ch */
-  .body-p {{ color: var(--ks-body); font-size: 15.5px; line-height: 1.7; max-width: 920px; }}
+  .body-p {{ color: var(--ks-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: 920px; }}
   .body-list {{ max-width: 920px; }}
 
   /* ── SEC filings ── */
@@ -2058,11 +2801,11 @@ def build_html(profile: dict) -> str:
                  border-bottom: 1px solid var(--ks-rule); }}
   .filing-row:last-child {{ border-bottom: none; }}
   .filing-row:hover .filing-go {{ opacity: 1; }}
-  .filing-form {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-weight: 700;
+  .filing-form {{ font-family: var(--ks-sans); font-weight: 700;
                   font-size: 12.5px; color: var(--ks-kinpaku); min-width: 52px; }}
-  .filing-meta {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 11.5px;
+  .filing-meta {{ font-family: var(--ks-sans); font-size: 11.5px;
                   color: var(--ks-faint); flex: 1; }}
-  .filing-go {{ font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px;
+  .filing-go {{ font-family: var(--ks-sans); font-size: 10.5px;
                 font-weight: 700; letter-spacing: 0.04em; color: var(--ks-kinpaku-pale);
                 opacity: 0.55; transition: opacity .15s; white-space: nowrap; }}
 
@@ -2079,20 +2822,20 @@ def build_html(profile: dict) -> str:
   .kit-tags {{ display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }}
   .kit-tag  {{ font-size: 9px; background: var(--ks-graphite); border: 1px solid var(--ks-rule);
                color: var(--ks-kinpaku-pale); padding: 2px 7px; border-radius: 3px;
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; letter-spacing: 0.04em; }}
+               font-family: var(--ks-sans); letter-spacing: 0.04em; }}
   .kit-copy {{ display: flex; flex-direction: column; gap: 6px; }}
   .kit-copy-label {{ font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.18em;
-                     color: var(--ks-faint); font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                     color: var(--ks-faint); font-family: var(--ks-sans); }}
   .kit-stat {{ background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
                padding: 8px 12px; font-size: 12.5px; font-weight: 600; color: var(--ks-champagne);
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; cursor: text; }}
+               font-family: var(--ks-sans); cursor: text; }}
   .kit-bullet {{ background: var(--ks-graphite); border-left: 2px solid var(--ks-kinpaku);
                  padding: 7px 10px; font-size: 12px; color: var(--ks-body); line-height: 1.5;
                  margin-top: 2px; }}
   .kit-assets {{ display: flex; flex-direction: column; gap: 6px; }}
   .kit-url  {{ background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
                padding: 7px 10px; font-size: 10.5px; color: var(--ks-patina); word-break: break-all;
-               font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+               font-family: var(--ks-sans); }}
   .kit-swatches {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }}
   .kit-swatch-wrap {{ display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: default; }}
   .kit-swatch {{ width: 36px; height: 36px; border-radius: 6px; border: 1px solid rgba(0,0,0,.12);
@@ -2118,21 +2861,21 @@ def build_html(profile: dict) -> str:
   /* ── Risk list ── */
   .risk-list {{ list-style: none; padding: 0; }}
   .risk-list li {{ padding: 10px 0 10px 22px; border-bottom: 1px solid var(--ks-rule);
-                   position: relative; font-size: 14.5px; color: var(--ks-body); line-height: 1.65; }}
+                   position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }}
   .risk-list li:before {{ content: "!"; position: absolute; left: 3px; top: 10px; width: 13px; height: 13px;
                           border-radius: 50%; background: rgba(179,18,43,0.1);
                           color: var(--ks-vermilion); font-size: 9px; font-weight: 900;
                           text-align: center; line-height: 13px;
-                          font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                          font-family: var(--ks-sans); }}
   .risk-list li:last-child {{ border-bottom: none; }}
   .risk-label {{ font-weight: 600; color: var(--ks-champagne); }}
 
   /* ── Comps table ── */
-  .comps-table {{ width: 100%; border-collapse: collapse; font-size: 13.5px; }}
+  .comps-table {{ width: 100%; border-collapse: collapse; font-size: var(--fs-dense); }}
   .comps-table th {{ text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
                      text-transform: uppercase; color: var(--ks-faint); padding: 0 12px 8px 0;
                      border-bottom: 1.5px solid var(--ks-kinpaku); vertical-align: bottom;
-                     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                     font-family: var(--ks-sans); }}
   .comps-table th.right {{ text-align: right; }}
   /* unit (LTM / YoY) parked under the header so each cell value is one clean token */
   .th-unit {{ display: block; text-transform: none; font-weight: 400; font-size: 8.5px;
@@ -2144,10 +2887,22 @@ def build_html(profile: dict) -> str:
   .comps-table tr:last-child td {{ border-bottom: none; }}
   .comps-table tr:hover td {{ background: var(--ks-raised); }}
   .comps-table tr.subj td {{ background: #eef3fa; font-weight: 700; color: var(--ks-champagne); }}
+  .comps-table tr.subj td:first-child {{ box-shadow: inset 3px 0 0 0 var(--ks-accent); }}
   .comp-name {{ font-weight: 700; color: var(--ks-champagne); font-size: 13px; }}
   .comp-ticker {{ color: var(--ks-kinpaku-pale); font-size: 11px; font-weight: 700; }}
   .comp-type-cell {{ font-size: 10px; color: var(--ks-faint); white-space: nowrap; }}
-  .comp-ev {{ vertical-align: middle; }}
+  /* EV/Rev cell: the number with a thin underline bar showing where it sits in the set;
+     the most-expensive name's bar is crimson so the priciest name is pre-attentive */
+  .comp-ev {{ vertical-align: middle; position: relative; padding-bottom: 13px; }}
+  .comp-ev .ev-num {{ display: block; }}
+  /* shared faint track = the full scale; the coloured fill shows where this name sits on it,
+     so even short bars read against a common baseline (crimson fill = priciest name) */
+  .evtrack {{ position: absolute; right: 12px; bottom: 6px; width: 88px; height: 3px;
+             background: var(--ks-rule); border-radius: 2px; overflow: hidden; }}
+  .evfill {{ position: absolute; right: 0; top: 0; height: 100%; border-radius: 2px; min-width: 3px; }}
+  .evfill.evbar {{ background: var(--ks-kinpaku-pale); }}
+  .evfill.evbar-subj {{ background: var(--ks-kinpaku); }}
+  .evfill.evbar-max {{ background: var(--ks-accent); }}
   .comp-val {{ font-size: 13px; font-weight: 700; color: var(--ks-kinpaku); }}
   .comp-val a {{ color: var(--ks-kinpaku); border-bottom: 1px solid transparent; }}
   .comp-val a:hover {{ border-bottom-color: var(--ks-kinpaku); }}
@@ -2173,25 +2928,25 @@ def build_html(profile: dict) -> str:
   /* ── Slide bullets ── */
   .slide-list {{ list-style: none; padding: 0; counter-reset: slides; }}
   .slide-list li {{ padding: 10px 0 10px 42px; border-bottom: 1px solid var(--ks-rule);
-                    position: relative; font-size: 13px; color: var(--ks-body); line-height: 1.7; }}
+                    position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }}
   .slide-list li:last-child {{ border-bottom: none; }}
   .slide-list li:before {{ counter-increment: slides; content: counter(slides);
                            position: absolute; left: 0; top: 8px; width: 26px; height: 26px;
                            border-radius: 2px; background: var(--ks-kinpaku); color: var(--ks-lacquer-deep);
                            font-size: 11px; font-weight: 700; text-align: center; line-height: 26px;
-                           font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                           font-family: var(--ks-sans); }}
 
   /* ── Diligence ── */
   .dq-list {{ list-style: none; padding: 0; counter-reset: dqs; }}
   .dq-list li {{ padding: 10px 0 10px 42px; border-bottom: 1px solid var(--ks-rule);
-                 position: relative; font-size: 13px; color: var(--ks-body); line-height: 1.7; }}
+                 position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }}
   .dq-list li:last-child {{ border-bottom: none; }}
   .dq-list li:before {{ counter-increment: dqs; content: "Q" counter(dqs);
                         position: absolute; left: 0; top: 8px; width: 26px; height: 26px;
                         border-radius: 2px; background: var(--ks-raised); color: var(--ks-kinpaku);
                         border: 1px solid var(--ks-rule); font-size: 9.5px; font-weight: 700;
                         text-align: center; line-height: 26px;
-                        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                        font-family: var(--ks-sans); }}
 
   /* ── Chips ── */
   .chip-list {{ display: flex; flex-wrap: wrap; gap: 6px; }}
@@ -2203,9 +2958,39 @@ def build_html(profile: dict) -> str:
              padding: 14px 40px; display: flex; justify-content: space-between; align-items: center; }}
   .footer-left {{ font-size: 10.5px; color: var(--ks-faint); line-height: 1.7; }}
   .footer-right {{ font-size: 10.5px; font-weight: 700; color: var(--ks-kinpaku);
-                   letter-spacing: 0.22em; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }}
+                   letter-spacing: 0.22em; font-family: var(--ks-sans); }}
   .meta-note {{ font-size: 12px; color: var(--ks-muted); margin-top: 8px; }}
   .meta-note strong {{ color: var(--ks-champagne); }}
+
+  /* ── Phone (≤520px) ──────────────────────────────────────────────────────────
+     Reading layout for a ~390px viewport. Kept at 520px so the print render
+     (Letter-width viewport) never triggers any of it — no print overrides needed. */
+  @media (max-width: 520px) {{
+    .header, .what-matters, .toc, .section, .footer {{ padding-left: 16px; padding-right: 16px; }}
+    /* header meta (website + version-history dropdown, which can't wrap) drops below the
+       company name on a phone instead of forcing the header wider than the screen */
+    .header-top {{ flex-wrap: wrap; }}
+    .header-meta {{ width: 100%; text-align: left !important; margin-top: 4px; }}
+    /* sticky TOC: one scrollable row with finger-sized targets, not 4 stacked rows */
+    .toc {{ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+            padding-top: 6px; padding-bottom: 6px; }}
+    .toc-link {{ font-size: 11px; padding: 9px 13px; }}
+    .section {{ scroll-margin-top: 60px; }}
+    /* news: date stacks above the headline; the hanging indent goes away */
+    .news-row {{ flex-direction: column; gap: 3px; }}
+    .news-date {{ min-width: 0; padding-top: 0; font-size: 11px; }}
+    .news-why, .news-source-row {{ margin-left: 0; }}
+    .wm-row {{ flex-direction: column; gap: 2px; }}
+    .wm-label {{ flex-basis: auto; }}
+    .footer {{ flex-direction: column; align-items: flex-start; gap: 6px; }}
+    /* floor the micro-label scale — 8.5–10px is desktop-only territory */
+    .hero-label, .ctx-label, .metric-label {{ font-size: 10.5px; }}
+    .hero-sub, .ctx-sub, .metric-sub {{ font-size: 11px; }}
+    .metric-period, .tl-round, .tl-date, .tl-leads {{ font-size: 10px; }}
+    /* tappable micro-links and section meta read (and tap) better a notch bigger */
+    .news-source-link, .news-source-label, .chart-sources {{ font-size: 11px; }}
+    .sec-meta, .fin-meta {{ font-size: 11.5px; }}
+  }}
 
   @media (prefers-reduced-motion: reduce) {{
     * {{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }}
@@ -2222,6 +3007,7 @@ def build_html(profile: dict) -> str:
     a {{ color: inherit; }}
     .toc {{ display: none; }}                              /* interactive nav only */
     #slidekit {{ display: none; }}                         /* working artifact, not note content */
+    .table-scroll {{ overflow: visible; }}                 /* print can't scroll — never clip a table */
     .wrapper {{ max-width: none; border: none; }}
     .what-matters {{ break-inside: avoid; padding-left: 12px; }}
     .wm-row {{ break-inside: avoid; }}
@@ -2263,9 +3049,13 @@ def build_html(profile: dict) -> str:
     .exec-card {{ padding: 11px 13px; }}
     .explain-card {{ padding: 10px 13px; }}
     .explain-grid {{ gap: 9px; margin-bottom: 14px; }}
-    .explain-list li {{ padding: 3px 0 3px 16px; font-size: 12.5px; line-height: 1.45; }}
-    .body-list li {{ padding: 6px 0 6px 18px; font-size: 13px; line-height: 1.5; }}
+    .explain-list li {{ padding: 3px 0 3px 16px; }}
+    .body-list li {{ padding: 6px 0 6px 18px; }}
     .earn-bullets li, .risk-list li {{ padding-top: 6px; padding-bottom: 6px; }}
+    /* one print body size across every section so reading text never changes mid-note */
+    .explain-text, .explain-list li, .body-p, .body-list li, .swot-list li,
+    .swot-standout, .earn-bullets li, .risk-list li, .news-why,
+    .slide-list li, .dq-list li {{ font-size: 13px; line-height: 1.5; }}
     .news-item {{ padding: 8px 0; }}
     .news-why {{ margin-top: 4px; }}
     .chart-wrap {{ margin: 2px 0 4px; }}
@@ -2274,6 +3064,9 @@ def build_html(profile: dict) -> str:
 </head>
 <body>
 <div class="wrapper">
+
+  <!-- ⓪ THESIS BAR: ticker · the call · Street PT + upside (sticky; the call never scrolls off) -->
+  {thesis_bar_html}
 
   <!-- ① HEADER: Logo + Name + Badges -->
   <div class="header">
@@ -2305,8 +3098,11 @@ def build_html(profile: dict) -> str:
   <!-- ③a WHAT MATTERS: thesis · key debate · next catalyst (the MD's first 30 seconds) -->
   {what_matters_html}
 
+  <!-- ③b BULL · BASE · BEAR scenario box (v2; renders only when the run authored it) -->
+  {bull_bear_html}
+
   <!-- ④ BUSINESS OVERVIEW: explainer (3 levels) + bullets + value-chain diagram (only when an explicit bizFlow exists) -->
-  {'<div class="section" id="overview"><div class="sec-label">Business Overview</div>' + explainer_html + ('<div class="two-col"><div>' + to_bullets(b.get("businessOverview") or short_desc, max_bullets=max_ov_bullets) + '</div><div><div class="diagram-caption">How the business works, left to right: who buys, what the platform provides, and the payoff.</div>' + biz_flow_html + '</div></div>' if biz_flow_html else to_bullets(b.get("businessOverview") or short_desc, max_bullets=max_ov_bullets)) + _source_row(b.get("businessOverviewSources") or []) + '</div>' if (b.get("businessOverview") or short_desc) else ''}
+  {'<div class="section" id="overview"><div class="sec-label">Business Overview</div>' + explainer_html + to_bullets(b.get("businessOverview") or short_desc, max_bullets=max_ov_bullets) + (('<div class="diagram-caption">How the business works: who buys, the engine, and the payoff.</div>' + biz_flow_html) if biz_flow_html else '') + _source_row(b.get("businessOverviewSources") or []) + '</div>' if (b.get("businessOverview") or short_desc) else ''}
 
   <!-- ④a HOW BROADCOM IS DIFFERENT (vs peers) -->
   {differentiation_html}
@@ -2362,7 +3158,7 @@ def build_html(profile: dict) -> str:
   <!-- ⑯ SLIDE KIT -->
   <div class="section" id="slidekit">
     <div class="sec-label">Slide Kit</div>
-    <div class="sec-meta">Logo, stats, and copy-paste artifacts (web view only — excluded from the PDF)</div>
+    <div class="sec-meta">Logo, stats, and copy-paste artifacts (web view only, excluded from the PDF)</div>
     {slide_kit_html}
   </div>
 
@@ -2400,6 +3196,12 @@ def _find_chrome():
         "/Applications/Chromium.app/Contents/MacOS/Chromium",
         "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
         "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        # Windows (Chrome, then Edge as a fallback — both are Chromium)
+        os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+        os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
     ]
     for c in candidates:
         if Path(c).exists():
@@ -2421,7 +3223,10 @@ def _find_chrome():
         if not root:
             continue
         for pat in ("chromium-*/chrome-linux/chrome", "chromium_headless_shell-*/chrome-linux/headless_shell"):
-            hits = sorted(Path("/").glob(os.path.join(root, pat).lstrip("/")))
+            try:
+                hits = sorted(Path("/").glob(os.path.join(root, pat).lstrip("/")))
+            except (NotImplementedError, OSError):
+                continue          # POSIX-style root glob is unsupported on Windows — skip
             if hits:
                 return str(hits[-1])
     for c in ("/usr/lib/chromium/chrome", "/usr/lib/chromium-browser/chromium-browser",
@@ -2673,20 +3478,35 @@ _OVERFLOW_JS = r"""(function(){
 
 def _audit_layout(chrome, html_path):
     """Render the finished HTML in headless Chrome and report any element whose content
-    overflows its box. Returns a list of issue dicts ([] = clean). Best-effort: returns
-    [] if Chrome/DevTools is unavailable, so a flaky browser never blocks a render."""
+    overflows its box — at desktop width AND at a phone viewport (390×844), since the
+    brief is read on the deployed site from a phone and a wide table that pans the whole
+    page sideways is invisible at desktop width. Each issue dict carries a 'vp' tag.
+    Returns [] = clean. Best-effort: returns [] if Chrome/DevTools is unavailable, so a
+    flaky browser never blocks a render."""
+    def _evaluate(sock, msg_id):
+        _ws_send(sock, {"id": msg_id, "method": "Runtime.evaluate",
+                        "params": {"expression": _OVERFLOW_JS, "returnByValue": True}})
+        for _ in range(300):
+            msg = _ws_recv(sock)
+            if msg.get("id") == msg_id:
+                if "error" in msg:
+                    return []
+                val = (((msg.get("result") or {}).get("result") or {}).get("value")) or "[]"
+                return json.loads(val)
+        return []
+
     try:
         with _chrome_page(chrome, html_path) as sock:
-            _ws_send(sock, {"id": 3, "method": "Runtime.evaluate",
-                            "params": {"expression": _OVERFLOW_JS, "returnByValue": True}})
-            for _ in range(300):
-                msg = _ws_recv(sock)
-                if msg.get("id") == 3:
-                    if "error" in msg:
-                        return []
-                    val = (((msg.get("result") or {}).get("result") or {}).get("value")) or "[]"
-                    return json.loads(val)
-            return []
+            issues = [{**it, "vp": "desktop"} for it in _evaluate(sock, 3)]
+            _ws_send(sock, {"id": 4, "method": "Emulation.setDeviceMetricsOverride",
+                            "params": {"width": 390, "height": 844,
+                                       "deviceScaleFactor": 2, "mobile": True}})
+            for _ in range(100):                        # wait for the override ack
+                if _ws_recv(sock).get("id") == 4:
+                    break
+            time.sleep(0.4)                             # let the layout reflow
+            issues += [{**it, "vp": "mobile-390"} for it in _evaluate(sock, 5)]
+            return issues
     except Exception:
         return []
 
@@ -2863,10 +3683,11 @@ def audit_brief(html_path, profile, strict=False):
     else:
         print(f"❌  QA layout: {len(layout)} overflow issue(s):")
         for it in layout[:12]:
+            vp = it.get("vp", "desktop")
             if it.get("type") == "page-overflow-x":
-                print(f"      • page overflows horizontally ({it.get('sw')} > {it.get('cw')}px)")
+                print(f"      • [{vp}] page overflows horizontally ({it.get('sw')} > {it.get('cw')}px)")
             else:
-                print(f"      • {it.get('cls','?')}: \"{it.get('text','')}\" "
+                print(f"      • [{vp}] {it.get('cls','?')}: \"{it.get('text','')}\" "
                       f"overflows its box ({it.get('sw')} > {it.get('cw')}px)")
     print(f"🔗  QA sources: {src_summary}")
     print(f"🧮  QA metrics: {met_summary}")
@@ -2874,15 +3695,33 @@ def audit_brief(html_path, profile, strict=False):
         print(f"❌  QA metrics: {m}")
     for m in met_warns:
         print(f"⚠️  QA metrics: {m}")
+    # House-style guard: the finished brief carries no em/en dashes. Scan the rendered body
+    # (outside <style>/<script>) so any hardcoded string that bypassed clean() is caught here,
+    # before publish, instead of being found later in a shipped report.
+    dash_warns = []
+    try:
+        _dbody = re.split(r"</style>", Path(html_path).read_text(encoding="utf-8"))[-1]
+        _dbody = re.sub(r"<script\b.*?</script>", "", _dbody, flags=re.S | re.I)
+        _dhits = re.findall(r"\S{0,14}\s?[—–]\s?\S{0,14}", _dbody)
+        if _dhits:
+            dash_warns.append(f"{len(_dhits)} em/en dash(es) in the rendered brief "
+                              "(house style is none, fix the source string): "
+                              + "; ".join(h.strip() for h in _dhits[:4]))
+    except Exception:
+        pass
+    if dash_warns:
+        print(f"⚠️  QA dashes: {dash_warns[0]}")
+    else:
+        print("✒️  QA dashes: none.")
     for m in errors:
         print(f"❌  QA completeness: {m}")
     for m in warns:
         print(f"⚠️  QA: {m}")
-    if not layout and not errors and not warns and not met_issues:
+    if not layout and not errors and not warns and not met_issues and not dash_warns:
         print("✅  QA completeness: comps depth + sourcing + metric tie-out OK.")
 
     return (len(layout) + len(errors) + len(met_errors)
-            + (len(warns) + len(met_warns) if strict else 0))
+            + (len(warns) + len(met_warns) + len(dash_warns) if strict else 0))
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -2941,7 +3780,7 @@ def run(ticker: str, detail: str = "brief", audit: bool = True, strict: bool = F
     # Save HTML to runs folder (latest run date)
     suffix    = f"_{detail}" if detail != "brief" else ""
     html_path = out_dir / f"{folder_id}_brief_{run_date}{suffix}.html"
-    html_path.write_text(html)
+    html_path.write_text(html, encoding="utf-8")
     print(f"📄  Brief saved: {html_path}")
 
     # Render a print-faithful PDF alongside the HTML (the primary deliverable).
