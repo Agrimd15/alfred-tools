@@ -182,6 +182,16 @@ def live_quote(ticker: str, stock=None, info=None) -> dict:
 
     close, close_date = last_close(stock)
     shares = info.get("sharesOutstanding")
+    # Dual-class fix: for multi-class names (e.g. Alphabet GOOGL/GOOG), Yahoo's
+    # `sharesOutstanding` reports only the queried class (~5.9B for GOOGL), which
+    # halves the recomputed market cap / EV. `impliedSharesOutstanding` is the
+    # all-class total (~12.2B) that Yahoo's own marketCap uses. Prefer it whenever
+    # it is materially (>5%) larger; single-class names are unaffected (implied≈shares).
+    implied = info.get("impliedSharesOutstanding")
+    if implied and shares and implied > shares * 1.05:
+        shares = implied
+    elif implied and not shares:
+        shares = implied
     debt   = info.get("totalDebt") or 0
     cash   = info.get("totalCash") or 0
     rev    = info.get("totalRevenue")

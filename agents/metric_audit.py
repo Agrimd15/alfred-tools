@@ -336,6 +336,89 @@ def _competitor_names(profile: dict):
     return names
 
 
+def _fy_token(s: str):
+    """Canonical 'FYyyyy' token from a year/label string ('FY2025 (ended Dec 2025)' ->
+    'FY2025', '2024' -> 'FY2024'). Returns None if no fiscal year is present."""
+    m = re.search(r"FY\s?'?(\d{2,4})", s or "", re.I)
+    if m:
+        yr = m.group(1)
+        return "FY" + ("20" + yr if len(yr) == 2 else yr)
+    m2 = re.search(r"\b(20\d{2})\b", s or "")
+    return "FY" + m2.group(1) if m2 else None
+
+
+def _currency_symbol(s: str):
+    for sym in ("€", "£", "¥", "$"):
+        if sym in (s or ""):
+            return sym
+    return None
+
+
+def _audit_revenue_history(profile: dict):
+    """Two revenueHistory hygiene checks (both WARN):
+      1. Mixed currency across the annual points (incl. the LTM point) — the bar chart
+         plots different-currency bars as if continuous (SPOT: €-series + $-LTM).
+      2. A stated YoY growth (in keyMetrics / slide bullets) that contradicts the growth
+         implied by the revenueHistory values themselves (HOOD: '+50%' vs +52.5%).
+    Conservative on purpose (WARN, tight conditions) so it stays quiet unless there is a
+    real discrepancy."""
+    out = []
+    rh = profile.get("revenueHistory") or []
+    if not rh:
+        return out
+
+    # 1) mixed-currency axis
+    syms = {s for r in rh if (s := _currency_symbol(str(r.get("label", ""))))}
+    if len(syms) > 1:
+        out.append(("warn",
+            f"revenueHistory mixes currencies ({', '.join(sorted(syms))}) across its points — "
+            f"the annual chart plots different-currency bars as if continuous; put every point "
+            f"(including the LTM point) in one currency"))
+
+    # 2) stated vs computed YoY. Compute growth for each later-year FY from the values,
+    #    skipping the LTM point (it isn't a fiscal year and its own YoY is ambiguous).
+    fy_pts = [r for r in rh
+              if isinstance(r.get("value"), (int, float))
+              and not re.search(r"ltm|ttm|trailing", str(r.get("year", "")) + str(r.get("label", "")), re.I)]
+    computed = {}
+    for i in range(1, len(fy_pts)):
+        prev, cur = fy_pts[i - 1], fy_pts[i]
+        fy = _fy_token(str(cur.get("year", "")) or str(cur.get("label", "")))
+        pv = prev.get("value")
+        if fy and pv:
+            computed[fy] = (float(cur["value"]) - float(pv)) / abs(float(pv)) * 100.0
+    if computed:
+        b = profile.get("brief") or {}
+        et = b.get("earningsTakeaways") or {}
+        scan = []
+        for k, v in ((et.get("keyMetrics") or {}) if isinstance(et, dict) else {}).items():
+            if _concept_from_label(k) in ("revenue", "revenue_growth"):
+                scan.append((f"metrics grid · {k}", str(v)))
+        for i, s in enumerate(b.get("slideBullets") or []):
+            if "revenue" in str(s).lower():
+                scan.append((f"slide bullet {i+1}", str(s)))
+        for loc, text in scan:
+            fy = _fy_token(text)
+            if not fy or fy not in computed:
+                continue
+            # a growth-looking % that is genuinely YoY (adjacent YoY/growth marker, or a
+            # leading + sign): avoid mistaking a margin ("83% margin") for growth.
+            mg = re.search(r"([+\-]?\d{1,3}(?:\.\d+)?)\s*%\s*(?:yoy|y/y|year[\s-]?over[\s-]?year|growth)?",
+                           text, re.I)
+            if not mg:
+                continue
+            near = text[max(0, mg.start() - 6):mg.end() + 22].lower()
+            if not (mg.group(0).lstrip()[:1] in "+-" or re.search(r"yoy|y/y|growth|year", near)):
+                continue
+            stated = float(mg.group(1))
+            comp = computed[fy]
+            if abs(stated - comp) > 2.0:            # >2pp gap is a real mismatch, not rounding
+                out.append(("warn",
+                    f"{fy} growth in {loc} reads {stated:g}% but revenueHistory implies "
+                    f"{comp:.1f}% — recompute from the annual values, don't re-type"))
+    return out
+
+
 def audit_metrics(profile: dict):
     """Returns (issues, summary). issues: list of (level, message)."""
     profile = profile or {}
@@ -417,6 +500,12 @@ def audit_metrics(profile: dict):
                         f"QUARTER ({fq.loc}) and the same {_fmt_m(fa.value)} for the YEAR "
                         f"({fa.loc}) — a quarterly figure should not equal the annual; "
                         f"verify one isn't mislabeled"))
+
+    # ── 2b) revenueHistory hygiene: mixed currency + stated-vs-computed growth ──
+    # Two defects the drift/collision checks miss, both caught in the 2026-06-30 batch:
+    #   • SPOT plotted four EUR bars next to a USD LTM bar (a mixed-currency axis).
+    #   • HOOD labelled FY2025 "+50% YoY" when revenueHistory implies +52.5%.
+    issues.extend(_audit_revenue_history(profile))
 
     # ── 3) Unperioded headline figures in the metrics grid ──
     et = (profile.get("brief") or {}).get("earningsTakeaways") or {}

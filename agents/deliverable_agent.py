@@ -3574,18 +3574,34 @@ def _audit_multiple_drift(profile):
             window = t[max(0, m.start() - 44):m.end() + 28].lower()
             if not re.search(r"ev\s*/\s*rev|ev/revenue|ev[\s-]to[\s-]revenue", window):
                 continue
-            # Forward/estimated markers — or an explicit as-of date — excuse a token
-            # only when they sit RIGHT next to it ("~12x forward earnings", "19x
-            # EV/Rev (as of the 2026-06-05 close)"); a "forward" later in the
-            # sentence must not shield an undated LTM claim earlier in it.
-            near = t[max(0, m.start() - 24):m.end() + 24].lower()
-            if re.search(r"fwd|forward|ntm|fy\s?\d|estimate|target|as of", near):
+            # Forward/estimated markers excuse a token when they sit RIGHT next to it
+            # ("~12x forward earnings"); a "forward" later in the sentence must not
+            # shield an undated LTM claim earlier in it.
+            near = t[max(0, m.start() - 24):m.end() + 28]
+            near_l = near.lower()
+            if re.search(r"fwd|forward|ntm|fy\s?\d|estimate|target", near_l):
                 continue
             v = float(m.group(1))
+            # An explicit "as of <date>" only shields the token when that date MATCHES the
+            # run's actual close. A hard-typed multiple stamped with a STALE date (MRVL's
+            # "~28x EV/Rev (as of the 2026-06-12 close)" on a 2026-06-29 run) is a defect:
+            # it drifts and misdates the claim. Flag the date mismatch even if the value
+            # still happens to equal the live multiple.
+            masof = re.search(r"as of[^0-9]{0,12}(\d{4}-\d{2}-\d{2})", near_l)
+            run_asof = str(q.get("priceAsOf", "") or "")
+            if masof:
+                if run_asof and masof.group(1) != run_asof:
+                    issues.append(("warn",
+                        f"EV/Rev as-of date stale: {loc} says '{v:g}x … as of {masof.group(1)}' "
+                        f"but this run's close is {run_asof} — a hard-typed dated multiple drifts; "
+                        f"drop the number and point to the live comps table, or restamp the date"))
+                continue                                  # correctly-dated -> legitimately shielded
+            if re.search(r"as of", near_l):               # dated but no parseable date -> let it pass
+                continue
             if abs(v - live) > max(0.05, 0.015 * live):
                 issues.append(("warn",
                     f"EV/Rev drift: {loc} says {v:g}x but the live multiple is {live:g}x "
-                    f"(as of {q.get('priceAsOf','')} close) — refresh the wording or date the claim"))
+                    f"(as of {run_asof} close) — refresh the wording or date the claim"))
     return issues
 
 

@@ -189,9 +189,9 @@
     }
   ],
   "employeeCount": "~14,500 (late 2025)",
-  "lastRunDate": "2026-06-18",
+  "lastRunDate": "2026-07-07",
   "brief": {
-    "runDate": "2026-06-18",
+    "runDate": "2026-07-07",
     "businessOverview": "Databricks, founded in 2013 by the UC Berkeley creators of Apache Spark (Ali Ghodsi, Matei Zaharia, Ion Stoica, Reynold Xin and others), is the company behind the 'Data Intelligence Platform' \u2014 its branding of the lakehouse architecture that merges the cheap, open storage of a data lake with the structured query performance and governance of a data warehouse. Built on the open-source projects it created or stewards (Apache Spark, Delta Lake, MLflow, Unity Catalog) plus the open table format world it expanded into via Iceberg (the Tabular acquisition), the platform lets enterprises run data engineering, BI/SQL warehousing, streaming, and AI/ML on one governed copy of their data across AWS, Azure and Google Cloud. Since 2023 Databricks has pivoted hard into generative AI through its Mosaic AI stack (from the ~$1.3B MosaicML acquisition), letting customers build, fine-tune and serve LLM-powered applications and agents directly on their data, and added a serverless operational database (Lakebase) via the ~$1B Neon acquisition. It is the lead challenger to Snowflake in the data-platform wars and is headquartered in San Francisco. As of 2026 it remains private, with a revenue run-rate above $5.4B (>65% YoY) and a $134B post-money valuation, while reportedly in talks for a new round at $165-175B.",
     "businessOverviewSources": [
       {
@@ -223,6 +223,13 @@
       }
     ],
     "recentNews": [
+      {
+        "date": "2026-06-25",
+        "headline": "Databricks' Former AI Chief Naveen Rao Leaves to Launch Unconventional AI, Targeting 1,000x Power Efficiency",
+        "whyItMatters": "Naveen Rao, head of AI at Databricks, departed to found Unconventional AI (oscillator-based architecture for image generation). Signals leadership churn at a critical AI buildout moment and highlights talent-departure risk at late-stage private AI companies ahead of a potential Databricks IPO.",
+        "source": "TechCrunch",
+        "sourceUrl": "https://techcrunch.com/2026/06/25/databricks-former-ai-chief-thinks-he-can-cut-ais-power-bill-by-1000x/"
+      },
       {
         "date": "2026-06-17",
         "headline": "Databricks Doubles Down on Cybersecurity at Annual Conference, Unveils New Acquisition",
@@ -271,13 +278,6 @@
         "whyItMatters": "First crossing of the $100B threshold (co-led by a16z, Insight, MGX, Thrive, WCM) made Databricks one of the most valuable private tech companies in the world and reset the comp set for the data-platform category.",
         "source": "Databricks Newsroom",
         "sourceUrl": "https://www.databricks.com/company/newsroom/press-releases/databricks-raising-series-k-investment-100-billion-valuation"
-      },
-      {
-        "date": "2025-05-14",
-        "headline": "Databricks to acquire Neon (serverless Postgres) for ~$1B",
-        "whyItMatters": "Adds an operational/transactional database (Lakebase) purpose-built for AI agents \u2014 extending Databricks from analytics into the live application data layer, a direct expansion of TAM.",
-        "source": "Databricks Newsroom",
-        "sourceUrl": "https://www.databricks.com/company/newsroom/press-releases/databricks-agrees-acquire-neon-help-developers-deliver-ai-systems"
       }
     ],
     "earningsTakeaways": {
