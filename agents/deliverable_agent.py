@@ -1229,7 +1229,8 @@ def build_html(profile: dict) -> str:
                   "operatingMargin", "operatingMarginNonGAAP", "fcfMargin", "aiRevenue"}
 
     _ACRONYMS = {"us", "gaap", "eps", "tcv", "rpo", "rdv", "arr", "nrr", "fcf", "ai", "ev",
-                 "ipo", "saas", "rps", "ltm", "yoy", "qoq", "uk", "emea", "apac"}
+                 "ipo", "saas", "rps", "ltm", "yoy", "qoq", "uk", "emea", "apac", "gtv",
+                 "ebitda", "gmv", "tpv"}
     def _humanize(k):
         # split camelCase + digit boundaries, then fix acronym casing and 'Of40' -> 'of 40'
         s = re.sub(r'(?<=[a-zA-Z])(?=[0-9])', ' ', re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', k))
@@ -1314,8 +1315,16 @@ def build_html(profile: dict) -> str:
         lbl = METRIC_LABELS.get(k, _humanize(k))
         # A guidance metric keyed like 'fy2026Guide' humanizes badly and reads as a current-
         # period actual; relabel it cleanly and let the period tag carry the 'FY guidance'.
+        # Preserve WHAT is guided when the key names it (gtvGuidance -> "GTV Guidance",
+        # q2GtvGuide -> "GTV Guidance") so the card is never a bare, ambiguous "Guidance".
         if k not in METRIC_LABELS and re.search(r"guid", k, re.I):
-            lbl = "Guidance"
+            stem = re.sub(r"(?i)(fy\d{2,4}|q[1-4]\d*|next\s*q|guid(?:ance|e)?)", " ", k)
+            stem = re.sub(r"[_\s]+", " ", stem).strip()
+            if stem:
+                stem = stem.upper() if len(stem) <= 4 else _humanize(stem)
+                lbl = f"{stem} Guidance"
+            else:
+                lbl = "Guidance"
         head, sub = _split_stat(v)
         if _is_empty(head):                         # e.g. "Not disclosed (private)" -> drop
             continue
