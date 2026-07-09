@@ -459,17 +459,16 @@ def build_quarterly_trend(ticker: str) -> dict:
     return {"chart": chart_html, "table": table_html}
 
 
-def build_sankey(stmt: dict, name: str) -> str:
-    """Income-statement Sankey (revenue → costs → profit) hand-drawn as a self-contained inline
-    SVG from the live income statement, in the App-Economy-Insights house style: smooth
-    semi-transparent gradient ribbons (not flat slabs), GREEN = profit kept, SALMON/RED = money
-    spent, AMBER = the non-operating bridge, with each node carrying name + value, a margin % on
-    the profit nodes and a YoY chip when a prior year is available. No external service and no
-    network call — it is part of the page, so it prints vector-crisp and works offline. Returns ''
-    when stmt is None (private / unprofitable / missing) so the section omits the chart gracefully,
-    like the optional Gartner map. Handles BOTH non-operating shapes: otherNet > 0 → interest/other
-    INCOME bridging operating income UP to pretax (e.g. PLTR); otherNet < 0 → interest/other EXPENSE
-    bridging DOWN (e.g. AVGO/MSFT). Every flow stays balanced."""
+def _sankey_svg(stmt: dict, name: str) -> str:
+    """The inline income-statement Sankey <svg> for ONE period (revenue → costs → profit),
+    hand-drawn in the App-Economy-Insights house style: smooth semi-transparent gradient ribbons
+    (not flat slabs), GREEN = profit kept, SALMON/RED = money spent, AMBER = the non-operating
+    bridge, with each node carrying name + value, a margin % on the profit nodes and a YoY chip
+    when a comparison period is available. No external service and no network call — it is part of
+    the page, so it prints vector-crisp and works offline. Returns '' when stmt is None (private /
+    unprofitable / missing). Handles BOTH non-operating shapes: otherNet > 0 → interest/other
+    INCOME bridging operating income UP to pretax (e.g. PLTR); otherNet < 0 → interest/other
+    EXPENSE bridging DOWN (e.g. AVGO/MSFT). Every flow stays balanced."""
     if not stmt:
         return ""
     try:
@@ -704,22 +703,73 @@ def build_sankey(stmt: dict, name: str) -> str:
             f'<text x="{cx:.1f}" y="{TOP-26:.1f}" font-size="10.5" font-weight="700" '
             f'letter-spacing="1.4" fill="#aab0ba">{lbl}</text>' for cx, lbl in caps)
 
+        per = stmt.get("period", "")
         svg = (
             f'<svg viewBox="0 0 {VBW} {VBH}" xmlns="http://www.w3.org/2000/svg" role="img" '
-            f'aria-label="{_html.escape(name)} income statement flow: revenue through costs to net profit" '
+            f'aria-label="{_html.escape(name)} income statement flow ({_html.escape(per)}): revenue through costs to net profit" '
             f'font-family="Inter, Arial, sans-serif" class="sankey-svg">'
             f'<defs>{"".join(defs)}</defs>'
             f'<rect x="0" y="0" width="{VBW}" height="{VBH}" rx="14" fill="{BG}"/>'
             f'{cap_svg}{"".join(ribbons)}{"".join(node_svg)}{"".join(label_svg)}</svg>')
-
-        per = stmt.get("period", "")
-        return (f'<div class="sankey-wrap"><div class="chart-eyebrow">Income statement flow'
-                f'{(" · " + per) if per else ""}</div><div class="sankey-scroll">{svg}</div>'
-                f'<div class="chart-sources">Source: yfinance income statement (most recent fiscal year). '
-                f'Green = profit kept · salmon = costs · amber = non-operating. Margins shown as % of revenue.'
-                f'</div></div>')
+        return svg
     except Exception:
         return ""
+
+
+def build_sankey(stmt: dict, name: str) -> str:
+    """Single-period income-statement Sankey wrapped in the section chrome (eyebrow + horizontally
+    scrollable SVG + sources). Returns '' when the period isn't drawable, so the section omits the
+    chart gracefully, like the optional Gartner map. Backward-compatible with the old signature."""
+    svg = _sankey_svg(stmt, name)
+    if not svg:
+        return ""
+    per = (stmt or {}).get("period", "")
+    return (f'<div class="sankey-wrap"><div class="chart-eyebrow">Income statement flow'
+            f'{(" · " + per) if per else ""}</div><div class="sankey-scroll">{svg}</div>'
+            f'{_SANKEY_SOURCE_HTML}</div>')
+
+
+# shared source/legend line under any income-statement Sankey
+_SANKEY_SOURCE_HTML = (
+    '<div class="chart-sources">Source: yfinance income statement. '
+    'Green = profit kept · salmon = costs · amber = non-operating. Margins shown as % of revenue.'
+    '</div>')
+
+
+def build_sankey_tabs(stmts: list, name: str) -> str:
+    """Income-statement Sankey with a FY / quarter toggle across the top: one tab per period in
+    `stmts` (most-recent fiscal year first, then recent quarters), each its own inline SVG panel.
+    Pure CSS radio-tabs — no JS — so it toggles in the browser and prints the first (FY) panel in
+    the PDF. Falls back to a single un-tabbed chart when only one period is drawable, and returns
+    '' when none are. `stmts` comes from data_agent.income_statements()."""
+    panels = [(s, _sankey_svg(s, name)) for s in (stmts or [])]
+    panels = [(s, svg) for s, svg in panels if svg]
+    if not panels:
+        return ""
+    if len(panels) == 1:
+        return build_sankey(panels[0][0], name)
+    import html as _html
+    # Radios come first so they precede .sk-tabrow and .sk-panels as siblings (the `~` combinator
+    # reaches both); labels live in the tab row and reference each radio by `for=`.
+    radios, labels, bodies, css = [], [], [], []
+    for i, (s, svg) in enumerate(panels):
+        rid = f"sk-{i}"
+        per = _html.escape(s.get("period", f"Period {i+1}"))
+        kind = "FY" if s.get("periodType") == "annual" else "Q"
+        radios.append(f'<input type="radio" name="sk-tab" id="{rid}" class="sk-radio"'
+                      f'{" checked" if i == 0 else ""}>')
+        labels.append(f'<label for="{rid}" class="sk-tab" data-kind="{kind}">{per}</label>')
+        bodies.append(f'<div class="sk-panel">{svg}</div>')
+        css.append(f'#{rid}:checked ~ .sk-panels > .sk-panel:nth-child({i+1}) {{ display: block; }}')
+        css.append(f'#{rid}:checked ~ .sk-tabrow > label[for="{rid}"] {{ color: var(--ks-ink); '
+                   f'border-bottom-color: var(--ks-kinpaku); background: var(--ks-raised); }}')
+    scoped = "<style>" + "".join(css) + "</style>"
+    return (f'<div class="sankey-wrap sk-tabs">{scoped}'
+            f'<div class="chart-eyebrow">Income statement flow</div>'
+            f'{"".join(radios)}'
+            f'<div class="sk-tabrow">{"".join(labels)}</div>'
+            f'<div class="sk-panels">{"".join(bodies)}</div>'
+            f'{_SANKEY_SOURCE_HTML}</div>')
 
 
 def build_biz_flow(profile: dict, b: dict) -> str:
@@ -815,12 +865,59 @@ def build_comps_scatter(rows: list) -> str:
     y1 = max(ys) * 1.18 or 1.0
     def X(v): return P + (v - x0) / (x1 - x0) * (W - 2 * P)
     def Y(v): return H - P - v / y1 * (H - 2 * P)
-    dots = ""
+    import html as _html
+    # ── marks: dot + label, with label de-collision ──
+    # Each label defaults to centered just above its dot. Labels whose horizontal extents
+    # overlap (clustered names like TTD/CART/UBER) are grouped, spread evenly side-by-side on a
+    # common line just above the cluster's topmost dot, and tied back to each dot with a thin
+    # leader so no two tickers overprint.
+    FS = 10.0
+    marks = []
     for g, ev, lbl, subj in pts:
-        fill = "var(--ks-accent)" if subj else "var(--ks-kinpaku)"
-        dots += (f'<circle cx="{X(g):.1f}" cy="{Y(ev):.1f}" r="{6 if subj else 4.5}" fill="{fill}" opacity="0.9"/>'
-                 f'<text x="{X(g):.1f}" y="{Y(ev) - 9:.1f}" text-anchor="middle" font-size="10" font-weight="700" '
-                 f'fill="{fill}" font-family="Arial,Helvetica,sans-serif">{lbl}</text>')
+        s = str(lbl)
+        marks.append({"cx": X(g), "cy": Y(ev), "lbl": s, "subj": subj,
+                      "fill": "var(--ks-accent)" if subj else "var(--ks-kinpaku)",
+                      "r": 6.0 if subj else 4.5, "hw": max(9.0, len(s) * FS * 0.31),
+                      "tx": X(g), "ty": Y(ev) - 9, "moved": False})
+    # Group labels that genuinely overlap at their default positions — overlapping in BOTH x
+    # (widths touch) AND y (dots within a label-height of each other). Two dots far apart
+    # vertically never collide even when their x is close (e.g. DASH vs SHOP), so they stay put.
+    n = len(marks)
+    parent = list(range(n))
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]; a = parent[a]
+        return a
+    for i in range(n):
+        for j in range(i + 1, n):
+            a, b = marks[i], marks[j]
+            if (abs(a["cx"] - b["cx"]) < a["hw"] + b["hw"] + 5
+                    and abs(a["cy"] - b["cy"]) < 13):
+                parent[find(i)] = find(j)
+    groups = {}
+    for i, m in enumerate(marks):
+        groups.setdefault(find(i), []).append(m)
+    for cl in groups.values():
+        if len(cl) < 2:
+            continue
+        pad = 5.0
+        total = sum(2 * m["hw"] for m in cl) + pad * (len(cl) - 1)
+        center = sum(m["cx"] for m in cl) / len(cl)
+        top_y = max(12.0, min(m["cy"] for m in cl) - 13)
+        x = min(max(P + 2, center - total / 2), W - P - total - 2)
+        for m in sorted(cl, key=lambda m: m["cx"]):
+            m["tx"] = x + m["hw"]; x += 2 * m["hw"] + pad
+            m["ty"] = top_y; m["moved"] = True
+    dots = leaders = texts = ""
+    for m in marks:
+        dots += f'<circle cx="{m["cx"]:.1f}" cy="{m["cy"]:.1f}" r="{m["r"]}" fill="{m["fill"]}" opacity="0.9"/>'
+        if m["moved"]:
+            leaders += (f'<line x1="{m["tx"]:.1f}" y1="{m["ty"] + 3:.1f}" x2="{m["cx"]:.1f}" '
+                        f'y2="{m["cy"] - m["r"] - 1:.1f}" stroke="{m["fill"]}" stroke-width="0.7" opacity="0.35"/>')
+        texts += (f'<text x="{m["tx"]:.1f}" y="{m["ty"]:.1f}" text-anchor="middle" font-size="{FS:.0f}" '
+                  f'font-weight="700" fill="{m["fill"]}" font-family="Arial,Helvetica,sans-serif">'
+                  f'{_html.escape(m["lbl"])}</text>')
+    dots = leaders + dots + texts
     ax = (f'<line x1="{P}" y1="{H - P}" x2="{W - P}" y2="{H - P}" stroke="var(--ks-rule-strong)" stroke-width="1"/>'
           f'<line x1="{P}" y1="{P - 12}" x2="{P}" y2="{H - P}" stroke="var(--ks-rule-strong)" stroke-width="1"/>')
     ticks = ""
@@ -2191,8 +2288,8 @@ def build_html(profile: dict) -> str:
         sankey_html = ""
         if ticker_sym and re.fullmatch(_TICKER_RE, ticker_sym or ""):
             try:
-                from data_agent import income_statement
-                sankey_html = build_sankey(income_statement(ticker_sym), name)
+                from data_agent import income_statements
+                sankey_html = build_sankey_tabs(income_statements(ticker_sym), name)
             except Exception:
                 sankey_html = ""
         earnings_section_html = (
@@ -2780,6 +2877,20 @@ def build_html(profile: dict) -> str:
   .sankey-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
   .sankey-svg {{ display: block; width: 100%; min-width: 860px; height: auto;
                  border: 1px solid var(--ks-rule); border-radius: 6px; }}
+  /* ── FY / quarter toggle (pure-CSS radio tabs; no JS) ── */
+  .sk-tabs .sk-radio {{ position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }}
+  .sk-tabrow {{ display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 10px; }}
+  .sk-tab {{ font-family: var(--ks-sans); font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+             color: var(--ks-faint); background: transparent; border: 1px solid var(--ks-rule);
+             border-bottom: 2px solid transparent; border-radius: 5px; padding: 5px 11px;
+             cursor: pointer; user-select: none; transition: color .12s, background .12s, border-color .12s;
+             white-space: nowrap; }}
+  .sk-tab:hover {{ color: var(--ks-body); background: var(--ks-raised); }}
+  .sk-panel {{ display: none; overflow-x: auto; -webkit-overflow-scrolling: touch; }}
+  /* print: show only the first (FY) panel; the interactive tab row is meaningless on paper */
+  @media print {{ .sk-tabrow {{ display: none; }}
+    .sk-panels > .sk-panel {{ display: none !important; }}
+    .sk-panels > .sk-panel:first-child {{ display: block !important; }} }}
 
   /* ── Funding timeline (flex cards) ── */
   .tl-flex  {{ display: flex; align-items: center; gap: 0; overflow-x: auto;
@@ -2909,7 +3020,10 @@ def build_html(profile: dict) -> str:
   .comps-table tr:last-child td {{ border-bottom: none; }}
   .comps-table tr:hover td {{ background: var(--ks-raised); }}
   .comps-table tr.subj td {{ background: #eef3fa; font-weight: 700; color: var(--ks-champagne); }}
-  .comps-table tr.subj td:first-child {{ box-shadow: inset 3px 0 0 0 var(--ks-accent); }}
+  /* the 3px accent bar is drawn as an inset shadow over the cell's left edge, so the first
+     column needs left padding or the subject name/note is clipped by the bar (the private
+     table compensates the same way) */
+  .comps-table tr.subj td:first-child {{ box-shadow: inset 3px 0 0 0 var(--ks-accent); padding-left: 11px; }}
   .comp-name {{ font-weight: 700; color: var(--ks-champagne); font-size: 13px; }}
   .comp-ticker {{ color: var(--ks-kinpaku-pale); font-size: 11px; font-weight: 700; }}
   .comp-type-cell {{ font-size: 10px; color: var(--ks-faint); white-space: nowrap; }}
