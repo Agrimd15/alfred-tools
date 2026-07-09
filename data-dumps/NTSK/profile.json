@@ -167,12 +167,33 @@
     }
   ],
   "employeeCount": "~2,910 (as of July 31, 2025, per S-1)",
-  "lastRunDate": "2026-06-24",
+  "lastRunDate": "2026-07-09",
   "brief": {
-    "runDate": "2026-06-24",
-    "businessOverview": "Netskope is a cloud-native Security Service Edge (SSE) and Secure Access Service Edge (SASE) platform founded in 2012 in Santa Clara, CA. The company pioneered the Cloud Access Security Broker (CASB) category and has evolved into a full platform consolidating CASB, Secure Web Gateway (SWG), Zero Trust Network Access (ZTNA), and Firewall-as-a-Service (FWaaS) into a single control plane sold to enterprise CISOs. Netskope completed its $908M IPO on NASDAQ (NTSK) in September 2025 \u2014 the largest cybersecurity IPO of the year \u2014 and trades at $10/share as of the 2026-06-05 close (following a sharp post-Q1-FY27 selloff), implying a ~$2.4B market cap and 2.7x EV/Revenue LTM \u2014 a steep discount to SSE/SASE peers. As of Q1 FY2027 (April 30, 2026), Netskope reports $845M ARR (+29% YoY), $202M quarterly revenue (+28% YoY), 118% NRR, and 4,317 enterprise customers across 90 countries. The stock's 37% decline from its $19 IPO price \u2014 against a consensus analyst target of $17.89 (18 analysts, strong buy) \u2014 is the central debate.",
+    "runDate": "2026-07-09",
+    "businessOverview": "Netskope is a cloud-native Security Service Edge (SSE) and Secure Access Service Edge (SASE) platform founded in 2012 in Santa Clara, CA. The company pioneered the Cloud Access Security Broker (CASB) category and has evolved into a full platform consolidating CASB, Secure Web Gateway (SWG), Zero Trust Network Access (ZTNA), and Firewall-as-a-Service (FWaaS) into a single control plane sold to enterprise CISOs. Netskope completed its $908M IPO on NASDAQ (NTSK) in September 2025 \u2014 the largest cybersecurity IPO of the year \u2014 and trades at $10/share as of the 2026-06-05 close (following a sharp post-Q1-FY27 selloff), implying a ~$2.4B market cap and 5.9x EV/Revenue LTM \u2014 a steep discount to SSE/SASE peers. As of Q1 FY2027 (April 30, 2026), Netskope reports $845M ARR (+29% YoY), $202M quarterly revenue (+28% YoY), 118% NRR, and 4,317 enterprise customers across 90 countries. The stock's 37% decline from its $19 IPO price \u2014 against a consensus analyst target of $17.89 (18 analysts, strong buy) \u2014 is the central debate.",
     "productModel": "Netskope licenses its SSE/SASE platform on a per-user annual or multi-year SaaS subscription. The platform has four core pillars: CASB (the founding product, inline and API-based cloud app control); Next-Gen SWG (web threat protection and acceptable use enforcement); ZTNA (identity-aware least-privilege access replacing VPNs); and FWaaS (cloud-native network firewall). DLP and threat protection capabilities are embedded across all modules. GTM is top-down enterprise, selling to CISOs at Fortune 500 accounts via a direct sales force complemented by channel partners. The dominant motion is land-and-expand: enter via CASB or SWG, then cross-sell additional modules and expand user seats. The company's proprietary NewEdge cloud network \u2014 claimed to be within 15 milliseconds of any user globally \u2014 is the primary performance differentiator versus Zscaler's third-party data-center infrastructure.",
     "recentNews": [
+      {
+        "date": "2026-07-07",
+        "headline": "Netskope: AI Demand and Platform Adoption Still Support Buy",
+        "whyItMatters": "Detailed analysis reaffirms Buy thesis \u2014 ARR $845M +29% YoY, RPO +33%, 113% NRR, 57% of large customers using 4+ products \u2014 signaling durable platform stickiness heading into H2 FY2027.",
+        "source": "Seeking Alpha",
+        "sourceUrl": "https://seekingalpha.com/article/4920491-netskope-stock-ai-demand-platform-adoption-still-support-buy"
+      },
+      {
+        "date": "2026-06-29",
+        "headline": "Wells Fargo reiterates Buy on Netskope, maintains $13 price target",
+        "whyItMatters": "Continued Buy stance after the post-earnings sell-off signals institutional conviction that the ~23% decline was an overreaction to a lighter ARR beat rather than structural growth impairment.",
+        "source": "Seeking Alpha",
+        "sourceUrl": "https://seekingalpha.com/symbol/NTSK/news"
+      },
+      {
+        "date": "2026-06-25",
+        "headline": "KeyBanc lowers Netskope price target to $14 from $15, maintains Overweight",
+        "whyItMatters": "Analyst trimmed PT citing IT budget gaps from KeyBanc's H1 2026 CIO survey, while keeping the bullish rating and calling AI-security names a preferred stay-long sector.",
+        "source": "Seeking Alpha",
+        "sourceUrl": "https://seekingalpha.com/symbol/NTSK/news"
+      },
       {
         "date": "2026-06-07",
         "headline": "Netskope CEO Sanjay Beri appears on CNBC 'Fortt Knox' to discuss fiscal Q1 2027 earnings",
@@ -207,13 +228,6 @@
         "whyItMatters": "AI adoption expanding enterprise attack surfaces is the core secular demand driver; the 20x oversubscription reflects the structural thesis rather than company-specific factors.",
         "source": "Bloomberg",
         "sourceUrl": "https://www.bloomberg.com/news/articles/2025-09-16/netskope-ipo-in-demand-as-ai-era-heightens-cyber-threats"
-      },
-      {
-        "date": "2025-09-08",
-        "headline": "Netskope Files for $813M IPO; H1 FY2026 Revenue Grew 31% to $328.5M",
-        "whyItMatters": "S-1 filing disclosed first public look at financials: 31% revenue growth, narrowing net loss, 118% NRR, and 4,317 customers \u2014 metrics that positioned NTSK as a high-quality compounder at IPO.",
-        "source": "Bloomberg",
-        "sourceUrl": "https://www.bloomberg.com/news/articles/2025-09-08/cybersecurity-firm-netskope-seeks-to-raise-813-million-in-ipo"
       }
     ],
     "earningsTakeaways": {
@@ -252,7 +266,7 @@
         "ticker": "ZS",
         "priceAsOf": "2026-06-23",
         "marketCap": "$20.4B",
-        "evRevenue": "5.9x",
+        "evRevenue": "6.8x",
         "evRevenueLTM": "5.9x",
         "revenueGrowth": "25.4%",
         "grossMargin": "76.7%",
@@ -267,7 +281,7 @@
         "ticker": "NET",
         "priceAsOf": "2026-06-23",
         "marketCap": "$72.2B",
-        "evRevenue": "30.8x",
+        "evRevenue": "41.4x",
         "evRevenueLTM": "30.8x",
         "revenueGrowth": "33.5%",
         "grossMargin": "73.3%",
@@ -282,7 +296,7 @@
         "ticker": "CRWD",
         "priceAsOf": "2026-06-23",
         "marketCap": "$173.3B",
-        "evRevenue": "33.3x",
+        "evRevenue": "37.5x",
         "evRevenueLTM": "33.3x",
         "revenueGrowth": "25.6%",
         "grossMargin": "75.1%",
@@ -297,7 +311,7 @@
         "ticker": "PANW",
         "priceAsOf": "2026-06-23",
         "marketCap": "$237.1B",
-        "evRevenue": "22.3x",
+        "evRevenue": "24.5x",
         "evRevenueLTM": "22.3x",
         "revenueGrowth": "31.1%",
         "grossMargin": "72.0%",
@@ -312,7 +326,7 @@
         "ticker": "FTNT",
         "priceAsOf": "2026-06-23",
         "marketCap": "$108.4B",
-        "evRevenue": "14.9x",
+        "evRevenue": "15.8x",
         "evRevenueLTM": "14.9x",
         "revenueGrowth": "20.1%",
         "grossMargin": "80.3%",
@@ -327,7 +341,7 @@
         "ticker": "S",
         "priceAsOf": "2026-06-23",
         "marketCap": "$5.1B",
-        "evRevenue": "4.2x",
+        "evRevenue": "5.1x",
         "evRevenueLTM": "4.2x",
         "revenueGrowth": "20.8%",
         "grossMargin": "73.2%",
@@ -340,10 +354,10 @@
     ],
     "slideBullets": [
       "$845M ARR growing 29% YoY as of Q1 FY2027 \u2014 NRR of 118% and GRR of 96% across 4,317 enterprise customers in 90 countries confirm platform stickiness and durable land-and-expand economics.",
-      "IPO'd NASDAQ (NTSK) September 2025 at $19/share raising $908M; stock now at $10 implies 2.7x EV/Revenue (as of 2026-06-23 close8) with 32% growth \u2014 the cheapest valuation in the public security peer set on a growth-adjusted basis against consensus analyst target of $17.89.",
+      "IPO'd NASDAQ (NTSK) September 2025 at $19/share raising $908M; stock now at $10 implies 5.9x EV/Revenue (as of 2026-07-08) with 32% growth \u2014 the cheapest valuation in the public security peer set on a growth-adjusted basis against consensus analyst target of $17.89.",
       "Sole pure-play SSE platform alongside Zscaler in a $30B+ SASE/SSE market; differentiated on data protection heritage (CASB founder), proprietary NewEdge network (<15ms global latency), and single-policy-engine architecture \u2014 directly positioned against Zscaler's proxy-first and Palo Alto's bundle strategy.",
       "AI adoption is a structural demand accelerator: every generative AI deployment creates new data-exfiltration risk surfaces requiring inline CASB/DLP; CEO Beri called this 'a redefinition of the biggest market in security, data network security' on IPO day.",
-      "Key debate: NTSK at 2.7x EV/Rev (as of 2026-06-23 close) (vs. Cloudflare 36x on comparable growth) is either the most compelling post-IPO security discount in years, or a warning signal about gross margin trajectory, loss profile, and competitive intensity from Zscaler ($2.2B ARR, ~3x NTSK's scale)."
+      "Key debate: NTSK at 5.9x EV/Rev (as of 2026-07-08) (vs. Cloudflare ~41x (as of 2026-07-08 close \u2014 see comps table) on comparable growth) is either the most compelling post-IPO security discount in years, or a warning signal about gross margin trajectory, loss profile, and competitive intensity from Zscaler ($2.2B ARR, ~3x NTSK's scale)."
     ],
     "diligenceQuestions": [
       "What is driving the 29% ARR growth in Q1 FY2027 vs. 34% in Q3 FY2026 \u2014 is the deceleration attributable to tough year-over-year comparables as the IPO benefited pipeline, or does it reflect genuine competitive pressure from Zscaler or Palo Alto Networks in renewals and new logos? How does NRR trend quarter-over-quarter in the most recent two periods?",
@@ -351,11 +365,11 @@
       "What is the overlap and head-to-head win rate versus Zscaler in competitive bake-offs, and what is the average contract value and module attach rate for deals where Netskope wins \u2014 is the primary wedge still CASB/SWG or has ZTNA become the entry point, and does the module attachment trajectory support reaching $1B ARR with 30%+ NRR economics?"
     ],
     "swot": {
-      "standoutSummary": "Netskope trades at just 2.7x EV/Revenue (as of 2026-06-08) \u2014 a fraction of SSE/SASE peers (Zscaler 6.1x, SentinelOne 4.5x, Palo Alto 20.8x, CrowdStrike 32.8x, Cloudflare 34x) \u2014 despite ~28% growth and best-in-class 118% NRR. The discount is the post-IPO 'show me GAAP profitability' debate, sharpened by the post-Q1-FY27 selloff.",
+      "standoutSummary": "Netskope trades at just 5.9x EV/Revenue (as of 2026-07-08) \u2014 a fraction of SSE/SASE peers (Zscaler 6.1x, SentinelOne 4.5x, Palo Alto 20.8x, CrowdStrike 32.8x, Cloudflare 34x) \u2014 despite ~28% growth and best-in-class 118% NRR. The discount is the post-IPO 'show me GAAP profitability' debate, sharpened by the post-Q1-FY27 selloff.",
       "strengths": [
         {
           "point": "Deep value vs peers",
-          "detail": "2.7x EV/Rev (as of 2026-06-08) on ~28% growth \u2014 the cheapest pure-play SSE name by a wide margin (ZS 6.1x, S 4.5x), a large multiple gap to close if profitability inflects."
+          "detail": "5.9x EV/Rev (as of 2026-07-08) on ~28% growth \u2014 the cheapest pure-play SSE name by a wide margin (ZS 6.1x, S 4.5x), a large multiple gap to close if profitability inflects."
         },
         {
           "point": "Best-in-class retention",
@@ -443,10 +457,10 @@
     ]
   },
   "trading": {
-    "priceAsOf": "2026-06-23",
-    "stockPrice": "$10",
-    "marketCap": "$2.4B",
-    "enterpriseValue": "$2.0B",
+    "priceAsOf": "2026-07-08",
+    "stockPrice": "$12",
+    "marketCap": "$4.8B",
+    "enterpriseValue": "$4.5B",
     "totalRevenueLTM": "$753M",
     "revenueGrowthYoY": "27.8%",
     "grossMargin": "69.3%",
@@ -455,16 +469,16 @@
     "fcfPerShare": 264194256,
     "totalDebt": "$747M",
     "totalCash": "$1.1B",
-    "evRevenueLTM": "2.7x",
+    "evRevenueLTM": "5.9x",
     "evBasis": "recomputed: last close \u00d7 shares + net debt",
-    "forwardPE": 669.7,
-    "priceToSalesLTM": 5.1,
+    "forwardPE": 837.7,
+    "priceToSalesLTM": 6.4,
     "52wHigh": 27.99,
     "52wLow": 7.665,
-    "dayChange": "6.5%",
-    "volume": 7000417,
-    "avgVolume": 5527488,
-    "analystTargetPrice": 16.05556,
+    "dayChange": "-1.1%",
+    "volume": 5925844,
+    "avgVolume": 5576798,
+    "analystTargetPrice": 16.0,
     "analystTargetHigh": 28.0,
     "analystTargetLow": 13.0,
     "analystRating": "strong_buy",
@@ -474,8 +488,8 @@
     "industry": "Software - Infrastructure",
     "sharesOutstanding": 251821667
   },
-  "marketCloseAsOf": "2026-06-23",
-  "freshnessNote": "All multiples reflect the 2026-06-23 market close.",
+  "marketCloseAsOf": "2026-07-08",
+  "freshnessNote": "All multiples reflect the 2026-07-08 market close.",
   "explainer": {
     "plain": [
       "Netskope sells cloud security to big companies. Instead of routing office traffic through hardware boxes, it inspects employees' internet and cloud-app traffic in its own global cloud \u2014 blocking threats, stopping data leaks, and enforcing who can reach what.",
