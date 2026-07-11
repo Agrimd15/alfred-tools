@@ -83,9 +83,9 @@
     }
   ],
   "employeeCount": "~1,500-2,000 (a deliberately lean, automation-heavy organization after the mid-2025 games divestiture)",
-  "lastRunDate": "2026-06-27",
+  "lastRunDate": "2026-07-11",
   "brief": {
-    "runDate": "2026-06-27",
+    "runDate": "2026-07-11",
     "businessOverview": "AppLovin Corporation (NASDAQ: APP) has completed one of the sharpest strategic pivots in adtech, transforming from a mobile-games publisher into a pure-play, AI-driven advertising platform. The engine behind the shift is AXON, AppLovin's machine-learning recommendation and bidding system, which powers AppDiscovery (advertiser demand) and the MAX in-app bidding/mediation marketplace. In 2025 the company shed its legacy games business: on May 7, 2025 it agreed to sell its mobile-gaming studios to London-based Tripledot Studios for $400M cash plus ~20% of Tripledot's equity (a deal valued around $800M), completing the divestiture on June 30, 2025 and exiting roughly 10 studios. With games gone, AppLovin now reports as essentially a single advertising business and is pushing AXON beyond gaming into e-commerce, web, and connected TV (via its Wurl unit). The company was added to the S&P 500 effective September 22, 2025. Led by co-founder and CEO Adam Foroughi from Palo Alto, AppLovin trades near $493 as of the 2026-06-10 close (~$150.7B market cap). The central debate is the unresolved short-seller controversy over AXON's data practices, set against a financial profile most adtech peers can only envy.",
     "businessOverviewSources": [
       {
@@ -113,6 +113,20 @@
       }
     ],
     "recentNews": [
+      {
+        "headline": "AppLovin Opens AI Ad Platform to All Advertisers Globally, Renames Axon 'AppLovin Ads'",
+        "date": "2026-06-30",
+        "whyItMatters": "Pivotal commercial milestone: removed referral-code restrictions and opened self-serve e-commerce access to all advertisers across 1B+ daily active mobile users. Execution on broader advertiser onboarding is now the key variable heading into Q2/Q3 2026 \u2014 operationalizing the e-commerce expansion thesis.",
+        "source": "AppLovin Official Blog",
+        "sourceUrl": "https://www.applovin.com/en/blog/applovin-ads-now-open"
+      },
+      {
+        "headline": "AppLovin Sets Q2 2026 Earnings for August 5 \u2014 Guided $1.915\u20131.945B Revenue at ~84-85% Adj EBITDA Margin",
+        "date": "2026-07-01",
+        "whyItMatters": "August 5 is the next key catalyst \u2014 first full quarter after the AppLovin Ads self-serve launch. Street will watch whether the broader advertiser pool drove revenue above the high end of guidance and whether e-commerce ROAS can sustain the 28.8x EV/Rev multiple.",
+        "source": "AppLovin Investor Relations",
+        "sourceUrl": "https://investors.applovin.com/news/news-details/2026/AppLovin-to-Announce-Second-Quarter-2026-Results/default.aspx"
+      },
       {
         "date": "2026-06-26",
         "headline": "AppLovin Opens Axon AI Ad Platform to All Advertisers \u2014 Removing Referral-Only Access",
@@ -397,6 +411,88 @@
       }
     ]
   },
-  "marketCloseAsOf": "2026-06-26",
-  "freshnessNote": "All multiples reflect the 2026-06-26 market close."
+  "marketCloseAsOf": "2026-07-10",
+  "freshnessNote": "All multiples reflect the 2026-07-10 market close.",
+  "trading": {
+    "priceAsOf": "2026-07-10",
+    "stockPrice": "$507",
+    "marketCap": "$170.3B",
+    "enterpriseValue": "$171.4B",
+    "totalRevenueLTM": "$6.2B",
+    "revenueGrowthYoY": "59.0%",
+    "grossMargin": "88.4%",
+    "operatingMarginGAAP": "78.2%",
+    "ebitdaMargin": "79.0%",
+    "fcfPerShare": 3180097280,
+    "totalDebt": "$3.8B",
+    "totalCash": "$2.8B",
+    "evRevenueLTM": "27.8x",
+    "evBasis": "recomputed: last close \u00d7 shares + net debt",
+    "forwardPE": 23.4,
+    "priceToSalesLTM": 27.6,
+    "52wHigh": 745.61,
+    "52wLow": 332.32,
+    "dayChange": "-2.6%",
+    "volume": 3459298,
+    "avgVolume": 4986827,
+    "analystTargetPrice": 654.6,
+    "analystTargetHigh": 860.0,
+    "analystTargetLow": 406.0,
+    "analystRating": "strong_buy",
+    "numberOfAnalysts": 30,
+    "shortName": "Applovin Corporation",
+    "sector": "Communication Services",
+    "industry": "Advertising Agencies",
+    "sharesOutstanding": 305732000
+  },
+  "comps": [
+    {
+      "ticker": "TTD",
+      "name": "The Trade Desk, Inc.",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$9.2B",
+      "evRevenueLTM": "2.8x",
+      "revenueGrowth": "11.8%",
+      "grossMargin": "77.8%",
+      "analystRating": "hold",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/TTD"
+    },
+    {
+      "ticker": "META",
+      "name": "Meta Platforms, Inc.",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$1.7T",
+      "evRevenueLTM": "7.9x",
+      "revenueGrowth": "33.1%",
+      "grossMargin": "81.9%",
+      "analystRating": "strong_buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/META"
+    },
+    {
+      "ticker": "U",
+      "name": "Unity Software Inc.",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$13.5B",
+      "evRevenueLTM": "7.1x",
+      "revenueGrowth": "16.8%",
+      "grossMargin": "74.7%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/U"
+    },
+    {
+      "ticker": "RBLX",
+      "name": "Roblox Corporation",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$39.6B",
+      "evRevenueLTM": "7.2x",
+      "revenueGrowth": "39.3%",
+      "grossMargin": "24.1%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/RBLX"
+    }
+  ]
 }

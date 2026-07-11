@@ -97,9 +97,9 @@
     }
   ],
   "employeeCount": "~1,000+ (rapidly growing post-IPO)",
-  "lastRunDate": "2026-06-27",
+  "lastRunDate": "2026-07-11",
   "brief": {
-    "runDate": "2026-06-27",
+    "runDate": "2026-07-11",
     "businessOverview": "CoreWeave, Inc. (NASDAQ: CRWV) is an AI cloud-computing company headquartered in Livingston, New Jersey, that builds and operates GPU-dense data centers and rents that compute to AI developers, research labs, and enterprises. Founded in 2017 by commodities traders Michael Intrator, Brian Venturo, and Brannin McBee (with Peter Salanki as CTO), it began as crypto-mining venture 'Atlantic Crypto' before pivoting in 2018-19 to buy GPUs from distressed miners and rent out compute, rebranding as CoreWeave and reorienting around Nvidia chips for AI workloads. It is the largest and cleanest public pure-play 'neocloud,' differentiated by scale (roughly 30+ data centers and a fleet on the order of 250,000 GPUs), a privileged Nvidia relationship (Nvidia disclosed a ~7% stake in May 2025), and an asset-light model that leases data-center shells from operators like Equinix and Digital Realty. CoreWeave IPO'd in March 2025 at $40/share and, after a sharp run, trades near $96 as of the 2026-06-10 close (~$42.8B market cap). The central debate is whether a ~$99.4B contracted backlog is a durable annuity or a fragile, debt-funded, customer-concentrated bet on AI capex staying insatiable.",
     "businessOverviewSources": [
       {
@@ -131,6 +131,27 @@
       }
     ],
     "recentNews": [
+      {
+        "headline": "Meta Plans Competing AI Cloud Business, CoreWeave Bonds Slide",
+        "date": "2026-07-02",
+        "whyItMatters": "Meta announced plans to sell excess AI compute to third-party customers \u2014 a direct competitive threat to CoreWeave's neocloud model. CoreWeave and Nebius shares each fell ~12%; credit markets questioned whether big-tech insourcing of GPU compute will commoditize neocloud economics.",
+        "source": "Bloomberg",
+        "sourceUrl": "https://www.bloomberg.com/news/articles/2026-07-02/coreweave-junk-bonds-slide-further-as-investors-question-ai-boom"
+      },
+      {
+        "headline": "Meta Looks to Monetize Excess AI Compute, Overlapping CoreWeave's Customer Base",
+        "date": "2026-07-01",
+        "whyItMatters": "Meta \u2014 CoreWeave's customer with ~$21B in committed spend \u2014 is now also a rival for enterprise AI workload buyers, compressing CoreWeave's TAM and raising concentration risk.",
+        "source": "TechCrunch",
+        "sourceUrl": "https://techcrunch.com/2026/07/01/meta-like-spacex-looks-to-turn-excess-ai-compute-into-cash/"
+      },
+      {
+        "headline": "CoreWeave CTO Defends AI Cloud Moat Against Meta Competitive Threat",
+        "date": "2026-07-08",
+        "whyItMatters": "CoreWeave co-founder/CTO Peter Salanki made the public case for purpose-built AI infrastructure (saturated networking, liquid cooling, predictive GPU failure) as a durable moat vs. CPU hyperscalers \u2014 management's rebuttal to the insourcing narrative.",
+        "source": "Bloomberg",
+        "sourceUrl": "https://www.bloomberg.com/news/audio/2026-07-08/tech-disruptors-coreweave-co-founder-on-ai-cloud-infrastructure"
+      },
       {
         "date": "2026-06-18",
         "headline": "CoreWeave Closes $1.25B USD + \u20ac2B EUR Senior Notes \u2014 Part of $8.5B Debt Build-Out",
@@ -165,27 +186,6 @@
         "whyItMatters": "Adds Anthropic one day after the ~$21B Meta expansion; CoreWeave says it now serves nine of the ten leading AI providers, further diversifying away from Microsoft.",
         "source": "CNBC",
         "sourceUrl": "https://www.cnbc.com/2026/04/10/coreweave-anthropic-claude-ai-deal.html"
-      },
-      {
-        "date": "2026-02-26",
-        "headline": "CoreWeave reports FY2025 revenue of $5.13B (+168% YoY); GAAP net loss widens to ~$1.17B",
-        "whyItMatters": "The fastest cloud platform ever to $5B in annual revenue, with year-end contracted backlog of $66.8B \u2014 but the widening loss and Microsoft at ~67% of revenue crystallized the growth-vs-burn and concentration debate.",
-        "source": "CoreWeave IR \u2014 Q4 & FY2025 results",
-        "sourceUrl": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-Reports-Strong-Fourth-Quarter-and-Fiscal-Year-2025-Results/"
-      },
-      {
-        "date": "2025-10-30",
-        "headline": "Core Scientific shareholders reject CoreWeave's $9B all-stock takeover; deal terminated",
-        "whyItMatters": "CoreWeave's bid to own ~1.3 GW of power/data-center capacity outright collapsed (ISS and Two Seas Capital opposed it); the two keep their commercial partnership, but CoreWeave must secure power another way.",
-        "source": "CNBC",
-        "sourceUrl": "https://www.cnbc.com/2025/10/30/core-scientific-shareholders-reject-9-billion-coreweave-offer-deal-terminated.html"
-      },
-      {
-        "date": "2025-03-28",
-        "headline": "CoreWeave IPOs on Nasdaq at $40/share, raising ~$1.5B",
-        "whyItMatters": "The first major pure-play AI-infrastructure IPO; it priced below its $47-55 range amid AI-bubble jitters but shares later surged, validating public-market appetite for the neocloud model.",
-        "source": "CoreWeave IR \u2014 IPO pricing",
-        "sourceUrl": "https://investors.coreweave.com/news/news-details/2025/CoreWeave-Announces-Pricing-of-Initial-Public-Offering/default.aspx"
       }
     ],
     "earningsTakeaways": {
@@ -438,6 +438,88 @@
       }
     ]
   },
-  "marketCloseAsOf": "2026-06-26",
-  "freshnessNote": "All multiples reflect the 2026-06-26 market close."
+  "marketCloseAsOf": "2026-07-10",
+  "freshnessNote": "All multiples reflect the 2026-07-10 market close.",
+  "trading": {
+    "priceAsOf": "2026-07-10",
+    "stockPrice": "$89",
+    "marketCap": "$48.5B",
+    "enterpriseValue": "$81.4B",
+    "totalRevenueLTM": "$6.2B",
+    "revenueGrowthYoY": "111.6%",
+    "grossMargin": "69.4%",
+    "operatingMarginGAAP": "-6.9%",
+    "ebitdaMargin": "48.6%",
+    "fcfPerShare": -8560327168,
+    "totalDebt": "$35.1B",
+    "totalCash": "$2.3B",
+    "evRevenueLTM": "13.1x",
+    "evBasis": "recomputed: last close \u00d7 shares + net debt",
+    "forwardPE": -76.1,
+    "priceToSalesLTM": 7.8,
+    "52wHigh": 153.2,
+    "52wLow": 63.8,
+    "dayChange": "-0.9%",
+    "volume": 12427764,
+    "avgVolume": 30395131,
+    "analystTargetPrice": 142.29411,
+    "analystTargetHigh": 303.0,
+    "analystTargetLow": 36.0,
+    "analystRating": "buy",
+    "numberOfAnalysts": 34,
+    "shortName": "CoreWeave, Inc.",
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "sharesOutstanding": 447573939
+  },
+  "comps": [
+    {
+      "ticker": "NBIS",
+      "name": "Nebius Group N.V.",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$55.8B",
+      "evRevenueLTM": "63.8x",
+      "revenueGrowth": "683.9%",
+      "grossMargin": "72.1%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/NBIS"
+    },
+    {
+      "ticker": "IREN",
+      "name": "IREN LIMITED",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$14.7B",
+      "evRevenueLTM": "21.7x",
+      "revenueGrowth": "-0.0%",
+      "grossMargin": "68.4%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/IREN"
+    },
+    {
+      "ticker": "APLD",
+      "name": "Applied Digital Corporation",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$8.9B",
+      "evRevenueLTM": "31.3x",
+      "revenueGrowth": "139.3%",
+      "grossMargin": "45.4%",
+      "analystRating": "strong_buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/APLD"
+    },
+    {
+      "ticker": "ORCL",
+      "name": "Oracle Corporation",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$405.1B",
+      "evRevenueLTM": "8.0x",
+      "revenueGrowth": "20.6%",
+      "grossMargin": "65.8%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/ORCL"
+    }
+  ]
 }
