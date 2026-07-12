@@ -37,6 +37,17 @@ Bookkeeping (mandatory for schedule/trigger-started sessions), in order, before 
 4. **Stop gracefully on usage limits.** If a run hits a rate/usage limit mid-batch, finish or
    cleanly abandon the in-flight company, publish what's QA-clean, and end with a note of what was
    left undone — leftovers roll to the next night, never force through a degraded brief.
+5. **Actually work the full ceiling — don't stop early "to be safe."** A group's target is its
+   **full share of 10** (or whatever the counter allows), not a smaller number that "feels like
+   enough." "5 clean briefs beat 10 rushed" is a quality bar (never degrade or duplicate to hit a
+   number), **NOT** a license to quit once a few are done. Keep picking → researching → publishing
+   one clean name at a time until you hit the ceiling. The **ONLY** valid reasons to stop before the
+   ceiling are: (a) the counter reaches 0; (b) a real rate/usage-limit or repeated hard errors (per
+   item 4); or (c) you genuinely cannot find another uncovered, cleanly-sourced, live-data name after
+   several tries. "The session has run long," "this is a token-heavy routine," or generic budget
+   caution are **NOT** valid stop reasons on their own — the 40/day budget is a deliberate dial that
+   is *expected* to run hot, and unused ceiling is wasted coverage, not saved money. If you stop
+   before the ceiling, the end-of-run summary must name which of (a)/(b)/(c) applied.
 
 Manual, user-initiated requests are unaffected and never count against the budget.
 
