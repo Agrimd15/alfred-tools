@@ -459,7 +459,7 @@ def build_quarterly_trend(ticker: str) -> dict:
     return {"chart": chart_html, "table": table_html}
 
 
-def _sankey_svg(stmt: dict, name: str) -> str:
+def _sankey_svg(stmt: dict, name: str, uid: str = "") -> str:
     """The inline income-statement Sankey <svg> for ONE period (revenue → costs → profit),
     hand-drawn in the App-Economy-Insights house style: smooth semi-transparent gradient ribbons
     (not flat slabs), GREEN = profit kept, SALMON/RED = money spent, AMBER = the non-operating
@@ -630,14 +630,14 @@ def _sankey_svg(stmt: dict, name: str) -> str:
             # gradient flowing source-color → target-color
             gid += 1
             sc_ = col_rib.get(sN["color"], "#9aa0aa"); tc_ = col_rib.get(tN["color"], "#9aa0aa")
-            defs.append(f'<linearGradient id="rib{gid}" x1="0" y1="0" x2="1" y2="0">'
+            defs.append(f'<linearGradient id="rib{uid}{gid}" x1="0" y1="0" x2="1" y2="0">'
                         f'<stop offset="0" stop-color="{sc_}"/><stop offset="1" stop-color="{tc_}"/>'
                         f'</linearGradient>')
             d = (f'M{sx:.1f} {sy0:.1f} '
                  f'C{c1:.1f} {sy0:.1f} {c2:.1f} {ty0:.1f} {tx:.1f} {ty0:.1f} '
                  f'L{tx:.1f} {ty1:.1f} '
                  f'C{c2:.1f} {ty1:.1f} {c1:.1f} {sy1:.1f} {sx:.1f} {sy1:.1f} Z')
-            ribbons.append(f'<path d="{d}" fill="url(#rib{gid})" fill-opacity="0.44"/>')
+            ribbons.append(f'<path d="{d}" fill="url(#rib{uid}{gid})" fill-opacity="0.44"/>')
 
         # ── node bars ────────────────────────────────────────────────────────────────
         node_svg = []
@@ -742,7 +742,11 @@ def build_sankey_tabs(stmts: list, name: str) -> str:
     Pure CSS radio-tabs — no JS — so it toggles in the browser and prints the first (FY) panel in
     the PDF. Falls back to a single un-tabbed chart when only one period is drawable, and returns
     '' when none are. `stmts` comes from data_agent.income_statements()."""
-    panels = [(s, _sankey_svg(s, name)) for s in (stmts or [])]
+    # Each panel gets a unique gradient-id prefix: the panels are sibling inline SVGs in ONE
+    # document, so duplicate ids (rib1, rib2, …) all resolve to the FIRST panel's defs — and once
+    # that panel is display:none (a quarter tab selected), the paint server fails and every ribbon
+    # vanishes. Unique ids keep each panel self-referencing.
+    panels = [(s, _sankey_svg(s, name, uid=f"p{i}-")) for i, s in enumerate(stmts or [])]
     panels = [(s, svg) for s, svg in panels if svg]
     if not panels:
         return ""
