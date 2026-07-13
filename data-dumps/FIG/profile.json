@@ -89,9 +89,9 @@
     }
   ],
   "employeeCount": "~1,500+ (rapidly scaling)",
-  "lastRunDate": "2026-06-28",
+  "lastRunDate": "2026-07-13",
   "brief": {
-    "runDate": "2026-06-28",
+    "runDate": "2026-07-13",
     "businessOverview": "Figma, Inc. (NYSE: FIG) makes browser-native, multiplayer software for designing digital products. Its core product, Figma Design, lets designers, developers, product managers, and marketers collaborate live in the same file from any browser \u2014 the 'Google Docs for design' that disrupted desktop incumbents Adobe XD and Sketch. The platform has expanded well beyond design canvases into FigJam (online whiteboarding), Dev Mode (design-to-code handoff), Figma Slides (presentations), Figma Sites (web/app builder), Figma Draw, and a fast-growing AI layer \u2014 Figma Make (prompt-to-prototype, built on Anthropic's Claude) and Figma Weave (AI media creation, from the ~$200M October 2025 Weavy acquisition). Co-founded in 2012 by CEO Dylan Field (a Thiel Fellow) and Evan Wallace, Figma is headquartered in San Francisco and serves 95% of the Fortune 500. Its defining pre-IPO event was the collapse of Adobe's $20B acquisition, abandoned in December 2023 over EU/UK antitrust opposition (Adobe paid a $1B reverse-termination fee). Figma IPO'd on the NYSE on July 31, 2025 at $33/share \u2014 opening at $85, halted past $112, closing day one at $115.50 (+250%) \u2014 then de-rated severely to near $20 by the 2026-06-10 close (~$8.8B market cap) as lockups expired and the market repriced AI risk.",
     "businessOverviewSources": [
       {
@@ -119,6 +119,20 @@
       }
     ],
     "recentNews": [
+      {
+        "date": "2026-07-07",
+        "headline": "Figma acquires team behind a vibe-coding app (Bud), expanding platform from design into agentic coding and prototyping",
+        "whyItMatters": "Acquiring the Bud (Y Combinator-backed AI app/agent builder) team extends Figma's platform from collaborative design into agentic coding and rapid prototyping \u2014 reinforcing the AI-as-growth-catalyst thesis and reducing the perceived threat from AI coding tools by bringing them in-house.",
+        "source": "TechCrunch",
+        "sourceUrl": "https://techcrunch.com/2026/07/07/figma-acquires-team-behind-a-vibe-coding-app/"
+      },
+      {
+        "date": "2026-07-07",
+        "headline": "BofA resumes Figma coverage at Buy with $30 price target, citing AI as structural growth catalyst for design-to-dev platform",
+        "whyItMatters": "BofA (analyst Tal Liani) resumed coverage at Buy at 8\u00d7 CY27 EV/Sales, arguing AI is a tailwind rather than a headwind for Figma's platform; shares rose ~6% on the reinstatement, signaling institutional re-rating momentum ahead of Figma's post-IPO growth phase.",
+        "source": "Seeking Alpha",
+        "sourceUrl": "https://seekingalpha.com/news/4611931-figma-in-focus-as-bofa-puts-buy-rating-on-stock"
+      },
       {
         "date": "2026-06-24",
         "headline": "Figma adds code layers, animations, and AI features in new update",
@@ -209,17 +223,17 @@
         "name": "Figma",
         "ticker": "FIG",
         "type": "Subject",
-        "evRevenue": "5.8x",
+        "evRevenue": "8.2x",
         "revenueGrowth": "46.1%",
         "grossMargin": "79.8%",
-        "note": "subject; design-native category leader re-accelerating to 46% growth with 139% NDR; de-rated to ~5.8x EV/Rev (2026-06-17 close) below its IPO level on AI-disruption fears",
+        "note": "subject; design-native category leader re-accelerating to 46% growth with 139% NDR; trading at a live EV/Rev multiple below its IPO level on AI-disruption fears",
         "source": "yfinance / Yahoo Finance",
         "sourceUrl": "https://finance.yahoo.com/quote/FIG"
       },
       {
         "name": "Adobe",
         "ticker": "ADBE",
-        "evRevenue": "3.3x",
+        "evRevenue": "3.6x",
         "revenueGrowth": "12.7%",
         "grossMargin": "89.4%",
         "note": "the incumbent Figma displaced and tried (and failed) to buy for $20B; far larger and more profitable but slower-growing \u2014 Figma is the higher-growth, design-native challenger",
@@ -229,7 +243,7 @@
       {
         "name": "Atlassian",
         "ticker": "TEAM",
-        "evRevenue": "2.0x",
+        "evRevenue": "3.7x",
         "revenueGrowth": "31.7%",
         "grossMargin": "84.8%",
         "note": "closest collaboration-software comp by motion (bottoms-up, seat/usage-led expansion across software teams), but dev-workflow-centric rather than design-centric",
@@ -239,7 +253,7 @@
       {
         "name": "monday.com",
         "ticker": "MNDY",
-        "evRevenue": "2.1x",
+        "evRevenue": "1.9x",
         "revenueGrowth": "24.5%",
         "grossMargin": "89.1%",
         "note": "another high-growth, seat-based collaboration-SaaS comp with strong NDR; a growth-and-margin yardstick, though work-management rather than the design layer",
@@ -249,7 +263,7 @@
       {
         "name": "Salesforce",
         "ticker": "CRM",
-        "evRevenue": "3.7x",
+        "evRevenue": "3.8x",
         "revenueGrowth": "13.3%",
         "grossMargin": "77.6%",
         "note": "broad enterprise-SaaS benchmark for scaled, profitable software; far larger and slower-growing, framing Figma as a still-early, premium-growth name versus mature platform peers",
@@ -258,7 +272,7 @@
       }
     ],
     "swot": {
-      "standoutSummary": "Figma is the design-native, browser-multiplayer category leader \u2014 the only name combining 95%-of-Fortune-500 reach, 40%+ growth re-accelerating to 46%, 139% NDR, and a historically ~91% gross margin \u2014 now testing whether AI is the seat-killer bears fear or the new monetization engine the latest print suggests. It trades at ~5.8x EV/Rev (2026-06-17 close), a premium to slower-growing Adobe (~3.8x) but well off its IPO valuation.",
+      "standoutSummary": "Figma is the design-native, browser-multiplayer category leader \u2014 the only name combining 95%-of-Fortune-500 reach, 40%+ growth re-accelerating to 46%, 139% NDR, and a historically ~91% gross margin \u2014 now testing whether AI is the seat-killer bears fear or the new monetization engine the latest print suggests. It trades at a live EV/Rev multiple (see comps table) (2026-06-17 close), a premium to slower-growing Adobe (~3.8x) but well off its IPO valuation.",
       "strengths": [
         {
           "point": "Collaboration moat & network effects",
@@ -400,13 +414,13 @@
       }
     ]
   },
-  "marketCloseAsOf": "2026-06-26",
-  "freshnessNote": "All multiples reflect the 2026-06-26 market close.",
+  "marketCloseAsOf": "2026-07-10",
+  "freshnessNote": "All multiples reflect the 2026-07-10 market close.",
   "trading": {
-    "priceAsOf": "2026-06-26",
-    "stockPrice": "$19",
-    "marketCap": "$8.3B",
-    "enterpriseValue": "$6.7B",
+    "priceAsOf": "2026-07-10",
+    "stockPrice": "$21",
+    "marketCap": "$11.2B",
+    "enterpriseValue": "$9.6B",
     "totalRevenueLTM": "$1.2B",
     "revenueGrowthYoY": "46.1%",
     "grossMargin": "79.8%",
@@ -415,17 +429,17 @@
     "fcfPerShare": 813476480,
     "totalDebt": "$56M",
     "totalCash": "$1.6B",
-    "evRevenueLTM": "5.8x",
+    "evRevenueLTM": "8.2x",
     "evBasis": "recomputed: last close \u00d7 shares + net debt",
-    "forwardPE": 55.2,
-    "priceToSalesLTM": 8.5,
+    "forwardPE": 64.6,
+    "priceToSalesLTM": 9.6,
     "52wHigh": 142.92,
     "52wLow": 16.6,
-    "dayChange": "10.6%",
-    "volume": 31661263,
-    "avgVolume": 19113261,
-    "analystTargetPrice": 36.11111,
-    "analystTargetHigh": 60.0,
+    "dayChange": "-5.2%",
+    "volume": 17976109,
+    "avgVolume": 20820287,
+    "analystTargetPrice": 30.55556,
+    "analystTargetHigh": 38.0,
     "analystTargetLow": 22.0,
     "analystRating": "buy",
     "numberOfAnalysts": 9,
@@ -436,23 +450,11 @@
   },
   "comps": [
     {
-      "ticker": "FIG",
-      "name": "Figma, Inc.",
-      "priceAsOf": "2026-06-26",
-      "marketCap": "$8.3B",
-      "evRevenueLTM": "5.8x",
-      "revenueGrowth": "46.1%",
-      "grossMargin": "79.8%",
-      "analystRating": "buy",
-      "source": "yfinance / Yahoo Finance",
-      "sourceUrl": "https://finance.yahoo.com/quote/FIG"
-    },
-    {
       "ticker": "ADBE",
       "name": "Adobe Inc.",
-      "priceAsOf": "2026-06-26",
-      "marketCap": "$80.6B",
-      "evRevenueLTM": "3.3x",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$88.9B",
+      "evRevenueLTM": "3.6x",
       "revenueGrowth": "12.7%",
       "grossMargin": "89.4%",
       "analystRating": "hold",
@@ -462,9 +464,9 @@
     {
       "ticker": "TEAM",
       "name": "Atlassian Corporation",
-      "priceAsOf": "2026-06-26",
-      "marketCap": "$12.6B",
-      "evRevenueLTM": "2.0x",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$22.5B",
+      "evRevenueLTM": "3.7x",
       "revenueGrowth": "31.7%",
       "grossMargin": "84.8%",
       "analystRating": "buy",
@@ -474,9 +476,9 @@
     {
       "ticker": "MNDY",
       "name": "monday.com Ltd.",
-      "priceAsOf": "2026-06-26",
-      "marketCap": "$3.7B",
-      "evRevenueLTM": "2.1x",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$3.5B",
+      "evRevenueLTM": "1.9x",
       "revenueGrowth": "24.5%",
       "grossMargin": "89.1%",
       "analystRating": "buy",
@@ -486,9 +488,9 @@
     {
       "ticker": "CRM",
       "name": "Salesforce, Inc.",
-      "priceAsOf": "2026-06-26",
-      "marketCap": "$129.7B",
-      "evRevenueLTM": "3.7x",
+      "priceAsOf": "2026-07-10",
+      "marketCap": "$133.8B",
+      "evRevenueLTM": "3.8x",
       "revenueGrowth": "13.3%",
       "grossMargin": "77.6%",
       "analystRating": "buy",
