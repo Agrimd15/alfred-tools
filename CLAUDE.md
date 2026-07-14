@@ -15,6 +15,25 @@ enabled with a budget that **resets every day**. Live counter: **24 remaining fo
 
 All four group sessions share the single daily counter — they run in order (1 → 2 → 3 → 4), each decrementing it. The counter is the source of truth, not the group size: if an earlier group over- or under-runs, the later groups take the remainder so the day still totals at most 40.
 
+**Public/private mix (set 2026-07-13 per user instruction):** each day's new-coverage picks must be a
+**mix of public and private companies** — aim for **2-3 private names out of every 10 new-coverage
+briefs** (roughly 20-30% of the day's new coverage), the rest public. Pick venture/growth-stage
+private names inside the coverage focus (AI/ML, dev tools, cybersecurity, fintech infra, data/cloud
+infra, vertical SaaS, semis/hardware startups) — e.g. the kind already covered (databricks,
+standard-intelligence, redwood-materials). Ground rules:
+- Private names follow the **Private Company Research Strategy** at the bottom of this file: folder ID
+  is the lowercase kebab-case slug (never an invented ticker), funding rounds/investors/valuation all
+  carry a date + source, leadership from live URLs only.
+- The Data Freshness Mandate still applies in spirit: no live multiples exist, so the "Valuation" is
+  the **last reported round's post-money with its date and source** — never a guessed number. The
+  deliverable agent already degrades gracefully (no live hero strip, no quarterly chart, no Sankey).
+- Quality bar unchanged: if a private candidate can't be cleanly sourced (no verifiable round data,
+  no Tier 1/2 coverage), swap in another name — public or private — rather than forcing it. The mix
+  target is a daily aim across the four groups, not a per-group hard quota; if one group runs all
+  public, a later group that day should lean private to restore the balance.
+- Refresh groups are unaffected (they refresh whatever is stale, public or private), but stale private
+  briefs must stay in the refresh rotation like any other.
+
 **Model policy (set 2026-06-15 on Max 5x):** every brief — new coverage and refreshes alike — runs
 on the **Opus-tier main loop**. There is **no Sonnet-subagent tier**; the old tiering was removed
 because the Opus sub-cap acted as an early exit and the Sonnet delegation never reliably fired. The
@@ -193,7 +212,7 @@ Read all 4 JSON files and produce a `brief` object with: `runDate`, `businessOve
 
 **Revenue on both a quarterly and annual basis (`brief.revenueHistory`).** Populate `revenueHistory` as a list of **annual** revenue points — `{year, value, label, source}`, `value` in $B (e.g. `{"year": "FY2026", "value": 41.45, "label": "$41.5B", "source": …}`) — with 3–4 fiscal years plus an `LTM` point. This drives the **annual revenue bar chart**. Separately, the deliverable agent pulls the **last ~5 quarters live from yfinance** at render time for the **quarterly revenue chart + table** (public tickers only — private cos show annual only). So every public brief shows revenue on both a quarterly *and* an annual basis with no manual quarterly entry; just make sure `revenueHistory` is present so the annual chart renders. **For US filers, source the annual points from `data.json`'s `secFacts` (SEC XBRL as-reported figures pulled by `data_agent.get_xbrl_facts`) rather than Yahoo aggregates** — they are the company's own filed numbers and the highest-trust cite (source: "SEC EDGAR (as reported)").
 
-**Street & balance-sheet context renders automatically (public tickers).** The brief adds a live context strip under the hero: analyst consensus target/upside/rating count, forward P/E, the 52-week EV/Rev band (price effect only — labeled), short interest % of float, net cash/(debt), SBC as % of LTM revenue, and 1M/YTD/1Y performance vs QQQ in percentage-point spreads. All of it comes from the same render-time pulls (`live_quote`, `sbc_pct_revenue`, `relative_performance`) — never write these into `keyMetrics` by hand.
+**Street & balance-sheet context renders automatically (public tickers).** The brief adds a live context strip under the hero: analyst consensus target/upside/rating count, forward P/E, the 52-week EV/Rev band (price effect only — labeled), short interest % of float, net cash/(debt), **diluted shares outstanding from the latest 10-K/10-Q** (SEC XBRL via `data_agent.sec_shares_outstanding` — the filer's own ASC 260 / treasury-stock-method weighted-average diluted count, split-adjusted for any split effective after the *filing* date via yfinance split history, and cross-checked against the live Yahoo share count with a ⚠ flag on >10% divergence instead of a silently stale figure), SBC as % of LTM revenue, and 1M/YTD/1Y performance vs QQQ in percentage-point spreads. All of it comes from the same render-time pulls (`live_quote`, `sbc_pct_revenue`, `sec_shares_outstanding`, `relative_performance`) — never write these into `keyMetrics` by hand.
 
 **Income-statement Sankey renders automatically (public, profitable tickers).** The Financials section adds a revenue → costs → profit Sankey (Revenue → Gross Profit/Cost of Revenue → Operating Income/OpEx → Net Income/Tax, with the non-operating bridge), built from the live income statement via `data_agent.income_statement()` and drawn by `deliverable_agent.build_sankey()` as a **self-contained inline SVG** (green = profit kept, red = money spent, amber = the non-operating bridge, with the margin printed on each profit node — the App-Economy-Insights style). No external service and no network call for rendering, so it prints vector-crisp and works offline. Fully automatic — nothing to author. It **omits gracefully** (like the optional Gartner map) for private companies, unprofitable names (a loss has no clean flow), or missing income-statement data. Do not hand-edit the generated SVG.
 

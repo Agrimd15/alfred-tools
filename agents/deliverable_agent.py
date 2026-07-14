@@ -1504,7 +1504,7 @@ def build_html(profile: dict) -> str:
     # badge, and a lone "Stage" stat stretched into its own full-width row.
 
     # ── Shared live extras (computed once; used by the hero rail AND the ctx strip) ──
-    rel_perf, sbc_pct = None, None
+    rel_perf, sbc_pct, sec_so = None, None, None
     if live_q:
         try:
             from data_agent import sbc_pct_revenue, relative_performance
@@ -1512,6 +1512,11 @@ def build_html(profile: dict) -> str:
             rel_perf = relative_performance(ticker_sym)
         except Exception:
             pass
+        try:
+            from data_agent import sec_shares_outstanding
+            sec_so = sec_shares_outstanding(ticker_sym) or None
+        except Exception:
+            sec_so = None
 
     # ── Verdict + Street target that anchor the v2 hero (composed, never invented) ──
     _swot_h = b.get("swot") or profile.get("swot") or {}
@@ -1628,6 +1633,23 @@ def build_html(profile: dict) -> str:
         if live_q.get("netCash"):
             lbl = "Net Cash" if not str(live_q["netCash"]).startswith("-") else "Net Debt"
             ctx_items.append((lbl, str(live_q["netCash"]).lstrip("-"), "cash − total debt"))
+        if sec_so and sec_so.get("dilutedSharesFormatted"):
+            # Diluted SO straight from the latest 10-K/10-Q (the filer's own ASC 260 /
+            # treasury-stock-method figure), split-adjusted, cross-checked vs the live
+            # count. A >10% gap renders a ⚠ instead of silently showing a stale count.
+            so_bits = [f"SEC {sec_so.get('dilutedForm') or '10-Q/K'}"]
+            if sec_so.get("dilutedPeriod"):
+                so_bits.append(sec_so["dilutedPeriod"])
+            so_bits.append("wtd-avg diluted, TSM as reported")
+            if sec_so.get("splitAdjusted"):
+                so_bits.append("split-adjusted")
+            xc = sec_so.get("crossCheck") or {}
+            if xc.get("ok"):
+                so_bits.append(f"ties to live count ±{abs(xc.get('diffPct') or 0):.1f}%")
+            elif xc:
+                so_bits.append(f"⚠ {xc.get('diffPct'):+.0f}% vs live count — see filing")
+            ctx_items.append(("Diluted Shares", sec_so["dilutedSharesFormatted"],
+                              " · ".join(so_bits)))
         if sbc_pct:
             ctx_items.append(("SBC % of Rev", sbc_pct, "LTM, the dilution drag"))
         if rel_perf and not use_v2_hero:
@@ -1644,7 +1666,7 @@ def build_html(profile: dict) -> str:
             f'<div class="ctx-card"><div class="ctx-label">{l}</div>'
             f'<div class="ctx-value">{v}</div>'
             + (f'<div class="ctx-sub">{s}</div>' if s else "") + '</div>'
-            for l, v, s in ctx_items[:7])
+            for l, v, s in ctx_items[:8])
         ctx_html = f'<div class="ctx-strip">{cards}</div>'
     hero_html += ctx_html
 

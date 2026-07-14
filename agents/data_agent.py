@@ -461,6 +461,28 @@ def income_statements(ticker: str, stock=None, n_quarters: int = 4) -> list[dict
     return out
 
 
+_COMPANYFACTS_CACHE: dict = {}
+
+
+def _companyfacts(cik: str) -> dict:
+    """Fetch (and cache per-process) the full SEC XBRL companyfacts blob for a CIK.
+    Shared by get_xbrl_facts and sec_shares_outstanding so one run hits EDGAR once.
+    Returns the `facts` dict ({} on any failure)."""
+    cached = _COMPANYFACTS_CACHE.get(cik)
+    if cached is not None:
+        return cached
+    facts = {}
+    try:
+        r = requests.get(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json",
+                         headers={"User-Agent": SEC_UA}, timeout=25)
+        if r.ok:
+            facts = r.json().get("facts") or {}
+    except Exception:
+        facts = {}
+    _COMPANYFACTS_CACHE[cik] = facts
+    return facts
+
+
 def get_xbrl_facts(ticker: str) -> dict:
     """As-reported revenue and net income from SEC XBRL companyfacts — primary-of-record
     figures straight from the filings, the highest-trust source for revenueHistory.
@@ -469,11 +491,7 @@ def get_xbrl_facts(ticker: str) -> dict:
     if not cik:
         return {}
     try:
-        r = requests.get(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json",
-                         headers={"User-Agent": SEC_UA}, timeout=25)
-        if not r.ok:
-            return {}
-        gaap = (r.json().get("facts") or {}).get("us-gaap") or {}
+        gaap = _companyfacts(cik).get("us-gaap") or {}
         def _series(concepts, form):
             for con in concepts:
                 rows = ((gaap.get(con) or {}).get("units") or {}).get("USD") or []
@@ -507,6 +525,206 @@ def get_xbrl_facts(ticker: str) -> dict:
         facts.update({"cik": cik, "source": "SEC EDGAR XBRL companyfacts (as reported)",
                       "sourceUrl": f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=10-K"})
         return facts
+    except Exception:
+        return {}
+
+
+def _fmt_shares(val) -> str | None:
+    """1_237_000_000 -> '1.24B' · 312_400_000 -> '312.4M' (share counts, not dollars)."""
+    if val is None or val != val:
+        return None
+    v = float(val)
+    if abs(v) >= 1e9:
+        return f"{v/1e9:.2f}B"
+    if abs(v) >= 1e6:
+        return f"{v/1e6:.1f}M"
+    return f"{v:,.0f}"
+
+
+def _split_factor_since(stock, since_iso: str) -> tuple[float, list[str]]:
+    """Cumulative stock-split factor for splits effective AFTER `since_iso`, from
+    yfinance's split history — so a share count filed pre-split is never shown stale.
+    Returns (factor, ["4-for-1 on 2026-07-02", ...]); (1.0, []) when none/unknown."""
+    factor, events = 1.0, []
+    try:
+        splits = stock.splits
+        if splits is None or len(splits) == 0:
+            return 1.0, []
+        for ts, ratio in splits.items():
+            d = ts.date().isoformat()
+            if d > since_iso and ratio and ratio == ratio and float(ratio) > 0:
+                factor *= float(ratio)
+                r = float(ratio)
+                label = f"{r:g}-for-1" if r >= 1 else f"1-for-{1/r:g} reverse"
+                events.append(f"{label} split on {d}")
+    except Exception:
+        return 1.0, []
+    return factor, events
+
+
+def sec_shares_outstanding(ticker: str, stock=None) -> dict:
+    """Diluted shares outstanding straight from the company's latest 10-K/10-Q on SEC
+    EDGAR (XBRL companyfacts), split-adjusted to today and cross-checked against the
+    live Yahoo share count. Returns {} on any failure (non-US filers, no CIK, network).
+
+    What it reports — all as-reported, never model memory:
+      - dilutedShares: weighted-average DILUTED shares from the most recent 10-Q/10-K
+        income statement. This is the filer's own ASC 260 computation, i.e. the
+        treasury stock method already applied to in-the-money options/warrants (and
+        if-converted for convertibles) — the defensible "diluted SO" figure, not a
+        re-derivation from option tables.
+      - basicShares: weighted-average basic shares from the same filing, so the
+        dilution spread (diluted vs basic) is explicit.
+      - coverShares: the actual point-in-time count from the filing's cover page
+        (dei:EntityCommonStockSharesOutstanding), with its own as-of date — already
+        reflects buybacks/issuance through that date.
+      - Split adjustment: any split effective AFTER a figure's reference date
+        multiplies it by the split factor (yfinance split history) and is labeled.
+      - crossCheck: split-adjusted cover count vs Yahoo's current implied share
+        count, with the % gap. >10% divergence is flagged (multi-class cover page,
+        heavy buybacks/issuance since filing, or a data problem) — never hidden.
+    """
+    cik = _sec_ticker_to_cik(ticker)
+    if not cik:
+        return {}
+    try:
+        facts = _companyfacts(cik)
+        gaap = facts.get("us-gaap") or {}
+        dei = facts.get("dei") or {}
+
+        def _entries(taxo, concept):
+            return ((taxo.get(concept) or {}).get("units") or {}).get("shares") or []
+
+        def _latest_wa(concepts):
+            """Most recent weighted-average share count from a 10-Q/10-K. Multiple spans
+            can end on the same date (a Q3 10-Q files both the 3-mo and 9-mo YTD WA);
+            prefer the SHORTEST span ending latest — the most current quarter's WA —
+            re-reported values keep the latest filing."""
+            best = None
+            for con in concepts:
+                for e in _entries(gaap, con):
+                    if e.get("form") not in ("10-K", "10-Q") or e.get("val") is None:
+                        continue
+                    if not e.get("end") or not e.get("start"):
+                        continue
+                    span = (datetime.date.fromisoformat(e["end"])
+                            - datetime.date.fromisoformat(e["start"])).days
+                    if not 60 < span < 400:
+                        continue
+                    key = (e["end"], -span, e.get("filed") or "")
+                    if best is None or key > best[0]:
+                        best = (key, {"value": e["val"], "end": e["end"], "span": span,
+                                      "form": e["form"], "filed": e.get("filed"),
+                                      "fy": e.get("fy"), "fp": e.get("fp"), "concept": con})
+                if best:
+                    break        # first concept with data wins — don't mix taxonomies
+            return best[1] if best else None
+
+        diluted = _latest_wa(("WeightedAverageNumberOfDilutedSharesOutstanding",
+                              "WeightedAverageNumberOfSharesOutstandingDiluted"))
+        basic = _latest_wa(("WeightedAverageNumberOfSharesOutstandingBasic",
+                            "WeightedAverageNumberOfSharesOutstanding"))
+        if not diluted:
+            return {}
+
+        # Cover-page actual count (instantaneous, no span) — latest end, latest filed
+        cover = None
+        for e in _entries(dei, "EntityCommonStockSharesOutstanding"):
+            if e.get("val") is None or not e.get("end"):
+                continue
+            key = (e["end"], e.get("filed") or "")
+            if cover is None or key > cover[0]:
+                cover = (key, {"value": e["val"], "asOf": e["end"],
+                               "form": e.get("form"), "filed": e.get("filed")})
+        cover = cover[1] if cover else None
+
+        # Split adjustment — reference date is the FILING date, not the period end:
+        # ASC 260 requires a filing to retroactively restate share counts for any
+        # split effective before the financials are issued, so a figure filed after
+        # the split is already post-split (e.g. BKNG's Q1-2026 10-Q, filed May, was
+        # already restated for the Apr-2026 25-for-1 — adjusting from the Mar-31
+        # period end would double-count it 25×). Only splits AFTER the filing date
+        # need adjusting (e.g. CRWD's Jul-2026 4-for-1 vs its Jun-filed 10-Q).
+        if yf is not None:
+            stock = stock or yf.Ticker(ticker.upper().strip())
+        adj_events = []
+        for fig, ref in ((diluted, (diluted.get("filed") or diluted.get("end")) if diluted else None),
+                         (basic, (basic.get("filed") or basic.get("end")) if basic else None),
+                         (cover, (cover.get("filed") or cover.get("asOf")) if cover else None)):
+            if fig is None or ref is None or stock is None:
+                continue
+            factor, events = _split_factor_since(stock, ref)
+            if factor != 1.0:
+                fig["valueAsFiled"] = fig["value"]
+                fig["value"] = fig["value"] * factor
+                fig["splitFactor"] = factor
+                adj_events = sorted(set(adj_events) | set(events))
+
+        # Cross-check vs Yahoo's live count (point-in-time vs point-in-time: cover page
+        # is the apples-to-apples comparison; fall back to diluted WA when no cover)
+        cross = None
+        try:
+            info = stock.info if stock is not None else {}
+            yf_sh = info.get("sharesOutstanding")
+            implied = info.get("impliedSharesOutstanding")
+            if implied and yf_sh and implied > yf_sh * 1.05:
+                yf_sh = implied            # dual-class total, same rule as live_quote
+            elif implied and not yf_sh:
+                yf_sh = implied
+            ours = (cover or diluted)["value"]
+            if yf_sh and ours:
+                diff = ours / yf_sh - 1
+                basis_lbl = "cover-page count" if cover else "diluted WA"
+                if abs(diff) <= 0.10:
+                    note = f"ties with Yahoo's live share count within {abs(diff)*100:.1f}%"
+                elif diff < 0:
+                    note = (f"SEC {basis_lbl} is {abs(diff)*100:.0f}% BELOW Yahoo's live count — "
+                            "likely a multi-class cover page (one class only) or issuance "
+                            "since the filing; verify against the filing before citing")
+                else:
+                    note = (f"SEC {basis_lbl} is {diff*100:.0f}% ABOVE Yahoo's live count — "
+                            "possible buybacks since the filing date or a stale Yahoo "
+                            "count; verify against the filing before citing")
+                cross = {"yahooShares": yf_sh, "yahooSharesFormatted": _fmt_shares(yf_sh),
+                         "diffPct": round(diff * 100, 1), "ok": abs(diff) <= 0.10, "note": note}
+        except Exception:
+            cross = None
+
+        dilution_pct = None
+        if basic and basic.get("value") and diluted.get("value"):
+            dilution_pct = round((diluted["value"] / basic["value"] - 1) * 100, 1)
+
+        def _period(fig):
+            if not fig:
+                return None
+            return (f"FY ended {fig['end']}" if fig.get("span", 0) > 200
+                    else f"Q ended {fig['end']}")
+
+        out = {
+            "dilutedShares": diluted["value"],
+            "dilutedSharesFormatted": _fmt_shares(diluted["value"]),
+            "dilutedPeriod": _period(diluted),
+            "dilutedForm": diluted["form"],
+            "dilutedFiled": diluted.get("filed"),
+            "basicShares": basic["value"] if basic else None,
+            "basicSharesFormatted": _fmt_shares(basic["value"]) if basic else None,
+            "dilutionPctVsBasic": dilution_pct,
+            "coverShares": cover["value"] if cover else None,
+            "coverSharesFormatted": _fmt_shares(cover["value"]) if cover else None,
+            "coverAsOf": cover["asOf"] if cover else None,
+            "splitAdjusted": bool(adj_events),
+            "splitEvents": adj_events,
+            "crossCheck": cross,
+            "basis": ("Diluted = weighted-average diluted shares as reported in the filing's "
+                      "income statement (ASC 260 — treasury stock method applied by the filer "
+                      "to options/warrants/RSUs; if-converted for convertibles). Cover count = "
+                      "actual shares outstanding on the filing cover page as of its stated date."
+                      + (" Split-adjusted: " + "; ".join(adj_events) + "." if adj_events else "")),
+            "source": "SEC EDGAR XBRL companyfacts (as reported)",
+            "sourceUrl": (f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany"
+                          f"&CIK={cik}&type={diluted['form']}"),
+        }
+        return out
     except Exception:
         return {}
 
@@ -839,6 +1057,7 @@ def run(ticker: str, comps_tickers: list[str] | None = None, ramp_demand_signal:
     sec_filings  = get_sec_filings(ticker)
     qtrend       = quarterly_trend(ticker)
     sec_facts    = get_xbrl_facts(ticker)          # as-reported, primary-of-record
+    sec_shares   = sec_shares_outstanding(ticker)  # diluted SO from the latest 10-K/10-Q
     rel_perf     = relative_performance(ticker)
 
     # Freshness audit: gather every close date used, surface the anchor, and flag
@@ -871,6 +1090,10 @@ def run(ticker: str, comps_tickers: list[str] | None = None, ramp_demand_signal:
         # As-reported XBRL figures: prefer these over Yahoo aggregates when writing
         # revenueHistory for US filers — they are the company's own filed numbers.
         "secFacts":          sec_facts,
+        # Diluted shares outstanding from the latest 10-K/10-Q (ASC 260 / treasury
+        # stock method as applied by the filer), split-adjusted + cross-checked vs
+        # Yahoo's live count. The brief renders this in the context strip.
+        "secSharesOutstanding": sec_shares,
         "relativePerformance": rel_perf,
         # Populated by the Data Agent subagent via ramp-data MCP tools (Claude Code only).
         # See RAMP_DATA_TOOLS and RAMP_DEMAND_SIGNAL_SCHEMA above for expected shape.
