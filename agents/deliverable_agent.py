@@ -1855,10 +1855,10 @@ def build_html(profile: dict) -> str:
             'Private valuations and rounds from the cited reporting (TechCrunch, Bloomberg, CNBC, Sacra, PitchBook). '
             'These are last-round marks, not market prices, and the dates differ by company.</div>') if prows else ""
         comps_html = f"""
-    <table class="comps-table comps-private">
+    <div class="table-scroll"><table class="comps-table comps-private">
       <thead><tr>{head}</tr></thead>
       <tbody>{prows}</tbody>
-    </table>{comps_source_html}""" if prows else ""
+    </table></div>{comps_source_html}""" if prows else ""
     else:
         # The subject must sit in the comp set (pinned row, crimson dot on the scatter,
         # premium/discount line). Match it by type OR ticker — `type` is free text, so
@@ -3161,6 +3161,8 @@ def build_html(profile: dict) -> str:
     /* tappable micro-links and section meta read (and tap) better a notch bigger */
     .news-source-link, .news-source-label, .chart-sources {{ font-size: 11px; }}
     .sec-meta, .fin-meta {{ font-size: 11.5px; }}
+    /* hero metric value can be a long string — allow wrapping on phone */
+    .metric-hero-value {{ white-space: normal; overflow-wrap: break-word; }}
   }}
 
   @media (prefers-reduced-motion: reduce) {{

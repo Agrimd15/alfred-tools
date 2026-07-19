@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broadcom · Atlas Research Brief</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap');
+  /* Institutional (light) design tokens: sell-side research note */
+  :root {
+    --ks-lacquer:      #ffffff;            /* paper */
+    --ks-lacquer-deep: #ffffff;            /* header */
+    --ks-raised:       #f7f9fb;            /* card / band */
+    --ks-graphite:     #f1f4f8;            /* stat strip / toc */
+    --ks-graphite-2:   #eef1f6;            /* module fill */
+    --ks-kinpaku:      #13315c;            /* navy: primary structural accent */
+    --ks-kinpaku-pale: #1f4d86;            /* navy-soft (links / ticker) */
+    --ks-kinpaku-rich: #102a4d;
+    --ks-kinpaku-deep: #0c2140;
+    --ks-accent:       #b3122b;            /* crimson: section eyebrows + wordmark */
+    --ks-patina:       #0a7d4d;            /* positive green */
+    --ks-vermilion:    #b3122b;            /* crimson (draft / risk) */
+    --ks-champagne:    #15181f;            /* headings ink */
+    --ks-body:         #2a2f37;            /* body */
+    --ks-muted:        #3d434f;
+    --ks-faint:        #727a89;
+    --ks-rule:         #dce0e7;            /* hairline */
+    --ks-rule-strong:  #c2c8d2;
+    --ks-sans:         'Inter', Arial, "Helvetica Neue", Helvetica, sans-serif;
+    --ks-serif:        'Source Serif 4', Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --ks-ease:         cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* ── Type scale: ONE size per role so the same kind of text is the same
+       size in every section (no half-pixel drift across the report) ── */
+    --fs-lede:   18px;     /* serif lede + section callouts                 */
+    --fs-body:   15px;     /* ALL flowing body: bullets, list items, prose  */
+    --lh-body:   1.6;      /* matching body line-height                     */
+    --fs-dense:  13.5px;   /* data tables + dense reference text            */
+  }
+
+  /* ── Base ── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--ks-sans);
+         background: var(--ks-lacquer); color: var(--ks-body); font-size: 15px; line-height: 1.6;
+         font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+         -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  /* charts scale down proportionally on narrow screens instead of letterboxing */
+  .chart-wrap svg { max-width: 100%; height: auto; }
+  /* wide tables scroll inside themselves — never pan the whole page sideways */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  a { color: inherit; text-decoration: none; }
+  p { color: var(--ks-body); line-height: 1.6; margin-bottom: 6px; }
+  strong { color: var(--ks-champagne); }
+  .mono { font-family: var(--ks-sans); font-variant-numeric: tabular-nums; }
+  .right { text-align: right; }
+
+  .wrapper { width: 100%; max-width: 1400px; margin: 0 auto; background: var(--ks-lacquer);
+              border: 1px solid var(--ks-rule); }
+
+  /* ── Header ── */
+  .header { background: var(--ks-lacquer-deep); padding: 26px 40px 20px;
+             border-bottom: 2px solid var(--ks-kinpaku); }
+  .header-top { display: flex; align-items: center; gap: 18px; margin-bottom: 10px; }
+  .company-logo { width: 44px; height: 44px; border-radius: 8px; object-fit: contain;
+                   background: var(--ks-raised); padding: 4px;
+                   border: 1px solid var(--ks-rule); flex-shrink: 0; }
+  .header-name { flex: 1; }
+  .company-name { font-family: var(--ks-serif);
+                   font-size: clamp(1.9rem, 3.4vw, 2.5rem); font-weight: 700;
+                   letter-spacing: -0.01em; line-height: 1.04; color: var(--ks-champagne);
+                   display: block; }
+  .header-badges { display: flex; align-items: center; gap: 7px; margin-top: 6px; flex-wrap: wrap; }
+  .ticker-badge { background: transparent; color: var(--ks-kinpaku);
+                   font-family: var(--ks-sans);
+                   font-size: 10.5px; font-weight: 700; padding: 0; border-radius: 0;
+                   letter-spacing: 0.16em; text-transform: uppercase; }
+  .stage-badge { background: var(--ks-raised); border: 1px solid var(--ks-rule);
+                  color: var(--ks-muted); font-size: 10px; font-weight: 600; padding: 2px 8px;
+                  border-radius: 2px; letter-spacing: 0.12em;
+                  font-family: var(--ks-sans); }
+  .draft-badge { background: var(--ks-kinpaku); border: 1px solid var(--ks-kinpaku);
+                  color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 9px;
+                  border-radius: 2px; letter-spacing: 0.15em;
+                  font-family: var(--ks-sans); }
+  .header-meta { font-size: 11.5px; color: var(--ks-faint); }
+  .header-meta a { color: var(--ks-kinpaku-pale); }
+  /* ── Version history (header disclosure) ── */
+  .verhist { position: relative; display: inline-block; }
+  .verhist > summary { cursor: pointer; list-style: none; color: var(--ks-faint);
+                        font-size: 11.5px; user-select: none; white-space: nowrap; }
+  .verhist > summary::-webkit-details-marker { display: none; }
+  .verhist > summary:hover, .verhist[open] > summary { color: var(--ks-champagne); }
+  .verhist-menu { position: absolute; right: 0; top: 100%; margin-top: 6px; z-index: 30;
+                   background: var(--ks-raised); border: 1px solid var(--ks-rule);
+                   border-radius: 6px; box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+                   padding: 6px; min-width: 190px; text-align: left; }
+  .verhist-head { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+                   color: var(--ks-faint); padding: 3px 10px 6px; border-bottom: 1px solid var(--ks-rule);
+                   margin-bottom: 4px; }
+  .verhist-item { display: block; padding: 5px 10px; border-radius: 4px; font-size: 11.5px;
+                   color: var(--ks-body); white-space: nowrap; }
+  a.verhist-item:hover { background: var(--ks-graphite-2); color: var(--ks-champagne); }
+  .verhist-item.current { color: var(--ks-faint); font-weight: 700; }
+  @media print { .verhist-menu { display: none !important; }
+                  .verhist > summary { color: var(--ks-faint); cursor: default; } }
+  .verticals { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .vertical-tag { background: var(--ks-graphite); border: 1px solid var(--ks-rule);
+                   color: var(--ks-muted); font-size: 10px; padding: 2px 9px; border-radius: 3px;
+                   font-family: var(--ks-sans); letter-spacing: 0.06em; }
+  .trading-bar { background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
+                  padding: 9px 14px; margin-top: 14px; font-size: 11px; color: var(--ks-faint);
+                  font-family: var(--ks-sans); }
+  .trading-bar strong { color: var(--ks-champagne); margin-right: 4px; }
+
+  /* ── Hero stats bar ── */
+  .hero-stats { display: flex; flex-wrap: wrap; background: var(--ks-graphite);
+                 border-bottom: 1px solid var(--ks-rule); }
+  /* fixed 20% basis -> exactly 5 per row; a partial last row stays left-aligned
+     under the columns instead of stretching to fill the width. */
+  .hero-card { flex: 0 0 20%; min-width: 0; padding: 13px 18px;
+                border-right: 1px solid var(--ks-rule); }
+  .hero-card:nth-child(5n) { border-right: none; }
+  .hero-card:last-child { border-right: none; }
+  .hero-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.13em;
+                 color: var(--ks-faint); margin-bottom: 6px; white-space: nowrap;
+                 font-family: var(--ks-sans); }
+  /* big number stays on ONE line; a long head shrinks to fit rather than wrapping */
+  .hero-value { font-family: var(--ks-sans); font-size: 1.5rem; font-weight: 700;
+                 line-height: 1.1; color: var(--ks-kinpaku); white-space: nowrap; }
+  .hero-value.long { font-size: 1.1rem; letter-spacing: -0.01em; }
+  .hero-sub { font-family: var(--ks-sans); font-size: 10.5px;
+               color: var(--ks-faint); margin-top: 4px; line-height: 1.3; }
+  .hero-sub.pos { color: var(--ks-patina); }
+  /* narrow screens: let the 5-col strip reflow (print/desktop keep 5 across) */
+  @media (max-width: 820px) { .hero-card { flex-basis: 33.333%; } }
+  @media (max-width: 520px) { .hero-card { flex-basis: 50%; } }
+
+  /* ── Street & balance-sheet context strip (under the as-of band) ── */
+  .ctx-strip { display: flex; flex-wrap: wrap; background: var(--ks-raised);
+                border-bottom: 1px solid var(--ks-rule); }
+  .ctx-card { flex: 1 1 0; min-width: 130px; padding: 10px 16px;
+               border-right: 1px solid var(--ks-rule); }
+  .ctx-card:last-child { border-right: none; }
+  .ctx-label { font-size: 8.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em;
+                color: var(--ks-faint); margin-bottom: 4px; white-space: nowrap;
+                font-family: var(--ks-sans); }
+  .ctx-value { font-family: var(--ks-sans); font-size: 1.0rem;
+                font-weight: 700; color: var(--ks-muted); white-space: nowrap; }
+  .ctx-sub { font-size: 9.5px; color: var(--ks-faint); margin-top: 3px; line-height: 1.3;
+              font-family: var(--ks-sans); }
+  @media (max-width: 820px) { .ctx-card { flex-basis: 33.333%; } }
+
+  /* ── As-of anchor: ONE dated line for the whole trading strip ── */
+  .asof-band { background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule);
+                padding: 6px 18px; font-size: 10px; color: var(--ks-faint);
+                font-family: var(--ks-sans); letter-spacing: 0.03em; }
+  .asof-band strong { color: var(--ks-muted); }
+
+  /* ── v2 thesis bar: ticker · the call · Street PT + upside (sticky at the top) ── */
+  .thesis-bar { position: sticky; top: 0; z-index: 40; display: flex; align-items: flex-start;
+                 gap: 14px; background: var(--ks-kinpaku); color: #fff; padding: 11px 40px;
+                 font-size: 13.5px; border-bottom: 1px solid var(--ks-kinpaku-deep); }
+  .tb-ticker { background: var(--ks-accent); font-weight: 700; letter-spacing: 0.03em;
+                padding: 2px 9px; border-radius: 3px; font-size: 12.5px; flex-shrink: 0;
+                margin-top: 1px; }
+  /* verdict wraps to at most 2 lines and is authored to fit — never an ellipsis cut-off */
+  .tb-verdict { flex: 1; font-family: var(--ks-serif); font-size: 15px; line-height: 1.34;
+                 color: rgba(255,255,255,0.96); min-width: 0;
+                 display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+                 overflow: hidden; }
+  .tb-pt { white-space: nowrap; flex-shrink: 0; color: #d7e0ee;
+            border-left: 1px solid #34527c; padding-left: 14px; }
+  .tb-pt b { color: #fff; }
+  .tb-up.pos { color: #7fe3b0; font-weight: 600; }
+  .tb-up.neg { color: #ff9a8f; font-weight: 600; }
+  /* phone: the PT sidecar drops below the verdict so the call isn't crushed to 'At th...' */
+  @media (max-width: 640px) {
+    .thesis-bar { flex-wrap: wrap; padding: 10px 16px; gap: 5px 10px; }
+    .tb-verdict { flex: 1 1 60%; font-size: 14px; -webkit-line-clamp: 3; }
+    .tb-pt { flex: 1 1 100%; border-left: none; padding-left: 0; margin-top: 2px;
+              white-space: normal; }
+  }
+  @media print { .thesis-bar { position: static; } }
+
+  /* ── v2 hero: ONE big number (upside to target) + a market-snapshot rail ── */
+  .hero-v2 { display: flex; gap: 26px; align-items: center; flex-wrap: wrap;
+              background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule);
+              padding: 20px 40px; }
+  .hero-lead { flex: 0 0 auto; }
+  .hero-eyebrow { font-size: 10px; font-weight: 600; text-transform: uppercase;
+                   letter-spacing: 0.13em; color: var(--ks-faint); margin-bottom: 4px; }
+  .hero-bignum { font-family: var(--ks-serif); font-size: clamp(2.8rem, 6vw, 3.6rem);
+                  font-weight: 700; line-height: 0.95; font-variant-numeric: tabular-nums;
+                  letter-spacing: -0.02em; }
+  .hero-bignum.pos { color: var(--ks-patina); }
+  .hero-bignum.neg { color: var(--ks-vermilion); }
+  .hero-bigcap { font-size: 12.5px; color: var(--ks-faint); margin-top: 6px; line-height: 1.4; }
+  .hero-bigcap-2 { color: var(--ks-muted); }
+  .hero-rail { flex: 1; min-width: 280px; display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0;
+                border: 1px solid var(--ks-rule-strong); border-radius: 6px; overflow: hidden;
+                background: var(--ks-lacquer); }
+  .hr-cell { display: flex; flex-direction: column; gap: 3px; padding: 10px 14px;
+              border-right: 1px solid var(--ks-rule); border-bottom: 1px solid var(--ks-rule); }
+  .hr-cell:nth-child(3n) { border-right: none; }
+  .hr-cell:nth-last-child(-n+3) { border-bottom: none; }
+  .hr-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+               letter-spacing: 0.1em; color: var(--ks-faint); white-space: nowrap; }
+  .hr-value { font-size: 16px; font-weight: 700; color: var(--ks-kinpaku);
+               white-space: nowrap; font-variant-numeric: tabular-nums; }
+  @media (max-width: 680px) { .hero-v2 { padding-left: 16px; padding-right: 16px; }
+                               .hero-rail { grid-template-columns: repeat(2, minmax(0,1fr)); }
+                               .hr-cell:nth-child(3n) { border-right: 1px solid var(--ks-rule); }
+                               .hr-cell:nth-child(2n) { border-right: none; } }
+
+  /* ── "What matters" band: thesis · key debate · next catalyst ── */
+  .what-matters { border-bottom: 1px solid var(--ks-rule); padding: 16px 40px 14px;
+                   background: var(--ks-lacquer); border-left: 3px solid var(--ks-kinpaku); }
+  .wm-head { font-family: var(--ks-sans); font-size: 10px;
+              font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+              color: var(--ks-accent); margin-bottom: 9px; }
+  .wm-row { display: flex; gap: 14px; padding: 4px 0; align-items: baseline; }
+  .wm-label { flex: 0 0 96px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em;
+               text-transform: uppercase; color: var(--ks-kinpaku); white-space: nowrap;
+               font-family: var(--ks-sans); padding-top: 2px; }
+  .wm-text { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ks-body); }
+
+  /* ── TOC ── */
+  .toc { background: var(--ks-graphite); border-bottom: 1px solid var(--ks-rule-strong);
+          padding: 9px 40px; display: flex; flex-wrap: wrap; gap: 5px;
+          position: sticky; top: 0; z-index: 10; }
+  .toc-link { font-size: 10px; font-weight: 600; color: var(--ks-faint); padding: 3px 10px;
+               border-radius: 20px; border: 1px solid var(--ks-rule); background: transparent;
+               transition: background 150ms var(--ks-ease), color 150ms var(--ks-ease);
+               white-space: nowrap; font-family: var(--ks-sans);
+               letter-spacing: 0.04em; }
+  .toc-link:hover { background: var(--ks-kinpaku); color: var(--ks-lacquer-deep); border-color: var(--ks-kinpaku); }
+
+  /* ── Sections ── */
+  .section { border-bottom: 1px solid var(--ks-rule); padding: 24px 40px; scroll-margin-top: 48px; }
+  .section:last-of-type { border-bottom: none; }
+  .sec-label { font-family: var(--ks-sans); font-size: 10px; font-weight: 700;
+                letter-spacing: 0.15em; text-transform: uppercase; color: var(--ks-accent);
+                margin-bottom: 15px; padding-bottom: 7px; border-bottom: 1px solid var(--ks-rule); }
+  /* normal-weight metadata line under a section label (quarter, as-of, captions) —
+     keeps the eyebrow itself short and uncluttered instead of wrapping inline */
+  .sec-meta { font-family: var(--ks-sans); font-size: 10.5px;
+               color: var(--ks-faint); margin: -9px 0 14px; letter-spacing: 0.03em; line-height: 1.4; }
+
+  /* ── Two-col layout (overview) ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+  @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+  .diagram-caption { font-size: 11px; color: var(--ks-faint); margin-bottom: 10px; line-height: 1.4;
+                      font-family: var(--ks-sans); }
+
+  /* ── "Understand the business" explainer (lede + plain / technical / simple) ── */
+  .explain-lede { margin-bottom: 16px; padding: 14px 18px; background: var(--ks-graphite);
+                   border-left: 3px solid var(--ks-accent); border-radius: 0 6px 6px 0; }
+  .explain-lede-label { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.15em;
+                         text-transform: uppercase; color: var(--ks-accent); margin-bottom: 5px;
+                         font-family: var(--ks-sans); }
+  .explain-lede-text { font-family: var(--ks-serif); font-size: var(--fs-lede); line-height: 1.5;
+                        color: var(--ks-champagne); }
+  .explain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+  @media (max-width: 820px) { .explain-grid { grid-template-columns: 1fr; } }
+  .explain-card { background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 5px;
+                   padding: 15px 16px; border-top: 3px solid var(--ks-kinpaku); }
+  .explain-1 { border-top-color: var(--ks-accent); }
+  .explain-2 { border-top-color: var(--ks-patina); }
+  .explain-label { font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase;
+                    color: var(--ks-kinpaku); margin-bottom: 2px;
+                    font-family: var(--ks-sans); }
+  .explain-sublabel { font-size: 10.5px; color: var(--ks-faint); margin-bottom: 8px;
+                       font-family: var(--ks-sans); }
+  .explain-1 .explain-label { color: var(--ks-accent); }
+  .explain-2 .explain-label { color: var(--ks-patina); }
+  .explain-text { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ks-body); }
+  .explain-list { list-style: none; padding: 0; margin: 0; }
+  .explain-list li { position: relative; padding: 5px 0 5px 16px; font-size: var(--fs-body); line-height: var(--lh-body);
+                      color: var(--ks-body); }
+  .explain-list li:before { content: ""; position: absolute; left: 2px; top: 10px; width: 5px; height: 5px;
+                             border-radius: 50%; background: var(--ks-kinpaku); }
+  .explain-1 .explain-list li:before { background: var(--ks-accent); }
+  .explain-2 .explain-list li:before { background: var(--ks-patina); }
+
+  /* ── Jargon glossary inside the explainer: "Key terms, decoded" ── */
+  .gloss-block { background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 5px;
+                  border-left: 3px solid var(--ks-kinpaku); padding: 14px 16px; margin-bottom: 24px; }
+  .gloss-head { font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase;
+                 color: var(--ks-kinpaku); margin-bottom: 10px;
+                 font-family: var(--ks-sans); }
+  .gloss-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 24px; margin: 0; }
+  @media (max-width: 820px) { .gloss-list { grid-template-columns: 1fr; } }
+  .gloss-item { margin: 0; padding: 7px 0; border-top: 1px solid var(--ks-rule); }
+  .gloss-item:first-child, .gloss-list > .gloss-item:nth-child(2) { border-top: 0; }
+  .gloss-term { font-size: 13px; font-weight: 700; color: var(--ks-champagne);
+                 font-family: var(--ks-sans); }
+  .gloss-exp { font-weight: 400; font-style: italic; font-size: 12px; color: var(--ks-faint); }
+  .gloss-def { font-size: 13px; line-height: 1.5; color: var(--ks-body); margin: 2px 0 0 0; }
+
+  /* ── Differentiation table ── */
+  .diff-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .diff-table th { text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+                    text-transform: uppercase; color: var(--ks-faint); padding: 0 14px 8px 0;
+                    border-bottom: 1.5px solid var(--ks-kinpaku);
+                    font-family: var(--ks-sans); vertical-align: bottom; }
+  .diff-table td { padding: 11px 14px 11px 0; border-bottom: 1px solid var(--ks-rule);
+                    vertical-align: top; color: var(--ks-body); line-height: 1.55; }
+  .diff-table tr:last-child td { border-bottom: none; }
+  .diff-table .diff-player { font-weight: 700; color: var(--ks-champagne); width: 17%; white-space: nowrap; }
+  .diff-table .diff-make { color: var(--ks-muted); width: 30%; }
+  .diff-table .diff-edge { color: var(--ks-body); }
+  @media (max-width: 680px) { .diff-table, .diff-table thead, .diff-table tbody, .diff-table tr, .diff-table td { display: block; width: auto; }
+    .diff-table thead { display: none; } .diff-table .diff-player { white-space: normal; padding-top: 12px; } }
+
+  /* ── SWOT analysis (2×2 quadrant) ── */
+  .swot-standout { font-size: var(--fs-body); line-height: 1.7; color: var(--ks-body);
+                    background: var(--ks-graphite); border-left: 3px solid var(--ks-kinpaku);
+                    padding: 12px 16px; border-radius: 0 6px 6px 0; margin-bottom: 18px; }
+  .swot-standout-label { font-weight: 700; color: var(--ks-champagne); }
+  .swot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .swot-grid { grid-template-columns: 1fr; } }
+  .swot-quad { border: 1px solid var(--ks-rule); border-top: 3px solid var(--ks-rule-strong);
+                border-radius: 6px; padding: 14px 16px 12px; background: var(--ks-lacquer); }
+  .swot-quad.swot-s { border-top-color: var(--ks-patina);  background: #f3faf6; }
+  .swot-quad.swot-w { border-top-color: var(--ks-vermilion); background: #fcf4f5; }
+  .swot-quad.swot-o { border-top-color: var(--ks-kinpaku-pale); background: #f3f7fc; }
+  .swot-quad.swot-t { border-top-color: #b8791a; background: #fdf8ef; }
+  .swot-head { display: flex; align-items: baseline; justify-content: space-between;
+                gap: 8px; margin-bottom: 8px; padding-bottom: 7px;
+                border-bottom: 1px solid var(--ks-rule); }
+  .swot-title { font-size: 11px; font-weight: 700; letter-spacing: 0.11em;
+                 text-transform: uppercase; color: var(--ks-champagne);
+                 font-family: var(--ks-sans); }
+  .swot-sub { font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase;
+               color: var(--ks-faint); font-family: var(--ks-sans); }
+  .swot-list { list-style: none; margin: 0; padding: 0; }
+  .swot-list li { position: relative; padding: 0 0 7px 15px; font-size: var(--fs-body);
+                   line-height: var(--lh-body); color: var(--ks-body); }
+  .swot-list li:last-child { padding-bottom: 0; }
+  .swot-list li::before { content: ""; position: absolute; left: 1px; top: 8px;
+                           width: 5px; height: 5px; border-radius: 50%;
+                           background: var(--ks-rule-strong); }
+  .swot-s .swot-list li::before { background: var(--ks-patina); }
+  .swot-w .swot-list li::before { background: var(--ks-vermilion); }
+  .swot-o .swot-list li::before { background: var(--ks-kinpaku-pale); }
+  .swot-t .swot-list li::before { background: #b8791a; }
+  .swot-pt { font-weight: 700; color: var(--ks-champagne); }
+
+  /* ── Gartner Magic Quadrant (embedded image) ── */
+  .gartner-caption { font-size: 14px; line-height: 1.65; color: var(--ks-muted); margin-bottom: 14px; }
+  .gartner-wrap { border: 1px solid var(--ks-rule); border-radius: 8px; padding: 14px;
+                   background: var(--ks-raised); text-align: center; }
+  .gartner-img { max-width: 100%; height: auto; border-radius: 4px; display: inline-block; }
+
+  /* ── Body bullet list ── */
+  .body-list { list-style: none; padding: 0; margin: 0; }
+  .body-list li { padding: 9px 0 9px 18px; position: relative; color: var(--ks-body);
+                   font-size: var(--fs-body); line-height: var(--lh-body); border-bottom: 1px solid var(--ks-rule); }
+  .body-list li:last-child { border-bottom: none; }
+  .body-list li:before { content: ""; position: absolute; left: 2px; top: 14px;
+                          width: 5px; height: 5px; border-radius: 50%; background: var(--ks-kinpaku); }
+  .body-list .run-in { color: var(--ks-kinpaku); font-weight: 700; }
+
+  /* ── Business flow diagram ── */
+  .biz-flow { display: flex; align-items: stretch; gap: 0; margin: 6px 0; }
+  .biz-col { display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 0; }
+  .biz-col-mid { flex: 1.05; }
+  .biz-col-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em;
+                    color: var(--ks-faint); margin-bottom: 3px; line-height: 1.3;
+                    font-family: var(--ks-sans); }
+  .biz-node { padding: 9px 11px; border-radius: 4px; }
+  .biz-node-name { font-size: 12.5px; font-weight: 600; line-height: 1.25;
+                    overflow-wrap: anywhere; }
+  .biz-node-sub { font-size: 10.5px; font-weight: 400; line-height: 1.3; margin-top: 2px;
+                   color: var(--ks-muted); overflow-wrap: anywhere; }
+  .biz-cust { background: rgba(19,49,92,0.05); border: 1px solid rgba(19,49,92,0.18);
+               color: var(--ks-champagne); }
+  .biz-out  { background: rgba(10,125,77,0.06); border: 1px solid rgba(10,125,77,0.22);
+               color: var(--ks-champagne); }
+  .biz-platform { background: var(--ks-kinpaku); color: var(--ks-lacquer-deep); padding: 11px 12px;
+                   border-radius: 4px; font-size: 13px; font-weight: 700; text-align: center;
+                   overflow-wrap: anywhere; }
+  .biz-mod { background: var(--ks-graphite-2); border: 1px solid var(--ks-rule); color: var(--ks-body);
+              padding: 8px 10px; border-radius: 4px; font-size: 12px; text-align: center; line-height: 1.3;
+              overflow-wrap: anywhere; }
+  .biz-arrow { display: flex; align-items: center; padding: 0 9px; color: var(--ks-kinpaku);
+                font-size: 18px; flex-shrink: 0; align-self: center; }
+  @media (max-width: 720px) { .biz-flow { flex-direction: column; } .biz-arrow { transform: rotate(90deg); margin: 2px auto; } }
+
+  /* ── Business model v2: engine-core value chain (inputs · the engine · the payoff) ── */
+  .bizv2 { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 18px; align-items: center;
+            margin: 8px 0 2px; }
+  .bizv2-side { display: flex; flex-direction: column; gap: 11px; }
+  .bizv2-collabel { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+                     color: var(--ks-faint); }
+  .bizv2-side-r .bizv2-collabel { text-align: right; }
+  .bizv2-in { border-left: 2px solid var(--ks-accent); padding: 1px 0 1px 11px; }
+  .bizv2-out { border-left: 2px solid var(--ks-patina); padding: 1px 0 1px 11px; }
+  .bizv2-in-name, .bizv2-out-name { font-weight: 600; font-size: 13px; color: var(--ks-champagne); }
+  .bizv2-in-sub, .bizv2-out-sub { font-size: 11px; color: var(--ks-faint); line-height: 1.42; margin-top: 2px; }
+  .bizv2-arrow { color: var(--ks-kinpaku-pale); font-size: 20px; line-height: 1; }
+  .bizv2-side-r .bizv2-arrow { text-align: left; }
+  .bizv2-engine { background: var(--ks-kinpaku); border-radius: 8px; padding: 16px 16px 13px; }
+  .bizv2-eng-eyebrow { font-size: 8.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+                        color: #8fa6c4; text-align: center; margin-bottom: 3px; }
+  .bizv2-eng-title { font-family: var(--ks-serif); color: #fff; font-weight: 700; font-size: 16px;
+                      text-align: center; margin-bottom: 11px; }
+  .bizv2-mod { background: var(--ks-kinpaku-pale); border-radius: 4px; padding: 7px 11px; color: #fff;
+                font-size: 12px; margin-bottom: 6px; }
+  .bizv2-mod b { font-weight: 700; }
+  .bizv2-mod span { color: #c3d3e8; }
+  .bizv2-core { text-align: center; color: #8fa6c4; font-size: 10px; margin-top: 9px; line-height: 1.4; }
+  @media (max-width: 760px) { .bizv2 { grid-template-columns: 1fr; }
+                               .bizv2-side-r .bizv2-collabel, .bizv2-side-r .bizv2-arrow { text-align: left; }
+                               .bizv2-arrow { transform: rotate(90deg); margin: 2px 0; } }
+
+  /* ── News ── */
+  .news-item { padding: 11px 0; border-bottom: 1px solid var(--ks-rule); }
+  .news-item:last-child { border-bottom: none; }
+  .news-row { display: flex; gap: 14px; align-items: flex-start; }
+  .news-date { font-size: 10px; color: var(--ks-faint); white-space: nowrap; min-width: 74px;
+                font-family: var(--ks-sans); padding-top: 2px; }
+  .news-headline { font-size: 15.5px; font-weight: 600; color: var(--ks-champagne); line-height: 1.4; }
+  .news-why { font-size: var(--fs-body); color: var(--ks-muted); margin-top: 6px; margin-left: 88px; line-height: var(--lh-body); }
+
+  /* ── Financials / metrics ── */
+  .fin-meta { font-size: 11px; color: var(--ks-faint); margin-bottom: 14px;
+               font-family: var(--ks-sans); letter-spacing: 0.05em; }
+  /* auto-fill (not auto-fit): a partial last row keeps card width + stays left-aligned */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                   gap: 10px; margin-bottom: 18px; }
+  .metric-card { background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 4px; padding: 14px 16px;
+                  min-width: 0; overflow: hidden; }
+  /* label may wrap to 2 lines (never truncate the metric name); min-height keeps
+     cards aligned whether the label is 1 or 2 lines */
+  .metric-label { font-size: 9.5px; font-weight: 500; color: var(--ks-faint); text-transform: uppercase;
+                   letter-spacing: 0.12em; margin-bottom: 6px; line-height: 1.3; min-height: 1.9em;
+                   font-family: var(--ks-sans); }
+  /* big number stays on ONE line; a long/sentence-like head shrinks AND wraps inside the
+     card instead of overflowing into the neighbouring tile */
+  .metric-value { font-family: var(--ks-sans); font-size: 1.15rem; font-weight: 700;
+                   color: var(--ks-kinpaku); line-height: 1.2; white-space: nowrap; }
+  .metric-value.long { font-size: 0.95rem; letter-spacing: -0.01em; white-space: normal;
+                        overflow-wrap: anywhere; line-height: 1.3; }
+  .metric-value.green { color: var(--ks-patina); }
+  .metric-sub { font-size: 10.5px; color: var(--ks-faint); margin-top: 4px; line-height: 1.35;
+                 font-family: var(--ks-sans); }
+  .metric-sub.pos { color: var(--ks-patina); font-weight: 600; }
+  /* period tag: the time window each metric covers, so a number is never undated */
+  .metric-period { font-size: 9px; color: var(--ks-faint); margin-top: 5px; line-height: 1.3;
+                    letter-spacing: 0.04em; text-transform: uppercase; white-space: normal;
+                    overflow-wrap: anywhere; padding-top: 4px; border-top: 1px solid var(--ks-rule);
+                    font-family: var(--ks-sans); }
+
+  /* v2: ONE hero metric (large, serif) + supporting grid, so the eye has an anchor */
+  .metrics-layout { display: grid; grid-template-columns: minmax(210px, 1.25fr) 2.75fr;
+                     gap: 10px; margin-bottom: 18px; align-items: stretch; }
+  .metrics-layout .metrics-grid { margin-bottom: 0; }
+  .metric-hero { background: var(--ks-raised); border: 1px solid var(--ks-rule-strong);
+                  border-radius: 6px; padding: 18px 20px; display: flex; flex-direction: column;
+                  justify-content: center; min-width: 0; }
+  .metric-hero-value { font-family: var(--ks-serif); font-size: clamp(2rem, 4.2vw, 2.75rem);
+                        font-weight: 700; color: var(--ks-kinpaku); line-height: 1.04;
+                        white-space: nowrap; letter-spacing: -0.01em; margin: 2px 0; }
+  /* signed-change chip: preattentive ▲/▼ + colour, faster to read than a clause */
+  .delta { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px;
+            border-radius: 20px; margin-top: 7px; white-space: nowrap; align-self: flex-start;
+            font-family: var(--ks-sans); }
+  .delta.up { background: #e7f4ec; color: var(--ks-patina); }
+  .delta.down { background: #fbeef0; color: var(--ks-vermilion); }
+  @media (max-width: 760px) { .metrics-layout { grid-template-columns: 1fr; } }
+
+  /* 3-tier financials: hero + 4 large (Tier 1) · medium grid (Tier 2) · reference table (Tier 3),
+     so size encodes importance instead of an undifferentiated wall of equal tiles */
+  .metrics-grid-lead { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .metrics-grid-sm { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                      gap: 10px; margin-bottom: 16px; }
+  .metric-card.lg { padding: 16px 18px; }
+  .metric-card.lg .metric-value { font-size: 1.6rem; }
+  .metric-card.lg .metric-label { font-size: 10px; }
+  .metric-card.sm { padding: 12px 14px; }
+  .metric-card.sm .metric-value { font-size: 1.18rem; }
+  .metrics-table-h { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+                      color: var(--ks-faint); margin: 2px 0 6px; }
+  .metrics-table { column-count: 2; column-gap: 36px; margin-bottom: 16px; }
+  .mt-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+             padding: 7px 2px; border-bottom: 1px solid var(--ks-rule); break-inside: avoid;
+             font-size: 13px; }
+  .mt-label { color: var(--ks-faint); flex-shrink: 0; }
+  .mt-per { font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ks-faint);
+             margin-left: 5px; }
+  /* value wraps (right-aligned) instead of forcing the page wide on a phone when a metric
+     carries a long compound value, e.g. "Revenue $90.5-91.0M; non-GAAP EPS $X" guidance */
+  .mt-val { color: var(--ks-champagne); font-weight: 600; text-align: right;
+             overflow-wrap: anywhere; min-width: 0; font-variant-numeric: tabular-nums; }
+  .mt-val .delta { margin-top: 0; padding: 1px 7px; font-size: 11px; }
+  @media (max-width: 680px) { .metrics-grid-lead { grid-template-columns: 1fr; }
+                               .metrics-table { column-count: 1; } }
+
+  /* ── Bull / Base / Bear scenario box (v2) ── */
+  .bbb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .bbb-cell { border-top: 3px solid var(--ks-rule-strong); background: var(--ks-raised);
+               border-radius: 0 0 4px 4px; padding: 12px 14px; }
+  .bbb-bear { border-top-color: var(--ks-vermilion); background: #fcf4f5; }
+  .bbb-base { border-top-color: var(--ks-kinpaku); background: #f3f7fc; }
+  .bbb-bull { border-top-color: var(--ks-patina); background: #f3faf6; }
+  .bbb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+               font-weight: 700; color: var(--ks-champagne); }
+  .bbb-name { font-size: 13px; }
+  .bbb-tag { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+              color: var(--ks-faint); }
+  .bbb-target { font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bbb-detail { font-size: 13px; color: var(--ks-muted); margin-top: 5px; line-height: 1.45; }
+  @media (max-width: 680px) { .bbb-grid { grid-template-columns: 1fr; } }
+
+  /* ── Quarterly trend matrix (Revenue / QoQ / Gross Margin × last 4 quarters) ── */
+  .qtrend-wrap { margin: 4px 0 6px; }
+  .qtrend-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .qtrend-table th, .qtrend-table td { padding: 7px 12px; border-bottom: 1px solid var(--ks-rule);
+                   font-size: 13px; }
+  .qtrend-table thead th { font-family: var(--ks-sans); font-size: 10px;
+                   font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+                   color: var(--ks-faint); border-bottom: 1px solid var(--ks-rule-strong); }
+  .qtrend-table td.mono { color: var(--ks-champagne); font-weight: 600; }
+  .qtrend-table td.pos { color: var(--ks-patina); }
+  .qtrend-table td.neg { color: var(--ks-vermilion); }
+  .qtrend-rowlbl { text-align: left; font-family: var(--ks-sans);
+                   font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em;
+                   color: var(--ks-faint); white-space: nowrap; }
+  .qtrend-table tbody tr:last-child td { border-bottom: none; }
+  .earn-bullets { list-style: none; padding: 0; margin: 0; }
+  .earn-bullets li { padding: 8px 0 8px 16px; position: relative; font-size: var(--fs-body);
+                      color: var(--ks-body); border-bottom: 1px solid var(--ks-rule); line-height: var(--lh-body); }
+  .earn-bullets li:before { content: ""; position: absolute; left: 2px; top: 14px;
+                             width: 5px; height: 5px; border-radius: 50%; background: var(--ks-patina); }
+  .earn-bullets li:last-child { border-bottom: none; }
+
+  /* ── ARR chart sources ── */
+  .chart-sources { margin-top: 8px; font-size: 9.5px; color: var(--ks-faint); }
+  .chart-source-label { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-right: 4px; }
+  .chart-source-link { color: var(--ks-kinpaku); text-decoration: none; border-bottom: 1px solid transparent;
+                        transition: border-color .15s; }
+  .chart-source-link:hover { border-bottom-color: var(--ks-kinpaku); }
+  .chart-source-text { color: var(--ks-faint); }
+
+  /* ── ARR chart ── */
+  .chart-row { display: flex; flex-wrap: wrap; gap: 28px 40px; align-items: flex-start; }
+  .chart-row .chart-wrap { flex: 1 1 320px; min-width: 0; }
+  .chart-caption { font-size: 10.5px; color: var(--ks-faint); margin-top: 6px; font-style: italic; }
+  .chart-wrap { margin: 4px 0 8px; }
+  .chart-eyebrow { font-size: 9px; text-transform: uppercase; letter-spacing: 0.18em;
+                    color: var(--ks-faint); margin-bottom: 12px;
+                    font-family: var(--ks-sans); }
+
+  /* ── Income-statement Sankey (inline SVG, scales to width) ── */
+  .sankey-wrap { margin: 16px 0 8px; }
+  /* inline SVG: fills the section on desktop; on a phone it keeps a readable min-width and
+     the wrapper scrolls horizontally (same pattern as the comps table) */
+  .sankey-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sankey-svg { display: block; width: 100%; min-width: 860px; height: auto;
+                 border: 1px solid var(--ks-rule); border-radius: 6px; }
+  /* ── FY / quarter toggle (pure-CSS radio tabs; no JS) ── */
+  .sk-tabs .sk-radio { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+  .sk-tabrow { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 10px; }
+  .sk-tab { font-family: var(--ks-sans); font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+             color: var(--ks-faint); background: transparent; border: 1px solid var(--ks-rule);
+             border-bottom: 2px solid transparent; border-radius: 5px; padding: 5px 11px;
+             cursor: pointer; user-select: none; transition: color .12s, background .12s, border-color .12s;
+             white-space: nowrap; }
+  .sk-tab:hover { color: var(--ks-body); background: var(--ks-raised); }
+  .sk-panel { display: none; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* print: show only the first (FY) panel; the interactive tab row is meaningless on paper */
+  @media print { .sk-tabrow { display: none; }
+    .sk-panels > .sk-panel { display: none !important; }
+    .sk-panels > .sk-panel:first-child { display: block !important; } }
+
+  /* ── Funding timeline (flex cards) ── */
+  .tl-flex  { display: flex; align-items: center; gap: 0; overflow-x: auto;
+               padding-bottom: 6px; margin: 8px 0; }
+  .tl-card  { background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
+               padding: 10px 12px; min-width: 88px; text-align: center; flex-shrink: 0; }
+  .tl-arrow { color: var(--ks-kinpaku); font-size: 14px; padding: 0 4px; flex-shrink: 0; }
+  .tl-round { font-size: 8px; text-transform: uppercase; letter-spacing: 0.10em;
+               color: var(--ks-faint); font-family: var(--ks-sans);
+               margin-bottom: 3px; }
+  .tl-amt   { font-size: 12px; font-weight: 700; color: var(--ks-kinpaku);
+               font-family: var(--ks-sans); }
+  .tl-val   { font-size: 10px; color: var(--ks-patina);
+               font-family: var(--ks-sans); margin-top: 2px; }
+  .tl-date  { font-size: 9px; color: var(--ks-faint); margin-top: 1px; }
+  .tl-leads { font-size: 9px; color: var(--ks-muted); margin-top: 3px; line-height: 1.3; }
+
+  /* ── News source tag ── */
+  .news-source-row { margin-left: 88px; margin-top: 4px; margin-bottom: 1px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+  .news-source-label { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ks-faint); margin-right: 2px; }
+  .news-source-sep { color: var(--ks-faint); font-size: 9px; }
+  .news-source-link { font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--ks-kinpaku); text-decoration: none; border-bottom: 1px solid transparent;
+    transition: border-color .15s; }
+  .news-source-link:hover { border-bottom-color: var(--ks-kinpaku); }
+  .news-source-nolink { color: var(--ks-faint); }
+  /* legacy: keep so old references do not break */
+  .news-source { font-size: 9.5px; font-weight: 600; color: var(--ks-faint); margin-left: 8px;
+                  font-family: var(--ks-sans); letter-spacing: 0.05em;
+                  background: var(--ks-raised); border: 1px solid var(--ks-rule);
+                  padding: 1px 6px; border-radius: 3px; vertical-align: middle; }
+
+  /* ── body-p (single paragraph, no bullets) ── */
+  /* prose measure: full-width lines are unreadable at 1400px — cap at ~75ch */
+  .body-p { color: var(--ks-body); font-size: var(--fs-body); line-height: var(--lh-body); max-width: 920px; }
+  .body-list { max-width: 920px; }
+
+  /* ── SEC filings ── */
+  .filings-wrap { display: flex; flex-direction: column; }
+  .filing-row { display: flex; align-items: baseline; gap: 14px; padding: 9px 0;
+                 border-bottom: 1px solid var(--ks-rule); }
+  .filing-row:last-child { border-bottom: none; }
+  .filing-row:hover .filing-go { opacity: 1; }
+  .filing-form { font-family: var(--ks-sans); font-weight: 700;
+                  font-size: 12.5px; color: var(--ks-kinpaku); min-width: 52px; }
+  .filing-meta { font-family: var(--ks-sans); font-size: 11.5px;
+                  color: var(--ks-faint); flex: 1; }
+  .filing-go { font-family: var(--ks-sans); font-size: 10.5px;
+                font-weight: 700; letter-spacing: 0.04em; color: var(--ks-kinpaku-pale);
+                opacity: 0.55; transition: opacity .15s; white-space: nowrap; }
+
+  /* ── Slide Kit ── */
+  .kit-grid { display: grid; grid-template-columns: 160px 1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 680px) { .kit-grid { grid-template-columns: 1fr; } }
+  .kit-identity { display: flex; flex-direction: column; gap: 8px; }
+  .kit-logo-lg  { width: 64px; height: 64px; border-radius: 10px; object-fit: contain;
+                   background: var(--ks-raised); padding: 6px; border: 1px solid var(--ks-rule); }
+  .kit-name { font-family: var(--ks-serif); font-size: 1.3rem;
+               font-weight: 400; color: var(--ks-champagne); line-height: 1.1; }
+  .kit-sub  { font-size: 11px; color: var(--ks-muted); }
+  .kit-link { font-size: 11px; color: var(--ks-kinpaku-pale); }
+  .kit-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .kit-tag  { font-size: 9px; background: var(--ks-graphite); border: 1px solid var(--ks-rule);
+               color: var(--ks-kinpaku-pale); padding: 2px 7px; border-radius: 3px;
+               font-family: var(--ks-sans); letter-spacing: 0.04em; }
+  .kit-copy { display: flex; flex-direction: column; gap: 6px; }
+  .kit-copy-label { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.18em;
+                     color: var(--ks-faint); font-family: var(--ks-sans); }
+  .kit-stat { background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
+               padding: 8px 12px; font-size: 12.5px; font-weight: 600; color: var(--ks-champagne);
+               font-family: var(--ks-sans); cursor: text; }
+  .kit-bullet { background: var(--ks-graphite); border-left: 2px solid var(--ks-kinpaku);
+                 padding: 7px 10px; font-size: 12px; color: var(--ks-body); line-height: 1.5;
+                 margin-top: 2px; }
+  .kit-assets { display: flex; flex-direction: column; gap: 6px; }
+  .kit-url  { background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 3px;
+               padding: 7px 10px; font-size: 10.5px; color: var(--ks-patina); word-break: break-all;
+               font-family: var(--ks-sans); }
+  .kit-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .kit-swatch-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: default; }
+  .kit-swatch { width: 36px; height: 36px; border-radius: 6px; border: 1px solid rgba(0,0,0,.12);
+                 box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+  .kit-hex { font-size: 9px; font-family: "SFMono-Regular","Roboto Mono",monospace;
+              color: var(--ks-faint); letter-spacing: .03em; text-transform: uppercase; }
+
+  /* ── Leadership ── */
+  .exec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .exec-card { background: var(--ks-raised); border: 1px solid var(--ks-rule); border-radius: 4px;
+                padding: 14px 16px; }
+  .exec-title { font-size: 9px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+                 color: var(--ks-faint); margin-bottom: 5px; }
+  .exec-since { font-weight: 400; color: var(--ks-faint); opacity: .7; }
+  .exec-name-row { margin-bottom: 6px; }
+  .exec-name { font-size: 13px; font-weight: 700; color: var(--ks-champagne); }
+  .exec-linkedin { font-size: 13px; font-weight: 700; color: var(--ks-kinpaku);
+                    text-decoration: none; border-bottom: 1px solid transparent;
+                    transition: border-color .15s; }
+  .exec-linkedin:hover { border-bottom-color: var(--ks-kinpaku); }
+  .exec-bg { font-size: 11px; color: var(--ks-muted); line-height: 1.55; }
+
+  /* ── Risk list ── */
+  .risk-list { list-style: none; padding: 0; }
+  .risk-list li { padding: 10px 0 10px 22px; border-bottom: 1px solid var(--ks-rule);
+                   position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }
+  .risk-list li:before { content: "!"; position: absolute; left: 3px; top: 10px; width: 13px; height: 13px;
+                          border-radius: 50%; background: rgba(179,18,43,0.1);
+                          color: var(--ks-vermilion); font-size: 9px; font-weight: 900;
+                          text-align: center; line-height: 13px;
+                          font-family: var(--ks-sans); }
+  .risk-list li:last-child { border-bottom: none; }
+  .risk-label { font-weight: 600; color: var(--ks-champagne); }
+
+  /* ── Comps table ── */
+  .comps-table { width: 100%; border-collapse: collapse; font-size: var(--fs-dense); }
+  .comps-table th { text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+                     text-transform: uppercase; color: var(--ks-faint); padding: 0 12px 8px 0;
+                     border-bottom: 1.5px solid var(--ks-kinpaku); vertical-align: bottom;
+                     font-family: var(--ks-sans); }
+  .comps-table th.right { text-align: right; }
+  /* unit (LTM / YoY) parked under the header so each cell value is one clean token */
+  .th-unit { display: block; text-transform: none; font-weight: 400; font-size: 8.5px;
+              letter-spacing: 0.03em; color: var(--ks-faint); opacity: 0.85; margin-top: 2px; }
+  .comps-table td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--ks-rule);
+                     vertical-align: middle; color: var(--ks-body); }
+  /* numeric cells never wrap — a single clean token per cell */
+  .comps-table td.mono, .comps-table td.right { white-space: nowrap; }
+  .comps-table tr:last-child td { border-bottom: none; }
+  .comps-table tr:hover td { background: var(--ks-raised); }
+  .comps-table tr.subj td { background: #eef3fa; font-weight: 700; color: var(--ks-champagne); }
+  /* the 3px accent bar is drawn as an inset shadow over the cell's left edge, so the first
+     column needs left padding or the subject name/note is clipped by the bar (the private
+     table compensates the same way) */
+  .comps-table tr.subj td:first-child { box-shadow: inset 3px 0 0 0 var(--ks-accent); padding-left: 11px; }
+  .comp-name { font-weight: 700; color: var(--ks-champagne); font-size: 13px; }
+  .comp-ticker { color: var(--ks-kinpaku-pale); font-size: 11px; font-weight: 700; }
+  .comp-type-cell { font-size: 10px; color: var(--ks-faint); white-space: nowrap; }
+  /* EV/Rev cell: the number with a thin underline bar showing where it sits in the set;
+     the most-expensive name's bar is crimson so the priciest name is pre-attentive */
+  .comp-ev { vertical-align: middle; position: relative; padding-bottom: 13px; }
+  .comp-ev .ev-num { display: block; }
+  /* shared faint track = the full scale; the coloured fill shows where this name sits on it,
+     so even short bars read against a common baseline (crimson fill = priciest name) */
+  .evtrack { position: absolute; right: 12px; bottom: 6px; width: 88px; height: 3px;
+             background: var(--ks-rule); border-radius: 2px; overflow: hidden; }
+  .evfill { position: absolute; right: 0; top: 0; height: 100%; border-radius: 2px; min-width: 3px; }
+  .evfill.evbar { background: var(--ks-kinpaku-pale); }
+  .evfill.evbar-subj { background: var(--ks-kinpaku); }
+  .evfill.evbar-max { background: var(--ks-accent); }
+  .comp-val { font-size: 13px; font-weight: 700; color: var(--ks-kinpaku); }
+  .comp-val a { color: var(--ks-kinpaku); border-bottom: 1px solid transparent; }
+  .comp-val a:hover { border-bottom-color: var(--ks-kinpaku); }
+  .comp-raise { font-weight: 700; color: var(--ks-champagne); }
+  .comp-sub { display: block; font-size: 9px; font-weight: 400; color: var(--ks-faint);
+               margin-top: 1px; white-space: nowrap; }
+  .comp-source-link { font-size: 9.5px; color: var(--ks-kinpaku); text-decoration: none;
+                       border-bottom: 1px solid transparent; transition: border-color .15s; }
+  .comp-source-link:hover { border-bottom-color: var(--ks-kinpaku); }
+  .comp-source-nolink { font-size: 9.5px; color: var(--ks-faint); }
+  .subject-row td { background: rgba(179,18,43,0.05); font-weight: 700; color: var(--ks-champagne); }
+  .subject-row td:first-child { border-left: 3px solid var(--ks-kinpaku); padding-left: 8px; color: var(--ks-kinpaku); }
+  .note-cell { color: var(--ks-faint); font-size: 11px; }
+  /* note rides under the company name so the numeric grid stays tight */
+  .comp-note-sub { font-size: 10px; font-weight: 400; color: var(--ks-faint); line-height: 1.4;
+                    margin-top: 2px; max-width: 340px; white-space: normal; }
+  .comps-table tr.median-row td { background: var(--ks-graphite); border-top: 1.5px solid var(--ks-rule-strong);
+                                   font-weight: 700; color: var(--ks-champagne); font-size: 12.5px; }
+  .comp-median-tag { font-size: 9px; font-weight: 400; color: var(--ks-faint);
+                      text-transform: uppercase; letter-spacing: 0.06em; margin-left: 4px; }
+  .scatter-wrap { margin-top: 18px; }
+
+  /* ── Slide bullets ── */
+  .slide-list { list-style: none; padding: 0; counter-reset: slides; }
+  .slide-list li { padding: 10px 0 10px 42px; border-bottom: 1px solid var(--ks-rule);
+                    position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }
+  .slide-list li:last-child { border-bottom: none; }
+  .slide-list li:before { counter-increment: slides; content: counter(slides);
+                           position: absolute; left: 0; top: 8px; width: 26px; height: 26px;
+                           border-radius: 2px; background: var(--ks-kinpaku); color: var(--ks-lacquer-deep);
+                           font-size: 11px; font-weight: 700; text-align: center; line-height: 26px;
+                           font-family: var(--ks-sans); }
+
+  /* ── Diligence ── */
+  .dq-list { list-style: none; padding: 0; counter-reset: dqs; }
+  .dq-list li { padding: 10px 0 10px 42px; border-bottom: 1px solid var(--ks-rule);
+                 position: relative; font-size: var(--fs-body); color: var(--ks-body); line-height: var(--lh-body); }
+  .dq-list li:last-child { border-bottom: none; }
+  .dq-list li:before { counter-increment: dqs; content: "Q" counter(dqs);
+                        position: absolute; left: 0; top: 8px; width: 26px; height: 26px;
+                        border-radius: 2px; background: var(--ks-raised); color: var(--ks-kinpaku);
+                        border: 1px solid var(--ks-rule); font-size: 9.5px; font-weight: 700;
+                        text-align: center; line-height: 26px;
+                        font-family: var(--ks-sans); }
+
+  /* ── Chips ── */
+  .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--ks-raised); border: 1px solid var(--ks-rule); color: var(--ks-muted);
+           font-size: 11.5px; padding: 3px 11px; border-radius: 20px; font-weight: 500; }
+
+  /* ── Footer ── */
+  .footer { background: var(--ks-raised); border-top: 1px solid var(--ks-rule-strong);
+             padding: 14px 40px; display: flex; justify-content: space-between; align-items: center; }
+  .footer-left { font-size: 10.5px; color: var(--ks-faint); line-height: 1.7; }
+  .footer-right { font-size: 10.5px; font-weight: 700; color: var(--ks-kinpaku);
+                   letter-spacing: 0.22em; font-family: var(--ks-sans); }
+  .meta-note { font-size: 12px; color: var(--ks-muted); margin-top: 8px; }
+  .meta-note strong { color: var(--ks-champagne); }
+
+  /* ── Phone (≤520px) ──────────────────────────────────────────────────────────
+     Reading layout for a ~390px viewport. Kept at 520px so the print render
+     (Letter-width viewport) never triggers any of it — no print overrides needed. */
+  @media (max-width: 520px) {
+    .header, .what-matters, .toc, .section, .footer { padding-left: 16px; padding-right: 16px; }
+    /* header meta (website + version-history dropdown, which can't wrap) drops below the
+       company name on a phone instead of forcing the header wider than the screen */
+    .header-top { flex-wrap: wrap; }
+    .header-meta { width: 100%; text-align: left !important; margin-top: 4px; }
+    /* sticky TOC: one scrollable row with finger-sized targets, not 4 stacked rows */
+    .toc { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+            padding-top: 6px; padding-bottom: 6px; }
+    .toc-link { font-size: 11px; padding: 9px 13px; }
+    .section { scroll-margin-top: 60px; }
+    /* news: date stacks above the headline; the hanging indent goes away */
+    .news-row { flex-direction: column; gap: 3px; }
+    .news-date { min-width: 0; padding-top: 0; font-size: 11px; }
+    .news-why, .news-source-row { margin-left: 0; }
+    .wm-row { flex-direction: column; gap: 2px; }
+    .wm-label { flex-basis: auto; }
+    .footer { flex-direction: column; align-items: flex-start; gap: 6px; }
+    /* floor the micro-label scale — 8.5–10px is desktop-only territory */
+    .hero-label, .ctx-label, .metric-label { font-size: 10.5px; }
+    .hero-sub, .ctx-sub, .metric-sub { font-size: 11px; }
+    .metric-period, .tl-round, .tl-date, .tl-leads { font-size: 10px; }
+    /* tappable micro-links and section meta read (and tap) better a notch bigger */
+    .news-source-link, .news-source-label, .chart-sources { font-size: 11px; }
+    .sec-meta, .fin-meta { font-size: 11.5px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* ── Print / PDF (the deliverable) ──────────────────────────────────────────
+     The PDF is just this HTML printed, so all pagination lives here. Goals:
+     consistent page geometry, no block ever sliced by a page edge, no orphaned
+     headings, running context on every page, and tighter density.            */
+  @media print {
+    @page { size: Letter; margin: 16mm 12mm; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; font-size: 10.5pt; line-height: 1.45; }
+    a { color: inherit; }
+    .toc { display: none; }                              /* interactive nav only */
+    #slidekit { display: none; }                         /* working artifact, not note content */
+    .table-scroll { overflow: visible; }                 /* print can't scroll — never clip a table */
+    .wrapper { max-width: none; border: none; }
+    .what-matters { break-inside: avoid; padding-left: 12px; }
+    .wm-row { break-inside: avoid; }
+
+    /* edge-to-edge: the page margin (set by the DevTools render / @page) provides
+       the side gutters, so sections sit flush to the printable area */
+    .header, .toc, .section, .footer { padding-left: 0; padding-right: 0; }
+
+    /* Keep atomic blocks whole — never sliced by a page break */
+    .ctx-card, .ctx-strip,
+    .hero-card, .metric-card, .explain-card, .exec-card, .tl-card, .news-item,
+    .biz-flow, .chart-wrap, .kit-grid, .filing-row,
+    .body-list li, .earn-bullets li, .risk-list li, .explain-list li,
+    .slide-list li, .dq-list li, .comps-table tr, .diff-table tr,
+    .swot-quad, .swot-list li, .gartner-wrap,
+    img, svg { break-inside: avoid; }
+
+    /* Never strand a heading at the foot of a page */
+    .sec-label, .sec-meta, .chart-eyebrow, .biz-col-label, .kit-copy-label,
+    .explain-label, .diagram-caption { break-after: avoid; }
+    .section { break-inside: auto; }                     /* long sections break BETWEEN items */
+    thead { display: table-header-group; }               /* repeat table headers on continued pages */
+
+    /* Print is always desktop-width, so keep the designed horizontal value chain
+       (override the narrow-screen column fallback that the print viewport triggers) */
+    .biz-flow { flex-direction: row; }
+    .biz-arrow { transform: none; align-self: center; margin: 0 4px; }
+
+    /* Density — same content, tighter so it reads in fewer pages */
+    .header { padding-top: 0; padding-bottom: 12px; }
+    .section { padding-top: 12px; padding-bottom: 12px; }
+    .footer { padding-top: 12px; padding-bottom: 0; }
+    .hero-card { padding: 9px 14px; }
+    .hero-value { font-size: 1.2rem; }
+    .hero-value.long { font-size: 0.95rem; }
+    .metric-card { padding: 10px 13px; }
+    .metrics-grid { gap: 7px; margin-bottom: 12px; }
+    .metric-value { font-size: 1.05rem; }
+    .exec-card { padding: 11px 13px; }
+    .explain-card { padding: 10px 13px; }
+    .explain-grid { gap: 9px; margin-bottom: 14px; }
+    .explain-list li { padding: 3px 0 3px 16px; }
+    .body-list li { padding: 6px 0 6px 18px; }
+    .earn-bullets li, .risk-list li { padding-top: 6px; padding-bottom: 6px; }
+    /* one print body size across every section so reading text never changes mid-note */
+    .explain-text, .explain-list li, .body-p, .body-list li, .swot-list li,
+    .swot-standout, .earn-bullets li, .risk-list li, .news-why,
+    .slide-list li, .dq-list li { font-size: 13px; line-height: 1.5; }
+    .news-item { padding: 8px 0; }
+    .news-why { margin-top: 4px; }
+    .chart-wrap { margin: 2px 0 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ⓪ THESIS BAR: ticker · the call · Street PT + upside (sticky; the call never scrolls off) -->
+  <div class="thesis-bar"><span class="tb-ticker">AVGO</span><span class="tb-verdict">Broadcom is the only at-scale merchant designer pairing custom AI accelerators AND the dominant AI Ethernet networking stack, a hyperscaler-aligned alternative to Nvidia, layered on a VMware/software cash cow that funds a sector-leading ~46% FCF margin and a growing dividend</span><span class="tb-pt">Street PT <b>$524.51</b> <span class="tb-up pos">+41.4%</span></span></div>
+
+  <!-- ① HEADER: Logo + Name + Badges -->
+  <div class="header">
+    <div class="header-top">
+      <img class="company-logo" src="https://logo.clearbit.com/www.broadcom.com" alt="Broadcom logo" onerror="this.style.display='none'">
+      <div class="header-name">
+        <span class="company-name">Broadcom</span>
+        <div class="header-badges">
+          <span class="ticker-badge">AVGO</span>
+          <span class="stage-badge">PUBLIC</span>
+          <span class="draft-badge">DRAFT</span>
+        </div>
+      </div>
+      <div class="header-meta" style="text-align:right">
+        <a href="https://www.broadcom.com" target="_blank">www.broadcom.com</a><br>
+        <details class="verhist"><summary class="verhist-btn">&#x21bb; Updated July 19, 2026 &middot; 5 versions</summary><div class="verhist-menu"><div class="verhist-head">Version history</div><span class="verhist-item current">Jul 19, 2026 &middot; current</span><a class="verhist-item" href="../2026-07-11/AVGO_brief_2026-07-11.html">Jul 11, 2026</a><a class="verhist-item" href="../2026-06-27/AVGO_brief_2026-06-27.html">Jun 27, 2026</a><a class="verhist-item" href="../2026-06-18/AVGO_brief_2026-06-18.html">Jun 18, 2026</a><a class="verhist-item" href="../2026-06-11/AVGO_brief_2026-06-11.html">Jun 11, 2026</a></div></details>
+      </div>
+    </div>
+    <div class="verticals"><span class="vertical-tag">AI Custom Silicon (XPU / ASIC)</span><span class="vertical-tag">AI & Data-Center Networking</span><span class="vertical-tag">Semiconductors</span><span class="vertical-tag">Infrastructure Software (VMware)</span></div>
+    
+  </div>
+
+  <!-- ② HERO STATS: 5 KPIs at a glance (+ the one as-of anchor line) -->
+  <div class="hero-v2"><div class="hero-lead"><div class="hero-eyebrow">45 analysts · consensus view</div><div class="hero-bignum pos">+41.4%</div><div class="hero-bigcap">upside to the Street target<br><span class="hero-bigcap-2">at 24.0x EV/Rev (LTM)</span></div></div><div class="hero-rail"><div class="hr-cell"><span class="hr-label">Price</span><span class="hr-value">$370.83</span></div><div class="hr-cell"><span class="hr-label">Mkt cap</span><span class="hr-value">$1.8T</span></div><div class="hr-cell"><span class="hr-label">Street PT</span><span class="hr-value">$524.51</span></div><div class="hr-cell"><span class="hr-label">EV / Rev</span><span class="hr-value">24.0x</span></div><div class="hr-cell"><span class="hr-label">Consensus</span><span class="hr-value">Strong_Buy</span></div><div class="hr-cell"><span class="hr-label">vs QQQ</span><span class="hr-value">+7pp 1Y</span></div></div></div><div class="asof-band">All trading data as of the <strong>2026-07-17</strong> US market close (yfinance; EV/Rev recomputed from last close × shares + net debt). Figures covering a different window are labeled individually.</div><div class="ctx-strip"><div class="ctx-card"><div class="ctx-label">Forward P/E</div><div class="ctx-value">19.1x</div><div class="ctx-sub">consensus fwd EPS</div></div><div class="ctx-card"><div class="ctx-label">EV/Rev 52-wk Band</div><div class="ctx-value">17.8x-31.8x</div><div class="ctx-sub">price effect only; today's shares, net debt + LTM rev</div></div><div class="ctx-card"><div class="ctx-label">Short Interest</div><div class="ctx-value">1.5%</div><div class="ctx-sub">% of float</div></div><div class="ctx-card"><div class="ctx-label">Net Debt</div><div class="ctx-value">$45.3B</div><div class="ctx-sub">cash − total debt</div></div><div class="ctx-card"><div class="ctx-label">Diluted Shares</div><div class="ctx-value">4.88B</div><div class="ctx-sub">SEC 10-Q · Q ended 2026-05-03 · wtd-avg diluted, TSM as reported · ties to live count ±0.0%</div></div><div class="ctx-card"><div class="ctx-label">SBC % of Rev</div><div class="ctx-value">11.6%</div><div class="ctx-sub">LTM, the dilution drag</div></div></div>
+
+  <!-- ③ TOC -->
+  <div class="toc"><a href="#overview" class="toc-link">Overview</a> <a href="#leadership" class="toc-link">Leadership</a> <a href="#product" class="toc-link">Revenue Model</a> <a href="#news" class="toc-link">News</a> <a href="#earnings" class="toc-link">Financials</a> <a href="#growth" class="toc-link">Growth</a> <a href="#risks" class="toc-link">Risks</a> <a href="#comps" class="toc-link">Comps</a> <a href="#swot" class="toc-link">SWOT</a> <a href="#filings" class="toc-link">Filings</a> <a href="#bullets" class="toc-link">Bullets</a> <a href="#diligence" class="toc-link">Diligence</a> <a href="#slidekit" class="toc-link">Slide Kit</a></div>
+
+  <!-- ③a WHAT MATTERS: thesis · key debate · next catalyst (the MD's first 30 seconds) -->
+  <div class="what-matters"><div class="wm-head">What Matters</div><div class="wm-row"><span class="wm-label">Key debate</span><span class="wm-text">Is the AI ramp accelerating or plateauing? An in-line (not raised) $56B FY2026 AI guide drove a ~13% selloff, bulls see >$100B by FY2027, bears see a stock priced for perfection at ~24x EV/Rev (2026-06-10 close).</span></div><div class="wm-row"><span class="wm-label">Next catalyst</span><span class="wm-text">Fiscal Q3 2026 results (quarter ending ~August 2, 2026), where management guides AI semiconductor revenue to $16.0B (>200% YoY), the next test of whether the ramp re-accelerates, and new CFO Amie Thuener's first full quarter.</span></div></div>
+
+  <!-- ③b BULL · BASE · BEAR scenario box (v2; renders only when the run authored it) -->
+  <div class="section" id="scenarios"><div class="sec-label">Bull · Base · Bear</div><div class="bbb-grid"><div class="bbb-cell bbb-bear"><div class="bbb-head"><span class="bbb-name">Bear</span><span class="bbb-target"></span></div><div class="bbb-detail">Customer concentration: a handful of hyperscalers (Google, Meta, plus Apple in wireless) and now OpenAI/Anthropic drive a large share of AI and total revenue, loss, in-sourcing…</div></div><div class="bbb-cell bbb-base"><div class="bbb-head"><span class="bbb-name">Base <span class="bbb-tag">Street</span></span><span class="bbb-target">$524.51 (+41.4%)</span></div><div class="bbb-detail">Street consensus Strong_Buy, 45 analysts; the $524.51 target sits +41.4% above the $370.83 close</div></div><div class="bbb-cell bbb-bull"><div class="bbb-head"><span class="bbb-name">Bull</span><span class="bbb-target"></span></div><div class="bbb-detail">AI revenue scaling: Management's >$100B FY2027 AI-revenue ambition and the OpenAI 10 GW deal extend the runway well beyond FY2026's ~$56B</div></div></div></div>
+
+  <!-- ④ BUSINESS OVERVIEW: explainer (3 levels) + bullets + value-chain diagram (only when an explicit bizFlow exists) -->
+  <div class="section" id="overview"><div class="sec-label">Business Overview</div><div class="explain-lede"><span class="explain-lede-label">In one sentence</span><span class="explain-lede-text">Broadcom designs custom AI chips and the networking silicon that wires them together for hyperscalers like Google, Meta and OpenAI, and sells VMware and other infrastructure software to enterprises. NASDAQ: AVGO; $75.5B LTM revenue, with AI semiconductors ~half of quarterly sales.</span></div><div class="explain-grid"><div class="explain-card explain-0"><div class="explain-label">Plain English</div><div class="explain-sublabel">What it does, who pays</div><ul class='explain-list'><li>Broadcom makes the specialized chips that power AI data centers and the internet.</li><li>Its biggest growth: custom AI chips built for Google, Meta, OpenAI and others.</li><li>It also makes the networking gear that wires thousands of chips together.</li><li>Plus it sells VMware software that runs companies' data-center servers.</li></ul></div><div class="explain-card explain-1"><div class="explain-label">The technical version</div><div class="explain-sublabel">How it actually works</div><ul class='explain-list'><li>Designs custom XPU/ASIC AI accelerators co-developed with each hyperscaler customer.</li><li>Supplies AI networking silicon (Tomahawk switches, Jericho routers) for Ethernet clusters.</li><li>Runs VMware/infrastructure software on a high-margin subscription (VCF) model.</li><li>Converts ~46% of revenue to free cash flow, funding the dividend and buybacks.</li></ul></div><div class="explain-card explain-2"><div class="explain-label">Explained simply</div><div class="explain-sublabel">The analogy</div><ul class='explain-list'><li>Think of Broadcom as the company that builds custom engines AND the highways for AI.</li><li>Big AI firms hire it to design a chip tuned to exactly their needs.</li><li>And it owns VMware, the software that quietly runs corporate computer rooms.</li></ul></div></div><div class="gloss-block"><div class="gloss-head">Key terms, decoded</div><dl class="gloss-list"><div class="gloss-item"><dt class="gloss-term">ASIC <span class="gloss-exp">Application-Specific Integrated Circuit</span></dt><dd class="gloss-def">A chip custom-built for one specific job, making it faster and cheaper at that task than a general-purpose chip.</dd></div><div class="gloss-item"><dt class="gloss-term">XPU</dt><dd class="gloss-def">Broadcom's term for a custom AI accelerator chip it co-designs with a specific hyperscaler customer.</dd></div><div class="gloss-item"><dt class="gloss-term">AI accelerator</dt><dd class="gloss-def">A chip specialized to crunch the math behind AI models far faster than a normal CPU.</dd></div><div class="gloss-item"><dt class="gloss-term">Hyperscaler</dt><dd class="gloss-def">A giant cloud/data-center operator (Google, Meta, Amazon, Microsoft, OpenAI) buying compute at massive scale.</dd></div><div class="gloss-item"><dt class="gloss-term">Ethernet (networking switch)</dt><dd class="gloss-def">The open networking standard Broadcom champions to connect many chips/servers so they act as one big computer.</dd></div><div class="gloss-item"><dt class="gloss-term">InfiniBand</dt><dd class="gloss-def">A competing high-speed networking standard (associated with Nvidia) that Broadcom's Ethernet products aim to displace in AI clusters.</dd></div><div class="gloss-item"><dt class="gloss-term">VMware / virtualization</dt><dd class="gloss-def">Software that splits one physical server into many virtual machines, letting companies run their data centers more efficiently.</dd></div><div class="gloss-item"><dt class="gloss-term">FCF <span class="gloss-exp">Free Cash Flow</span></dt><dd class="gloss-def">The cash a business generates after operating costs and capital spending, the money available for dividends, buybacks and debt paydown.</dd></div></dl></div><ul class='body-list'><li>(NASDAQ: AVGO), headquartered in Palo Alto, CA and led by CEO Hock Tan, is a global semiconductor and infrastructure-software leader operating in two segments.</li><li>Semiconductor Solutions (~68% of fiscal Q2 2026 revenue) spans custom AI accelerators ('XPUs'/ASICs) co-designed with hyperscalers, AI networking silicon (Tomahawk Ethernet switches, Jericho fabric routers), plus broadband, wireless (Apple is a large connectivity customer), server storage and industrial chips.</li><li>Infrastructure Software (~32%) is anchored by VMware, acquired for roughly $69B in November 2023, which transformed Broadcom's software mix, alongside mainframe (CA/Brocade) and security (Symantec). The company has reoriented around the AI build-out: in fiscal Q2 2026 (ended May 3, 2026), AI semiconductor revenue hit a record $10.8B (+143% YoY), about half of total revenue, with networking ~40% of AI sales.</li><li>Broadcom is the dominant merchant custom-silicon (ASIC) designer, now serving six core XPU customers including Google (TPU), Meta (MTIA), Anthropic and OpenAI. It trades near $372 as of the 2026-06-10 close (~$1.8T market cap).</li></ul><div class="news-source-row"><span class="news-source-label">Sources:</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000173016826000051/avgo-05032026x8kxex99.htm" target="_blank" rel="noopener">Broadcom Q2 FY2026 results (SEC EDGAR 8-K)</a> <span class="news-source-sep">·</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000173016825000116/avgo-11022025x8kxex99.htm" target="_blank" rel="noopener">Broadcom Q4/FY2025 results (SEC EDGAR 8-K)</a> <span class="news-source-sep">·</span> <a class="news-source-link" href="https://www.cnbc.com/2025/10/13/openai-partners-with-broadcom-custom-ai-chips-alongside-nvidia-amd.html" target="_blank" rel="noopener">CNBC, OpenAI partners with Broadcom on custom AI chips</a></div></div>
+
+  <!-- ④a HOW BROADCOM IS DIFFERENT (vs peers) -->
+  
+
+  <!-- ④b EXECUTIVE LEADERSHIP -->
+  <div class="section" id="leadership"><div class="sec-label">Executive Leadership</div><div class="exec-grid"><div class="exec-card"><div class="exec-title">President & Chief Executive Officer</div><div class="exec-name-row"><span class="exec-name">Hock E. Tan</span></div><div class="exec-bg">Long-time CEO and architect of Broadcom's roll-up M&A strategy (Brocade, CA, Symantec, VMware) and the pivot into AI custom silicon.</div></div><div class="exec-card"><div class="exec-title">Chief Financial Officer (retiring June 12, 2026)</div><div class="exec-name-row"><span class="exec-name">Kirsten M. Spears</span></div><div class="exec-bg">CFO who signed the Q2 FY2026 results after ~12 years in Broadcom finance; retiring June 12, 2026, with consulting support through March 2027.</div></div><div class="exec-card"><div class="exec-title">Chief Financial Officer (incoming, effective June 12, 2026)</div><div class="exec-name-row"><span class="exec-name">Amie Thuener</span></div><div class="exec-bg">Appointed CFO in March 2026; previously VP, Corporate Controller & Chief Accounting Officer of Alphabet Inc. since 2018, earlier at PwC.</div></div><div class="exec-card"><div class="exec-title">President, Semiconductor Solutions Group</div><div class="exec-name-row"><span class="exec-name">Charlie B. Kawwas, Ph.D.</span></div><div class="exec-bg">Leads the semiconductor business spanning AI accelerators and networking.</div></div></div></div>
+
+  <!-- ⑤ PRODUCT & REVENUE MODEL -->
+  <div class="section" id="product"><div class="sec-label">Product &amp; Revenue Model</div><ul class='body-list'><li>Broadcom's economics rest on two engines.</li><li>(1) AI semiconductors: it co-designs custom XPUs/ASICs with individual hyperscalers (18-24 month design cycles) and supplies the highest-bandwidth Ethernet networking silicon (Tomahawk 6 at 102.4 Tbps; the Jericho4 fabric router links more than 1M XPUs across data centers). Management has reaffirmed roughly $56B of FY2026 AI semiconductor revenue and reiterated a more than $100B FY2027 AI-revenue ambition, with AI bookings exceeding $30B. (2) Infrastructure software: VMware is being converted from perpetual licenses to VMware Cloud Foundation (VCF) subscriptions, lifting recurring revenue and margins.</li><li>The model is a free-cash-flow machine, fiscal Q2 2026 free cash flow was $10.26B (46% of revenue) and adjusted EBITDA was $15.24B (69% margin), funding a $0.65/quarter dividend (raised 10% for FY2026) and a $10B buyback authorization.</li></ul><div class="news-source-row"><span class="news-source-label">Sources:</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000173016826000051/avgo-05032026x8kxex99.htm" target="_blank" rel="noopener">Broadcom Q2 FY2026 results (SEC EDGAR 8-K)</a> <span class="news-source-sep">·</span> <a class="news-source-link" href="https://www.broadcom.com/company/news/product-releases/63146" target="_blank" rel="noopener">Broadcom ships Tomahawk 6 (broadcom.com)</a></div></div>
+
+  <!-- ⑥ RECENT NEWS -->
+  <div class="section" id="news"><div class="sec-label">Recent News</div><div class="news-item"><div class="news-row"><span class="news-date">2026-07-16</span><span class="news-headline">Standard Chartered Selects Broadcom to Deploy VMware Cloud Foundation Across 54 Global Markets</span></div><div class="news-source-row"><span class="news-source-label">Source:</span> <a class="news-source-link" href="https://www.globenewswire.com/news-release/2026/07/16/broadcom-standard-chartered-vmware-cloud-foundation.html" target="_blank" rel="noopener">GlobeNewswire (Broadcom IR)</a></div><div class="news-why">A major global bank standardizing on VMware Cloud Foundation across 54 countries is a marquee enterprise win for Broadcom's VMware integration, validating the post-acquisition monetization thesis and providing a concrete data point for the software upsell story that underpins Broadcom's premium multiple.</div></div><div class="news-item"><div class="news-row"><span class="news-date">2026-07-14</span><span class="news-headline">Morgan Stanley Reaffirms Overweight on Broadcom, 'AVGO Remains a Core AI Winner'</span></div><div class="news-source-row"><span class="news-source-label">Source:</span> <a class="news-source-link" href="https://www.cnbc.com/2026/07/14/morgan-stanley-broadcom-core-ai-winner.html" target="_blank" rel="noopener">CNBC</a></div><div class="news-why">Morgan Stanley reiteration reinforces analyst conviction ahead of the next earnings cycle, supporting the custom-ASIC AI chip revenue ramp thesis (Apple $30B+ deal through 2031) as a durable growth driver.</div></div><div class="news-item"><div class="news-row"><span class="news-date">2026-07-08</span><span class="news-headline">Apple Signs $30B+ Broadcom Chip Supply Deal Through 2031 for 15B+ US-Made Custom Chips</span></div><div class="news-source-row"><span class="news-source-label">Source:</span> <a class="news-source-link" href="https://www.bloomberg.com/news/articles/2026-07-08/apple-aapl-chip-deal-with-broadcom-avgo-expected-to-exceed-30-billion" target="_blank" rel="noopener">Bloomberg</a></div><div class="news-why">Apple's single largest manufacturing commitment under its $600B American Manufacturing Program, 15B+ custom wireless connectivity chips built at Broadcom's Fort Collins CO facility, Apple investing $1.5B in facility expansion. Provides massive multi-year revenue visibility on a customer representing ~20% of Broadcom's annual revenue, and cements US manufacturing as a geopolitical moat against export-control risk.</div></div><div class="news-item"><div class="news-row"><span class="news-date">2026-07-06</span><span class="news-headline">Broadcom Files 8-K on New Multi-Year Apple Custom ASIC Supply Agreements Through 2031</span></div><div class="news-source-row"><span class="news-source-label">Source:</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000119312526295589/d84378d8k.htm" target="_blank" rel="noopener">SEC EDGAR</a></div><div class="news-why">SEC filing disclosed new long-term agreements to develop and supply custom ASIC silicon across multiple generations of Apple products through 2031, expanding beyond RF/wireless into broader custom silicon. No dollar value disclosed in the filing; Apple quantified the $30B+ two days later.</div></div><div class="news-item"><div class="news-row"><span class="news-date">2026-06-24</span><span class="news-headline">OpenAI and Broadcom Unveil 'Jalapeño', OpenAI's First Custom AI Inference Chip</span></div><div class="news-source-row"><span class="news-source-label">Source:</span> <a class="news-source-link" href="https://www.cnbc.com/2026/06/24/openai-and-broadcom-reveal-jalapeno-first-ai-chip-in-partnership.html" target="_blank" rel="noopener">CNBC</a></div><div class="news-why">The ASIC delivers ~50% cost savings vs. Nvidia GPUs for inference and validates Broadcom's XPU business with a sixth major hyperscaler customer, directly supporting management's $100B+ FY2027 AI revenue forecast.</div></div><div class="news-item"><div class="news-row"><span class="news-date">2026-06-24</span><span class="news-headline">Broadcom Rallies on Jalapeño as OpenAI Reduces Nvidia Dependence</span></div><div class="news-source-row"><span class="news-source-label">Source:</span> <a class="news-source-link" href="https://www.bloomberg.com/news/articles/2026-06-24/openai-and-broadcom-unveil-ai-chip-to-run-models-faster-cheaper" target="_blank" rel="noopener">Bloomberg</a></div><div class="news-why">The co-branded chip launch reinforces Broadcom's custom silicon moat with a sixth hyperscaler XPU customer, expanding the addressable market and providing a re-rating catalyst.</div></div><div class="news-item"><div class="news-row"><span class="news-date">2026-06-18</span><span class="news-headline">Broadcom Completes $3.0B Senior Notes Tender Offer, Liability Management Ahead of AI Build Cycle</span></div><div class="news-source-row"><span class="news-source-label">Source:</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/1730168/000119312526275077/d149683d8k.htm" target="_blank" rel="noopener">SEC EDGAR</a></div><div class="news-why">Settlement of legacy senior notes due 2037/2038 (upsized from $2.5B) reduces interest costs and signals proactive balance sheet management as Broadcom invests heavily in AI infrastructure.</div></div><div class="news-item"><div class="news-row"><span class="news-date">2026-06-12</span><span class="news-headline">Broadcom Names Amie Thuener as CFO; Kirsten Spears Retires After 12 Years</span></div><div class="news-source-row"><span class="news-source-label">Source:</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/1730168/000119312526266777/d152717d8k.htm" target="_blank" rel="noopener">SEC EDGAR (8-K filing)</a></div><div class="news-why">Leadership transition at a pivotal moment: Thuener, previously VP/Corporate Controller and CAO at Alphabet, joins as Broadcom executes a $56B AI chip roadmap and integrates VMware. Spears continues under a nine-month consulting agreement through March 2027.</div></div></div>
+
+  <!-- ⑦ FINANCIALS / EARNINGS -->
+  <div class="section" id="earnings"><div class="sec-label">Financials &amp; Key Metrics</div><div class="sec-meta">Reporting period: Q2 FY2026 (ended May 3, 2026); reported June 3, 2026. Each metric is tagged with the period it covers; LTM and as-of figures are labeled individually.</div><div class="metrics-layout"><div class="metric-hero"><div class="metric-label">Revenue Guidance</div><div class="metric-hero-value">~$29.4B</div><span class="delta up">▲ +84% YoY</span><div class="metric-period">Q3 FY2026 guidance</div></div><div class="metrics-grid-lead"><div class="metric-card lg"><div class="metric-label">Free Cash Flow</div><div class="metric-value">$10.26B</div><div class="metric-sub">46% of revenue</div><div class="metric-period">Q2 FY2026</div></div><div class="metric-card lg"><div class="metric-label">Total Revenue</div><div class="metric-value">$22.19B</div><span class="delta up">▲ +48% YoY</span><div class="metric-period">Q2 FY2026</div></div><div class="metric-card lg"><div class="metric-label">Semiconductor Solutions</div><div class="metric-value">$15.01B</div><span class="delta up">▲ +79% YoY</span><div class="metric-period">Q2 FY2026</div></div><div class="metric-card lg"><div class="metric-label">Infrastructure Software</div><div class="metric-value">$7.18B</div><span class="delta up">▲ +9% YoY</span><div class="metric-period">Q2 FY2026</div></div></div></div><div class="metrics-grid-sm"><div class="metric-card sm"><div class="metric-label">AI Semiconductor Revenue</div><div class="metric-value">$10.8B</div><span class="delta up">▲ +143% YoY</span><div class="metric-period">Q2 FY2026</div></div><div class="metric-card sm"><div class="metric-label">Adjusted EBITDA</div><div class="metric-value">$15.24B</div><div class="metric-sub">69% of revenue</div><div class="metric-period">Q2 FY2026</div></div><div class="metric-card sm"><div class="metric-label">Non GAAP EPS</div><div class="metric-value">$2.44</div><span class="delta up">▲ +54% YoY</span><div class="metric-period">Q2 FY2026</div></div><div class="metric-card sm"><div class="metric-label">Quarterly Dividend</div><div class="metric-value long">$0.65 per share</div><div class="metric-period">Q2 FY2026</div></div></div><div class="metrics-table-h">Segment detail, bookings &amp; guidance</div><div class="metrics-table"><div class="mt-row"><span class="mt-label">AI Semi Guidance <span class="mt-per">Q3 FY2026 guidance</span></span><span class="mt-val">$16.0B </span></div></div><div class="sankey-wrap sk-tabs"><style>#sk-0:checked ~ .sk-panels > .sk-panel:nth-child(1) { display: block; }#sk-0:checked ~ .sk-tabrow > label[for="sk-0"] { color: var(--ks-ink); border-bottom-color: var(--ks-kinpaku); background: var(--ks-raised); }#sk-1:checked ~ .sk-panels > .sk-panel:nth-child(2) { display: block; }#sk-1:checked ~ .sk-tabrow > label[for="sk-1"] { color: var(--ks-ink); border-bottom-color: var(--ks-kinpaku); background: var(--ks-raised); }#sk-2:checked ~ .sk-panels > .sk-panel:nth-child(3) { display: block; }#sk-2:checked ~ .sk-tabrow > label[for="sk-2"] { color: var(--ks-ink); border-bottom-color: var(--ks-kinpaku); background: var(--ks-raised); }#sk-3:checked ~ .sk-panels > .sk-panel:nth-child(4) { display: block; }#sk-3:checked ~ .sk-tabrow > label[for="sk-3"] { color: var(--ks-ink); border-bottom-color: var(--ks-kinpaku); background: var(--ks-raised); }#sk-4:checked ~ .sk-panels > .sk-panel:nth-child(5) { display: block; }#sk-4:checked ~ .sk-tabrow > label[for="sk-4"] { color: var(--ks-ink); border-bottom-color: var(--ks-kinpaku); background: var(--ks-raised); }</style><div class="chart-eyebrow">Income statement flow</div><input type="radio" name="sk-tab" id="sk-0" class="sk-radio" checked><input type="radio" name="sk-tab" id="sk-1" class="sk-radio"><input type="radio" name="sk-tab" id="sk-2" class="sk-radio"><input type="radio" name="sk-tab" id="sk-3" class="sk-radio"><input type="radio" name="sk-tab" id="sk-4" class="sk-radio"><div class="sk-tabrow"><label for="sk-0" class="sk-tab" data-kind="FY">FY2025</label><label for="sk-1" class="sk-tab" data-kind="Q">Q2 FY2026</label><label for="sk-2" class="sk-tab" data-kind="Q">Q1 FY2026</label><label for="sk-3" class="sk-tab" data-kind="Q">Q4 FY2025</label><label for="sk-4" class="sk-tab" data-kind="Q">Q3 FY2025</label></div><div class="sk-panels"><div class="sk-panel"><svg viewBox="0 0 1240 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Broadcom income statement flow (FY2025): revenue through costs to net profit" font-family="Inter, Arial, sans-serif" class="sankey-svg"><defs><linearGradient id="ribp0-1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp0-2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp0-3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp0-4" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp0-5" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecc079"/></linearGradient><linearGradient id="ribp0-6" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#1f9d57"/></linearGradient></defs><rect x="0" y="0" width="1240" height="470" rx="14" fill="#fbfbf8"/><text x="263.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">REVENUE</text><text x="483.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">GROSS</text><text x="683.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">OPERATING</text><text x="871.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">NET</text><path d="M263.0 64.0 C349.9 64.0 383.1 64.0 470.0 64.0 L470.0 177.4 C383.1 177.4 349.9 177.4 263.0 177.4 Z" fill="url(#ribp0-1)" fill-opacity="0.44"/><path d="M263.0 177.4 C349.9 177.4 383.1 184.5 470.0 184.5 L470.0 423.0 C383.1 423.0 349.9 415.9 263.0 415.9 Z" fill="url(#ribp0-2)" fill-opacity="0.44"/><path d="M483.0 184.5 C561.5 184.5 591.5 184.5 670.0 184.5 L670.0 279.3 C591.5 279.3 561.5 279.3 483.0 279.3 Z" fill="url(#ribp0-3)" fill-opacity="0.44"/><path d="M483.0 279.3 C561.5 279.3 591.5 286.4 670.0 286.4 L670.0 430.0 C591.5 430.0 561.5 423.0 483.0 423.0 Z" fill="url(#ribp0-4)" fill-opacity="0.44"/><path d="M683.0 286.4 C756.5 286.4 784.5 271.2 858.0 271.2 L858.0 287.4 C784.5 287.4 756.5 302.6 683.0 302.6 Z" fill="url(#ribp0-5)" fill-opacity="0.44"/><path d="M683.0 302.6 C756.5 302.6 784.5 294.5 858.0 294.5 L858.0 421.9 C784.5 421.9 756.5 430.0 683.0 430.0 Z" fill="url(#ribp0-6)" fill-opacity="0.44"/><rect x="250.0" y="64.0" width="13" height="351.9" rx="3" fill="#5a6473"/><rect x="250.0" y="64.0" width="3.2" height="351.9" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="64.0" width="13" height="113.4" rx="3" fill="#e08a82"/><rect x="470.0" y="64.0" width="3.2" height="113.4" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="184.5" width="13" height="238.5" rx="3" fill="#1f9d57"/><rect x="470.0" y="184.5" width="3.2" height="238.5" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="184.5" width="13" height="94.9" rx="3" fill="#e08a82"/><rect x="670.0" y="184.5" width="3.2" height="94.9" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="286.4" width="13" height="143.6" rx="3" fill="#1f9d57"/><rect x="670.0" y="286.4" width="3.2" height="143.6" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="271.2" width="13" height="16.2" rx="3" fill="#e3a64a"/><rect x="858.0" y="271.2" width="3.2" height="16.2" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="294.5" width="13" height="127.4" rx="3" fill="#15834a"/><rect x="858.0" y="294.5" width="3.2" height="127.4" rx="2" fill="#ffffff" fill-opacity="0.22"/><text x="239.0" y="233.0" text-anchor="end" font-size="13.5" font-weight="700" fill="#1f2733">Revenue  $63.9B</text><text x="239.0" y="250.0" text-anchor="end" font-size="11.5" font-weight="600" fill="#6b7480">+24% Y/Y</text><text x="495.0" y="121.7" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Cost of revenue  $20.6B</text><text x="495.0" y="296.7" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Gross profit  $43.3B</text><text x="495.0" y="313.7" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">68% margin  ·  +33% Y/Y</text><text x="695.0" y="232.9" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Operating expenses  $17.2B</text><text x="695.0" y="351.2" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Operating profit  $26.1B</text><text x="695.0" y="368.2" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">41% margin  ·  +74% Y/Y</text><text x="883.0" y="280.3" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Interest &amp; other expense  $2.9B</text><text x="883.0" y="351.2" text-anchor="start" font-size="15" font-weight="700" fill="#15834a">Net profit  $23.1B</text><text x="883.0" y="368.2" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">36% margin  ·  +292% Y/Y</text></svg></div><div class="sk-panel"><svg viewBox="0 0 1240 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Broadcom income statement flow (Q2 FY2026): revenue through costs to net profit" font-family="Inter, Arial, sans-serif" class="sankey-svg"><defs><linearGradient id="ribp1-1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp1-2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp1-3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp1-4" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp1-5" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecc079"/></linearGradient><linearGradient id="ribp1-6" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#e08a82"/></linearGradient><linearGradient id="ribp1-7" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#1f9d57"/></linearGradient></defs><rect x="0" y="0" width="1240" height="470" rx="14" fill="#fbfbf8"/><text x="263.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">REVENUE</text><text x="483.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">GROSS</text><text x="683.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">OPERATING</text><text x="871.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">NET</text><path d="M263.0 64.0 C349.9 64.0 383.1 64.0 470.0 64.0 L470.0 169.4 C383.1 169.4 349.9 169.4 263.0 169.4 Z" fill="url(#ribp1-1)" fill-opacity="0.44"/><path d="M263.0 169.4 C349.9 169.4 383.1 176.3 470.0 176.3 L470.0 416.2 C383.1 416.2 349.9 409.3 263.0 409.3 Z" fill="url(#ribp1-2)" fill-opacity="0.44"/><path d="M483.0 176.3 C561.5 176.3 591.5 176.3 670.0 176.3 L670.0 247.2 C591.5 247.2 561.5 247.2 483.0 247.2 Z" fill="url(#ribp1-3)" fill-opacity="0.44"/><path d="M483.0 247.2 C561.5 247.2 591.5 254.1 670.0 254.1 L670.0 423.1 C591.5 423.1 561.5 416.2 483.0 416.2 Z" fill="url(#ribp1-4)" fill-opacity="0.44"/><path d="M683.0 254.1 C756.5 254.1 784.5 228.2 858.0 228.2 L858.0 239.6 C784.5 239.6 756.5 265.4 683.0 265.4 Z" fill="url(#ribp1-5)" fill-opacity="0.44"/><path d="M683.0 265.4 C756.5 265.4 784.5 246.5 858.0 246.5 L858.0 259.2 C784.5 259.2 756.5 278.2 683.0 278.2 Z" fill="url(#ribp1-6)" fill-opacity="0.44"/><path d="M683.0 278.2 C756.5 278.2 784.5 266.2 858.0 266.2 L858.0 411.0 C784.5 411.0 756.5 423.1 683.0 423.1 Z" fill="url(#ribp1-7)" fill-opacity="0.44"/><rect x="250.0" y="64.0" width="13" height="345.3" rx="3" fill="#5a6473"/><rect x="250.0" y="64.0" width="3.2" height="345.3" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="64.0" width="13" height="105.4" rx="3" fill="#e08a82"/><rect x="470.0" y="64.0" width="3.2" height="105.4" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="176.3" width="13" height="239.9" rx="3" fill="#1f9d57"/><rect x="470.0" y="176.3" width="3.2" height="239.9" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="176.3" width="13" height="70.9" rx="3" fill="#e08a82"/><rect x="670.0" y="176.3" width="3.2" height="70.9" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="254.1" width="13" height="169.0" rx="3" fill="#1f9d57"/><rect x="670.0" y="254.1" width="3.2" height="169.0" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="228.2" width="13" height="11.3" rx="3" fill="#e3a64a"/><rect x="858.0" y="228.2" width="3.2" height="11.3" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="246.5" width="13" height="12.8" rx="3" fill="#d87166"/><rect x="858.0" y="246.5" width="3.2" height="12.8" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="266.2" width="13" height="144.9" rx="3" fill="#15834a"/><rect x="858.0" y="266.2" width="3.2" height="144.9" rx="2" fill="#ffffff" fill-opacity="0.22"/><text x="239.0" y="229.6" text-anchor="end" font-size="13.5" font-weight="700" fill="#1f2733">Revenue  $22.2B</text><text x="239.0" y="246.6" text-anchor="end" font-size="11.5" font-weight="600" fill="#6b7480">+48% Y/Y</text><text x="495.0" y="117.7" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Cost of revenue  $6.8B</text><text x="495.0" y="289.2" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Gross profit  $15.4B</text><text x="495.0" y="306.2" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">69% margin  ·  +51% Y/Y</text><text x="695.0" y="212.7" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Operating expenses  $4.6B</text><text x="695.0" y="331.6" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Operating profit  $10.9B</text><text x="695.0" y="348.6" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">49% margin  ·  +84% Y/Y</text><text x="883.0" y="242.7" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Interest &amp; other expense  $729M</text><text x="883.0" y="272.7" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Taxes  $820M</text><text x="883.0" y="331.6" text-anchor="start" font-size="15" font-weight="700" fill="#15834a">Net profit  $9.3B</text><text x="883.0" y="348.6" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">42% margin  ·  +88% Y/Y</text></svg></div><div class="sk-panel"><svg viewBox="0 0 1240 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Broadcom income statement flow (Q1 FY2026): revenue through costs to net profit" font-family="Inter, Arial, sans-serif" class="sankey-svg"><defs><linearGradient id="ribp2-1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp2-2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp2-3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp2-4" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp2-5" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecc079"/></linearGradient><linearGradient id="ribp2-6" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#e08a82"/></linearGradient><linearGradient id="ribp2-7" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#1f9d57"/></linearGradient></defs><rect x="0" y="0" width="1240" height="470" rx="14" fill="#fbfbf8"/><text x="263.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">REVENUE</text><text x="483.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">GROSS</text><text x="683.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">OPERATING</text><text x="871.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">NET</text><path d="M263.0 64.0 C349.9 64.0 383.1 64.0 470.0 64.0 L470.0 174.0 C383.1 174.0 349.9 174.0 263.0 174.0 Z" fill="url(#ribp2-1)" fill-opacity="0.44"/><path d="M263.0 174.0 C349.9 174.0 383.1 180.9 470.0 180.9 L470.0 416.2 C383.1 416.2 349.9 409.3 263.0 409.3 Z" fill="url(#ribp2-2)" fill-opacity="0.44"/><path d="M483.0 180.9 C561.5 180.9 591.5 180.9 670.0 180.9 L670.0 261.2 C591.5 261.2 561.5 261.2 483.0 261.2 Z" fill="url(#ribp2-3)" fill-opacity="0.44"/><path d="M483.0 261.2 C561.5 261.2 591.5 268.1 670.0 268.1 L670.0 423.1 C591.5 423.1 561.5 416.2 483.0 416.2 Z" fill="url(#ribp2-4)" fill-opacity="0.44"/><path d="M683.0 268.1 C756.5 268.1 784.5 242.6 858.0 242.6 L858.0 251.0 C784.5 251.0 756.5 276.6 683.0 276.6 Z" fill="url(#ribp2-5)" fill-opacity="0.44"/><path d="M683.0 276.6 C756.5 276.6 784.5 257.9 858.0 257.9 L858.0 273.0 C784.5 273.0 756.5 291.7 683.0 291.7 Z" fill="url(#ribp2-6)" fill-opacity="0.44"/><path d="M683.0 291.7 C756.5 291.7 784.5 279.9 858.0 279.9 L858.0 411.3 C784.5 411.3 756.5 423.1 683.0 423.1 Z" fill="url(#ribp2-7)" fill-opacity="0.44"/><rect x="250.0" y="64.0" width="13" height="345.3" rx="3" fill="#5a6473"/><rect x="250.0" y="64.0" width="3.2" height="345.3" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="64.0" width="13" height="110.0" rx="3" fill="#e08a82"/><rect x="470.0" y="64.0" width="3.2" height="110.0" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="180.9" width="13" height="235.2" rx="3" fill="#1f9d57"/><rect x="470.0" y="180.9" width="3.2" height="235.2" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="180.9" width="13" height="80.3" rx="3" fill="#e08a82"/><rect x="670.0" y="180.9" width="3.2" height="80.3" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="268.1" width="13" height="154.9" rx="3" fill="#1f9d57"/><rect x="670.0" y="268.1" width="3.2" height="154.9" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="242.6" width="13" height="8.4" rx="3" fill="#e3a64a"/><rect x="858.0" y="242.6" width="3.2" height="8.4" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="257.9" width="13" height="15.1" rx="3" fill="#d87166"/><rect x="858.0" y="257.9" width="3.2" height="15.1" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="279.9" width="13" height="131.4" rx="3" fill="#15834a"/><rect x="858.0" y="279.9" width="3.2" height="131.4" rx="2" fill="#ffffff" fill-opacity="0.22"/><text x="239.0" y="237.6" text-anchor="end" font-size="13.5" font-weight="700" fill="#1f2733">Revenue  $19.3B</text><text x="495.0" y="120.0" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Cost of revenue  $6.2B</text><text x="495.0" y="291.6" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Gross profit  $13.2B</text><text x="495.0" y="308.6" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">68% margin</text><text x="695.0" y="222.1" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Operating expenses  $4.5B</text><text x="695.0" y="338.6" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Operating profit  $8.7B</text><text x="695.0" y="355.6" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">45% margin</text><text x="883.0" y="252.1" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Interest &amp; other expense  $471M</text><text x="883.0" y="282.1" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Taxes  $846M</text><text x="883.0" y="338.6" text-anchor="start" font-size="15" font-weight="700" fill="#15834a">Net profit  $7.3B</text><text x="883.0" y="355.6" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">38% margin</text></svg></div><div class="sk-panel"><svg viewBox="0 0 1240 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Broadcom income statement flow (Q4 FY2025): revenue through costs to net profit" font-family="Inter, Arial, sans-serif" class="sankey-svg"><defs><linearGradient id="ribp3-1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp3-2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp3-3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp3-4" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp3-5" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#1f9d57"/></linearGradient><linearGradient id="ribp3-6" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ecc079"/><stop offset="1" stop-color="#1f9d57"/></linearGradient></defs><rect x="0" y="0" width="1240" height="470" rx="14" fill="#fbfbf8"/><text x="263.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">REVENUE</text><text x="483.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">GROSS</text><text x="683.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">OPERATING</text><text x="871.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">NET</text><path d="M263.0 64.0 C349.9 64.0 383.1 64.0 470.0 64.0 L470.0 178.8 C383.1 178.8 349.9 178.8 263.0 178.8 Z" fill="url(#ribp3-1)" fill-opacity="0.44"/><path d="M263.0 178.8 C349.9 178.8 383.1 186.0 470.0 186.0 L470.0 430.0 C383.1 430.0 349.9 422.8 263.0 422.8 Z" fill="url(#ribp3-2)" fill-opacity="0.44"/><path d="M483.0 186.0 C561.5 186.0 591.5 186.0 670.0 186.0 L670.0 277.5 C591.5 277.5 561.5 277.5 483.0 277.5 Z" fill="url(#ribp3-3)" fill-opacity="0.44"/><path d="M483.0 277.5 C561.5 277.5 591.5 284.7 670.0 284.7 L670.0 437.2 C591.5 437.2 561.5 430.0 483.0 430.0 Z" fill="url(#ribp3-4)" fill-opacity="0.44"/><path d="M683.0 284.7 C756.5 284.7 784.5 260.3 858.0 260.3 L858.0 412.8 C784.5 412.8 756.5 437.2 683.0 437.2 Z" fill="url(#ribp3-5)" fill-opacity="0.44"/><path d="M263.0 430.0 C512.9 430.0 608.1 412.8 858.0 412.8 L858.0 430.0 C608.1 430.0 512.9 447.2 263.0 447.2 Z" fill="url(#ribp3-6)" fill-opacity="0.44"/><rect x="250.0" y="64.0" width="13" height="358.8" rx="3" fill="#5a6473"/><rect x="250.0" y="64.0" width="3.2" height="358.8" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="250.0" y="430.0" width="13" height="17.2" rx="3" fill="#e3a64a"/><rect x="250.0" y="430.0" width="3.2" height="17.2" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="64.0" width="13" height="114.8" rx="3" fill="#e08a82"/><rect x="470.0" y="64.0" width="3.2" height="114.8" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="186.0" width="13" height="244.0" rx="3" fill="#1f9d57"/><rect x="470.0" y="186.0" width="3.2" height="244.0" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="186.0" width="13" height="91.5" rx="3" fill="#e08a82"/><rect x="670.0" y="186.0" width="3.2" height="91.5" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="284.7" width="13" height="152.5" rx="3" fill="#1f9d57"/><rect x="670.0" y="284.7" width="3.2" height="152.5" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="260.3" width="13" height="169.7" rx="3" fill="#15834a"/><rect x="858.0" y="260.3" width="3.2" height="169.7" rx="2" fill="#ffffff" fill-opacity="0.22"/><text x="239.0" y="244.4" text-anchor="end" font-size="13.5" font-weight="700" fill="#1f2733">Revenue  $18.0B</text><text x="239.0" y="439.6" text-anchor="end" font-size="13.5" font-weight="700" fill="#1f2733">Interest &amp; other income  $864M</text><text x="495.0" y="122.4" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Cost of revenue  $5.8B</text><text x="495.0" y="301.0" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Gross profit  $12.2B</text><text x="495.0" y="318.0" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">68% margin</text><text x="695.0" y="232.8" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Operating expenses  $4.6B</text><text x="695.0" y="354.0" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Operating profit  $7.7B</text><text x="695.0" y="371.0" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">42% margin</text><text x="883.0" y="338.2" text-anchor="start" font-size="15" font-weight="700" fill="#15834a">Net profit  $8.5B</text><text x="883.0" y="355.2" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">47% margin</text></svg></div><div class="sk-panel"><svg viewBox="0 0 1240 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Broadcom income statement flow (Q3 FY2025): revenue through costs to net profit" font-family="Inter, Arial, sans-serif" class="sankey-svg"><defs><linearGradient id="ribp4-1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp4-2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7b8392"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp4-3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecaaa3"/></linearGradient><linearGradient id="ribp4-4" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#2bb069"/></linearGradient><linearGradient id="ribp4-5" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#ecc079"/></linearGradient><linearGradient id="ribp4-6" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#e08a82"/></linearGradient><linearGradient id="ribp4-7" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2bb069"/><stop offset="1" stop-color="#1f9d57"/></linearGradient></defs><rect x="0" y="0" width="1240" height="470" rx="14" fill="#fbfbf8"/><text x="263.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">REVENUE</text><text x="483.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">GROSS</text><text x="683.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">OPERATING</text><text x="871.0" y="38.0" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#aab0ba">NET</text><path d="M263.0 64.0 C349.9 64.0 383.1 64.0 470.0 64.0 L470.0 177.6 C383.1 177.6 349.9 177.6 263.0 177.6 Z" fill="url(#ribp4-1)" fill-opacity="0.44"/><path d="M263.0 177.6 C349.9 177.6 383.1 184.5 470.0 184.5 L470.0 416.2 C383.1 416.2 349.9 409.3 263.0 409.3 Z" fill="url(#ribp4-2)" fill-opacity="0.44"/><path d="M483.0 184.5 C561.5 184.5 591.5 184.5 670.0 184.5 L670.0 284.7 C591.5 284.7 561.5 284.7 483.0 284.7 Z" fill="url(#ribp4-3)" fill-opacity="0.44"/><path d="M483.0 284.7 C561.5 284.7 591.5 291.6 670.0 291.6 L670.0 423.1 C591.5 423.1 561.5 416.2 483.0 416.2 Z" fill="url(#ribp4-4)" fill-opacity="0.44"/><path d="M683.0 291.6 C756.5 291.6 784.5 256.9 858.0 256.9 L858.0 274.0 C784.5 274.0 756.5 308.7 683.0 308.7 Z" fill="url(#ribp4-5)" fill-opacity="0.44"/><path d="M683.0 308.7 C756.5 308.7 784.5 280.9 858.0 280.9 L858.0 305.6 C784.5 305.6 756.5 333.5 683.0 333.5 Z" fill="url(#ribp4-6)" fill-opacity="0.44"/><path d="M683.0 333.5 C756.5 333.5 784.5 312.6 858.0 312.6 L858.0 402.2 C784.5 402.2 756.5 423.1 683.0 423.1 Z" fill="url(#ribp4-7)" fill-opacity="0.44"/><rect x="250.0" y="64.0" width="13" height="345.3" rx="3" fill="#5a6473"/><rect x="250.0" y="64.0" width="3.2" height="345.3" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="64.0" width="13" height="113.6" rx="3" fill="#e08a82"/><rect x="470.0" y="64.0" width="3.2" height="113.6" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="470.0" y="184.5" width="13" height="231.7" rx="3" fill="#1f9d57"/><rect x="470.0" y="184.5" width="3.2" height="231.7" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="184.5" width="13" height="100.2" rx="3" fill="#e08a82"/><rect x="670.0" y="184.5" width="3.2" height="100.2" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="670.0" y="291.6" width="13" height="131.5" rx="3" fill="#1f9d57"/><rect x="670.0" y="291.6" width="3.2" height="131.5" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="256.9" width="13" height="17.1" rx="3" fill="#e3a64a"/><rect x="858.0" y="256.9" width="3.2" height="17.1" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="280.9" width="13" height="24.8" rx="3" fill="#d87166"/><rect x="858.0" y="280.9" width="3.2" height="24.8" rx="2" fill="#ffffff" fill-opacity="0.22"/><rect x="858.0" y="312.6" width="13" height="89.6" rx="3" fill="#15834a"/><rect x="858.0" y="312.6" width="3.2" height="89.6" rx="2" fill="#ffffff" fill-opacity="0.22"/><text x="239.0" y="237.6" text-anchor="end" font-size="13.5" font-weight="700" fill="#1f2733">Revenue  $16.0B</text><text x="495.0" y="121.8" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Cost of revenue  $5.2B</text><text x="495.0" y="293.4" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Gross profit  $10.7B</text><text x="495.0" y="310.4" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">67% margin</text><text x="695.0" y="235.6" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Operating expenses  $4.6B</text><text x="695.0" y="350.4" text-anchor="start" font-size="13.5" font-weight="700" fill="#15834a">Operating profit  $6.1B</text><text x="695.0" y="367.4" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">38% margin</text><text x="883.0" y="266.4" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Interest &amp; other expense  $789M</text><text x="883.0" y="296.4" text-anchor="start" font-size="13.5" font-weight="700" fill="#1f2733">Taxes  $1.1B</text><text x="883.0" y="350.4" text-anchor="start" font-size="15" font-weight="700" fill="#15834a">Net profit  $4.1B</text><text x="883.0" y="367.4" text-anchor="start" font-size="11.5" font-weight="600" fill="#6b7480">26% margin</text></svg></div></div><div class="chart-sources">Source: yfinance income statement. Green = profit kept · salmon = costs · amber = non-operating. Margins shown as % of revenue.</div></div><ul class="earn-bullets"><li><strong>AI / Product:</strong> CEO Hock Tan said fiscal Q2 AI semiconductor revenue of $10.8B grew 143% YoY 'above our forecast, driven by increasing demand for custom AI accelerators and AI networking,' and the company expects fiscal Q3 AI revenue to grow more than 200% YoY to $16.0B. Management reaffirmed (did not raise) roughly $56B of FY2026 AI semiconductor revenue and reiterated a more than $100B FY2027 AI-revenue ambition, with AI bookings above $30B. Six core custom-XPU customers now include Google, Meta, Anthropic and OpenAI.</li><li><strong>Demand:</strong> Networking was ~40% of AI semiconductor revenue (Tomahawk/Jericho). Infrastructure Software ($7.18B) slightly missed the ~$7.32B Street estimate as the VMware subscription conversion matures, and the stock fell ~13% post-print because the unchanged $56B AI guide was read as a ceiling rather than a raise. The non-AI semiconductor portfolio (broadband, wireless, industrial) remains cyclical, but free cash flow of $10.26B (46% of revenue) keeps funding the dividend and buyback.</li></ul><div class="news-source-row"><span class="news-source-label">Sources:</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000173016826000051/avgo-05032026x8kxex99.htm" target="_blank" rel="noopener">Broadcom Q2 FY2026 results (SEC EDGAR 8-K)</a> <span class="news-source-sep">·</span> <a class="news-source-link" href="https://www.cnbc.com/2026/06/03/broadcom-avgo-earnings-report-q2-2026.html" target="_blank" rel="noopener">CNBC, Broadcom fiscal Q2 2026 earnings</a></div></div>
+
+  <!-- ⑧ ARR GROWTH CHART -->
+  <div class="section" id="growth"><div class="sec-label">Revenue Trajectory</div><div class="chart-row rev-charts">
+    <div class="chart-wrap">
+      <div class="chart-eyebrow">ANNUAL REVENUE ($B)</div>
+      <svg width="470" height="206" viewBox="0 0 470 206" style="overflow:visible;max-width:100%">
+        
+        <rect x="30" y="101" width="78" height="55" fill="var(--ks-kinpaku)" rx="3" opacity="0.55"/>
+        <text x="69" y="92" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$35.8B</text>
+        
+        <text x="69" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">FY2023</text><text x="69" y="193" text-anchor="middle" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">ended Oct 2023</text>
+        <rect x="140" y="76" width="78" height="80" fill="var(--ks-kinpaku)" rx="3" opacity="0.70"/>
+        <text x="179" y="67" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$51.6B</text>
+        <text x="179" y="49" text-anchor="middle" font-size="11" fill="var(--ks-patina)" font-family="Arial,Helvetica,sans-serif" font-weight="700">+44%</text>
+        <text x="179" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">FY2024</text><text x="179" y="193" text-anchor="middle" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">ended Nov 2024</text>
+        <rect x="250" y="57" width="78" height="99" fill="var(--ks-kinpaku)" rx="3" opacity="0.85"/>
+        <text x="289" y="48" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$63.9B</text>
+        <text x="289" y="30" text-anchor="middle" font-size="11" fill="var(--ks-patina)" font-family="Arial,Helvetica,sans-serif" font-weight="700">+24%</text>
+        <text x="289" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">FY2025</text><text x="289" y="193" text-anchor="middle" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">ended Nov 2025</text>
+        <rect x="360" y="38" width="78" height="118" fill="var(--ks-kinpaku)" rx="3" opacity="1.00"/>
+        <text x="399" y="29" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$75.5B</text>
+        <text x="399" y="11" text-anchor="middle" font-size="11" fill="var(--ks-patina)" font-family="Arial,Helvetica,sans-serif" font-weight="700">+18%</text>
+        <text x="399" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">LTM</text><text x="399" y="193" text-anchor="middle" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">ended May 2026</text>
+        <line x1="30" y1="158" x2="440" y2="158" stroke="var(--ks-rule-strong)" stroke-width="1"/>
+      </svg>
+      
+      <div class="chart-sources"><span class="chart-source-label">Sources:</span> <a class="chart-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000173016823000093/avgo-10292023x8kxex99.htm" target="_blank" rel="noopener">SEC EDGAR (as reported)</a> · <a class="chart-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000173016825000116/avgo-11022025x8kxex99.htm" target="_blank" rel="noopener">SEC EDGAR (as reported, FY2025 8-K)</a> · <a class="chart-source-link" href="https://finance.yahoo.com/quote/AVGO/financials" target="_blank" rel="noopener">yfinance / Yahoo Finance (live pull, 2026-06-10 close)</a></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-eyebrow">QUARTERLY REVENUE ($B)</div>
+      <svg width="580" height="188" viewBox="0 0 580 188" style="overflow:visible;max-width:100%">
+        
+        <rect x="30" y="77" width="78" height="79" fill="var(--ks-kinpaku)" rx="3" opacity="0.55"/>
+        <text x="69" y="68" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$15.0B</text>
+        
+        <text x="69" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">2Q25</text>
+        <rect x="140" y="72" width="78" height="84" fill="var(--ks-kinpaku)" rx="3" opacity="0.66"/>
+        <text x="179" y="63" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$16.0B</text>
+        
+        <text x="179" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">3Q25</text>
+        <rect x="250" y="61" width="78" height="95" fill="var(--ks-kinpaku)" rx="3" opacity="0.78"/>
+        <text x="289" y="52" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$18.0B</text>
+        
+        <text x="289" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">4Q25</text>
+        <rect x="360" y="54" width="78" height="102" fill="var(--ks-kinpaku)" rx="3" opacity="0.89"/>
+        <text x="399" y="45" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$19.3B</text>
+        
+        <text x="399" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">1Q26</text>
+        <rect x="470" y="38" width="78" height="118" fill="var(--ks-kinpaku)" rx="3" opacity="1.00"/>
+        <text x="509" y="29" text-anchor="middle" font-size="14" fill="var(--ks-champagne)" font-family="Arial,Helvetica,sans-serif" font-weight="700">$22.2B</text>
+        <text x="509" y="11" text-anchor="middle" font-size="11" fill="var(--ks-patina)" font-family="Arial,Helvetica,sans-serif" font-weight="700">+47.9% YoY</text>
+        <text x="509" y="178" text-anchor="middle" font-size="12" fill="var(--ks-muted)" font-family="Arial,Helvetica,sans-serif" font-weight="600">2Q26</text>
+        <line x1="30" y1="158" x2="550" y2="158" stroke="var(--ks-rule-strong)" stroke-width="1"/>
+      </svg>
+      
+      
+    </div></div><div class="qtrend-wrap"><div class="chart-eyebrow">LAST 5 QUARTERS</div><div class="table-scroll"><table class="qtrend-table"><thead><tr><th class="qtrend-rowlbl"></th><th class="right">2Q25</th><th class="right">3Q25</th><th class="right">4Q25</th><th class="right">1Q26</th><th class="right">2Q26</th></tr></thead><tbody><tr><td class="qtrend-rowlbl">Revenue</td><td class="mono right">$15.0B</td><td class="mono right">$16.0B</td><td class="mono right">$18.0B</td><td class="mono right">$19.3B</td><td class="mono right">$22.2B</td></tr><tr><td class="qtrend-rowlbl">YoY</td><td class="mono right"></td><td class="mono right"></td><td class="mono right"></td><td class="mono right"></td><td class="mono right pos">+47.9%</td></tr><tr><td class="qtrend-rowlbl">QoQ</td><td class="mono right"></td><td class="mono right pos">+6.3%</td><td class="mono right pos">+12.9%</td><td class="mono right pos">+7.2%</td><td class="mono right pos">+14.9%</td></tr><tr><td class="qtrend-rowlbl">Gross Margin</td><td class="mono right">68.0%</td><td class="mono right">67.1%</td><td class="mono right">68.0%</td><td class="mono right">68.1%</td><td class="mono right">69.5%</td></tr></tbody></table></div><div class="chart-sources"><span class="chart-source-label">Source:</span> <a class="chart-source-link" href="https://finance.yahoo.com/quote/AVGO/financials" target="_blank" rel="noopener">yfinance / Yahoo Finance (quarterly income statement)</a> &nbsp;&middot;&nbsp; calendar-quarter labels on fiscal period-ends; gross margin = gross profit / revenue. Most recent quarter (2Q26): 47.9% YoY revenue growth.</div></div></div>
+
+  <!-- ⑨ KEY RISKS -->
+  <div class="section" id="risks"><div class="sec-label">Key Risks &amp; Debates</div><ul class="risk-list"><li><span class='risk-label'>Customer concentration:</span> a handful of hyperscalers (Google, Meta, plus Apple in wireless) and now OpenAI/Anthropic drive a large share of AI and total revenue, loss, in-sourcing, or a capex pause at any one would hit results outsized.</li><li>AI-revenue durability vs. Nvidia merchant GPUs: the bull case rests on hyperscalers preferring custom XPUs and Ethernet over Nvidia's GPU+InfiniBand stack; an unchanged $56B FY2026 AI guide already spooked investors who feared a ceiling.</li><li><span class='risk-label'>VMware pricing backlash / churn:</span> the forced perpetual-to-subscription conversion and large VCF bundles have driven steep price increases and customer pushback, and fiscal Q2 software revenue already slightly missed the Street.</li><li><span class='risk-label'>China & geopolitical exposure:</span> U.S.-China export controls and softer Chinese demand weigh on the non-AI semiconductor and networking businesses and add regulatory uncertainty.</li><li><span class='risk-label'>Debt and integration from VMware:</span> the ~$69B VMware deal loaded the balance sheet with debt; deleveraging competes with the dividend, buyback, and AI investment for cash.</li><li><span class='risk-label'>Valuation & cyclicality:</span> at ~24x EV/Revenue (2026-06-10 close) and a ~$1.8T market cap, the multiple prices in flawless AI execution, while the non-AI semiconductor portfolio remains cyclical and has been a recent drag.</li></ul><div class="news-source-row"><span class="news-source-label">Sources:</span> <a class="news-source-link" href="https://www.cnbc.com/2026/06/03/broadcom-avgo-earnings-report-q2-2026.html" target="_blank" rel="noopener">CNBC, Broadcom fiscal Q2 2026 earnings / stock drop</a> <span class="news-source-sep">·</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000173016826000051/avgo-05032026x8kxex99.htm" target="_blank" rel="noopener">Broadcom Q2 FY2026 results (SEC EDGAR 8-K)</a></div></div>
+
+  <!-- ⑩ COMPARABLE COMPANIES -->
+  <div class="section" id="comps"><div class="sec-label">Comparable Companies</div>
+    <div class="table-scroll"><table class="comps-table">
+      <thead><tr><th class="comp-name-col">Company</th><th>Ticker</th><th>Type</th><th class="right">Mkt Cap</th><th class="right">EV / Rev<span class="th-unit">LTM</span></th><th class="right">Rev Growth<span class="th-unit">YoY</span></th><th class="right">Gross Margin</th><th class="right">FCF Margin<span class="th-unit">LTM</span></th><th class="right">Rule of 40<span class="th-unit">growth + FCF</span></th></tr></thead>
+      <tbody><tr class="subj"><td class="comp-name">Broadcom<div class="comp-note-sub">subject; custom AI silicon + dominant AI Ethernet networking, layered on a VMware FCF cash cow; ~46% FCF margin funds a growing dividend</div></td><td class="mono comp-ticker"><a class="comp-source-link" href="https://finance.yahoo.com/quote/AVGO" target="_blank" rel="noopener">AVGO</a></td><td class="comp-type-cell">Subject</td><td class="mono right">$1.8T</td><td class="mono right comp-ev"><span class="ev-num">24.0x</span><span class="evtrack"><span class="evfill evbar-max" style="width:100%"></span></span></td><td class="mono right">47.9%</td><td class="mono right">76.3%</td><td class="mono right">36.1%</td><td class="mono right">84</td></tr><tr><td class="comp-name">AMD<div class="comp-note-sub">merchant AI GPU (Instinct) and data-center CPU challenger; competes for the same hyperscaler AI compute budget</div></td><td class="mono comp-ticker"><a class="comp-source-link" href="https://finance.yahoo.com/quote/AMD" target="_blank" rel="noopener">AMD</a></td><td class="comp-type-cell"></td><td class="mono right">$808.4B</td><td class="mono right comp-ev"><span class="ev-num">21.4x</span><span class="evtrack"><span class="evfill evbar" style="width:89%"></span></span></td><td class="mono right">37.8%</td><td class="mono right">53.1%</td><td class="mono right">19.2%</td><td class="mono right">57</td></tr><tr><td class="comp-name">NVIDIA<div class="comp-note-sub">the merchant-GPU incumbent and primary competitive frame; faster-growing at a lower EV/Rev, the GPU+InfiniBand stack Broadcom's custom-ASIC+Ethernet alternative competes against</div></td><td class="mono comp-ticker"><a class="comp-source-link" href="https://finance.yahoo.com/quote/NVDA" target="_blank" rel="noopener">NVDA</a></td><td class="comp-type-cell"></td><td class="mono right">$4.9T</td><td class="mono right comp-ev"><span class="ev-num">19.2x</span><span class="evtrack"><span class="evfill evbar" style="width:80%"></span></span></td><td class="mono right">85.2%</td><td class="mono right">74.1%</td><td class="mono right">18.3%</td><td class="mono right">103</td></tr><tr><td class="comp-name">Marvell Technology<div class="comp-note-sub">closest custom-silicon (ASIC) and AI-networking peer; the other merchant designer chasing hyperscaler XPU and optical sockets, lower gross margin</div></td><td class="mono comp-ticker"><a class="comp-source-link" href="https://finance.yahoo.com/quote/MRVL" target="_blank" rel="noopener">MRVL</a></td><td class="comp-type-cell"></td><td class="mono right">$165.2B</td><td class="mono right comp-ev"><span class="ev-num">19.1x</span><span class="evtrack"><span class="evfill evbar" style="width:80%"></span></span></td><td class="mono right">27.6%</td><td class="mono right">51.5%</td><td class="mono right">26.0%</td><td class="mono right">54</td></tr><tr><td class="comp-name">Qualcomm<div class="comp-note-sub">diversified mobile/edge connectivity peer; far less AI-data-center levered and far cheaper, a valuation/cyclicality contrast point</div></td><td class="mono comp-ticker"><a class="comp-source-link" href="https://finance.yahoo.com/quote/QCOM" target="_blank" rel="noopener">QCOM</a></td><td class="comp-type-cell"></td><td class="mono right">$181.1B</td><td class="mono right comp-ev"><span class="ev-num">4.2x</span><span class="evtrack"><span class="evfill evbar" style="width:17%"></span></span></td><td class="mono right">-3.5%</td><td class="mono right">54.8%</td><td class="mono right">21.6%</td><td class="mono right">18</td></tr><tr class="median-row"><td class="comp-name">Peer median <span class="comp-median-tag">ex-subject</span></td><td></td><td></td><td></td><td class="mono right">19.2x</td><td class="mono right">32.7%</td><td class="mono right">54.0%</td><td class="mono right">20.4%</td><td class="mono right">56</td></tr></tbody>
+    </table></div><div class="chart-wrap scatter-wrap"><div class="chart-eyebrow">GROWTH VS MULTIPLE</div><svg width="560" height="300" viewBox="0 0 560 300" style="max-width:100%"><line x1="46" y1="254" x2="514" y2="254" stroke="var(--ks-rule-strong)" stroke-width="1"/><line x1="46" y1="34" x2="46" y2="254" stroke="var(--ks-rule-strong)" stroke-width="1"/><text x="100.0" y="270" text-anchor="middle" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">-4%</text><text x="280.0" y="270" text-anchor="middle" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">41%</text><text x="460.0" y="270" text-anchor="middle" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">85%</text><text x="38" y="187.7" text-anchor="end" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">9x</text><text x="38" y="118.3" text-anchor="end" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">19x</text><text x="38" y="49.0" text-anchor="end" font-size="9.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">28x</text><circle cx="308.6" cy="77.7" r="6.0" fill="var(--ks-accent)" opacity="0.9"/><circle cx="267.6" cy="97.0" r="4.5" fill="var(--ks-kinpaku)" opacity="0.9"/><circle cx="460.0" cy="112.7" r="4.5" fill="var(--ks-kinpaku)" opacity="0.9"/><circle cx="226.2" cy="113.5" r="4.5" fill="var(--ks-kinpaku)" opacity="0.9"/><circle cx="100.0" cy="223.2" r="4.5" fill="var(--ks-kinpaku)" opacity="0.9"/><text x="308.6" y="68.7" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ks-accent)" font-family="Arial,Helvetica,sans-serif">AVGO</text><text x="267.6" y="88.0" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ks-kinpaku)" font-family="Arial,Helvetica,sans-serif">AMD</text><text x="460.0" y="103.7" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ks-kinpaku)" font-family="Arial,Helvetica,sans-serif">NVDA</text><text x="226.2" y="104.5" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ks-kinpaku)" font-family="Arial,Helvetica,sans-serif">MRVL</text><text x="100.0" y="214.2" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ks-kinpaku)" font-family="Arial,Helvetica,sans-serif">QCOM</text><text x="280.0" y="294" text-anchor="middle" font-size="9" letter-spacing="1.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">REVENUE GROWTH (YOY)</text><text x="13" y="150.0" transform="rotate(-90 13 150.0)" text-anchor="middle" font-size="9" letter-spacing="1.5" fill="var(--ks-faint)" font-family="Arial,Helvetica,sans-serif">EV / REVENUE (LTM)</text></svg></div><div class="chart-sources"><span class="chart-source-label">Sources:</span> Public-ticker multiples pulled live from <a class="chart-source-link" href="https://finance.yahoo.com" target="_blank" rel="noopener">yfinance / Yahoo Finance</a>, as of the 2026-07-17 market close; EV/Rev recomputed from last close × shares + net debt. Rev Growth (YoY), Gross Margin, and FCF Margin reflect each company's most recent reported quarter / LTM, so their as-of periods differ by company and from the price close above. Rule of 40 = revenue growth + FCF margin. <strong>Broadcom trades at 24.0x vs a 19.2x peer median, a 25% premium to the median.</strong></div></div>
+
+  <!-- ⑩a SWOT ANALYSIS (how the subject stands out vs the comp set) -->
+  <div class="section" id="swot"><div class="sec-label">SWOT Analysis</div><div class="swot-standout"><span class="swot-standout-label">How Broadcom stands out:</span> Broadcom is the only at-scale merchant designer pairing custom AI accelerators (XPUs) AND the dominant AI Ethernet networking stack, a hyperscaler-aligned alternative to Nvidia, layered on a VMware/software cash cow that funds a sector-leading ~46% FCF margin and a growing dividend. At a premium EV/Rev (live multiple in comps table) (2026-06-10 close) it sits between faster-growing Nvidia (~19x) and lower-margin Marvell (~26x).</div><div class="swot-grid"><div class="swot-quad swot-s"><div class="swot-head"><span class="swot-title">Strengths</span><span class="swot-sub">Internal edge</span></div><ul class="swot-list"><li><span class='swot-pt'>Custom-silicon moat:</span> Six core XPU customers (Google, Meta, Anthropic, OpenAI + two unnamed) on 18-24 month co-design cycles create deep switching costs and >$30B of AI bookings visibility.</li><li><span class='swot-pt'>Networking dominance:</span> Tomahawk 6 (102.4 Tbps) and Jericho4 make Broadcom the de facto Ethernet-for-AI standard-bearer; ~40% of AI revenue is networking, diversifying beyond accelerators.</li><li><span class='swot-pt'>FCF & capital-return machine:</span> Fiscal Q2 2026 FCF of $10.26B (46% of revenue) and a 69% adjusted EBITDA margin; VMware is a high-margin recurring cash cow funding the dividend and $10B buyback.</li></ul></div><div class="swot-quad swot-w"><div class="swot-head"><span class="swot-title">Weaknesses</span><span class="swot-sub">Internal gap</span></div><ul class="swot-list"><li><span class='swot-pt'>Concentration:</span> A few hyperscalers plus Apple drive an outsized revenue share; results swing on a handful of customers' capex and in-sourcing decisions.</li><li><span class='swot-pt'>VMware execution risk:</span> Aggressive subscription/price resets are alienating some enterprise customers; fiscal Q2 software revenue already missed the Street estimate.</li><li><span class='swot-pt'>Leverage:</span> VMware-related debt competes with AI investment and capital returns for cash flow.</li></ul></div><div class="swot-quad swot-o"><div class="swot-head"><span class="swot-title">Opportunities</span><span class="swot-sub">External upside</span></div><ul class="swot-list"><li><span class='swot-pt'>AI revenue scaling:</span> Management's >$100B FY2027 AI-revenue ambition and the OpenAI 10 GW deal extend the runway well beyond FY2026's ~$56B.</li><li><span class='swot-pt'>Ethernet vs. InfiniBand:</span> The industry shift toward open Ethernet for AI scale-up/scale-out plays directly to Broadcom's switch/router franchise.</li><li><span class='swot-pt'>VMware Cloud Foundation:</span> Full subscription conversion lifts recurring revenue and margins as the installed base renews onto VCF.</li></ul></div><div class="swot-quad swot-t"><div class="swot-head"><span class="swot-title">Threats</span><span class="swot-sub">External risk</span></div><ul class="swot-list"><li><span class='swot-pt'>Nvidia competition:</span> Nvidia's GPU + NVLink/InfiniBand stack and pace of innovation could blunt custom-ASIC and Ethernet adoption.</li><li><span class='swot-pt'>Valuation / expectations:</span> elevated EV/Rev (live multiple in comps table) EV/Rev (2026-06-10 close) prices in perfection, an in-line guide already drove a ~13% drop; any AI-demand wobble de-rates the multiple fast.</li><li><span class='swot-pt'>China & cyclicality:</span> Export controls and a cyclical non-AI chip portfolio (broadband, wireless, industrial) remain downside swing factors.</li></ul></div></div><div class="news-source-row"><span class="news-source-label">Sources:</span> <a class="news-source-link" href="https://www.sec.gov/Archives/edgar/data/0001730168/000173016826000051/avgo-05032026x8kxex99.htm" target="_blank" rel="noopener">Broadcom Q2 FY2026 results (SEC EDGAR 8-K)</a> <span class="news-source-sep">·</span> <a class="news-source-link" href="https://finance.yahoo.com/quote/AVGO" target="_blank" rel="noopener">yfinance / Yahoo Finance, live comps (2026-06-10 close)</a></div></div>
+
+  <!-- ⑩b GARTNER MAGIC QUADRANT (optional embedded map) -->
+  
+
+  <!-- ⑩c COMPETITORS (if no comps table) -->
+  
+
+  <!-- ⑩c PRIMARY FILINGS (SEC EDGAR) -->
+  <div class="section" id="filings"><div class="sec-label">Primary Filings (SEC EDGAR)</div><div class="filings-wrap"><a class="filing-row" href="https://www.sec.gov/Archives/edgar/data/1730168/000119312526295589/d84378d8k.htm" target="_blank" rel="noopener"><span class="filing-form">8-K</span><span class="filing-meta">filed 2026-07-06 &nbsp;·&nbsp; period 2026-07-06</span><span class="filing-go">View on EDGAR &rsaquo;</span></a><a class="filing-row" href="https://www.sec.gov/Archives/edgar/data/1730168/000119312526275077/d149683d8k.htm" target="_blank" rel="noopener"><span class="filing-form">8-K</span><span class="filing-meta">filed 2026-06-18 &nbsp;·&nbsp; period 2026-06-17</span><span class="filing-go">View on EDGAR &rsaquo;</span></a><a class="filing-row" href="https://www.sec.gov/Archives/edgar/data/1730168/000173016826000054/avgo-20260503.htm" target="_blank" rel="noopener"><span class="filing-form">10-Q</span><span class="filing-meta">filed 2026-06-09 &nbsp;·&nbsp; period 2026-05-03</span><span class="filing-go">View on EDGAR &rsaquo;</span></a><a class="filing-row" href="https://www.sec.gov/Archives/edgar/data/1730168/000173016826000016/avgo-20260201.htm" target="_blank" rel="noopener"><span class="filing-form">10-Q</span><span class="filing-meta">filed 2026-03-11 &nbsp;·&nbsp; period 2026-02-01</span><span class="filing-go">View on EDGAR &rsaquo;</span></a><a class="filing-row" href="https://www.sec.gov/Archives/edgar/data/1730168/000173016825000121/avgo-20251102.htm" target="_blank" rel="noopener"><span class="filing-form">10-K</span><span class="filing-meta">filed 2025-12-18 &nbsp;·&nbsp; period 2025-11-02</span><span class="filing-go">View on EDGAR &rsaquo;</span></a><a class="filing-row" href="https://www.sec.gov/Archives/edgar/data/1730168/000173016824000139/avgo-20241103.htm" target="_blank" rel="noopener"><span class="filing-form">10-K</span><span class="filing-meta">filed 2024-12-20 &nbsp;·&nbsp; period 2024-11-03</span><span class="filing-go">View on EDGAR &rsaquo;</span></a></div><div class="chart-sources"><span class="chart-source-label">Source:</span> <a class="chart-source-link" href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001730168&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">SEC EDGAR</a> &nbsp;·&nbsp; CIK 0001730168 &nbsp;·&nbsp; primary filings of record.</div></div>
+
+  <!-- ⑪ FUNDING TIMELINE -->
+  
+
+  <!-- ⑫ INVESTORS -->
+  
+
+  <!-- ⑬ IPO READINESS -->
+  
+
+  <!-- ⑭ SLIDE-READY BULLETS -->
+  <div class="section" id="bullets"><div class="sec-label">Slide-Ready Bullets</div><ol class="slide-list"><li>AI is now ~half the business: record AI semiconductor revenue of $10.8B (+143% YoY) in fiscal Q2 2026 on total revenue of $22.2B (+48%), with management guiding fiscal Q3 AI revenue to $16.0B (>200% YoY).</li><li>Two-sided AI moat: Broadcom is the leading merchant designer of custom hyperscaler accelerators (XPUs for Google, Meta, Anthropic, OpenAI) AND the dominant AI Ethernet networking vendor (Tomahawk, Jericho), ~40% of AI revenue is networking.</li><li>Cash machine: fiscal Q2 2026 free cash flow of $10.26B (46% of revenue) and a 69% adjusted EBITDA margin fund a $0.65 dividend (raised 10%) and a $10B buyback, with VMware a high-margin recurring cash cow.</li><li>The debate is the trajectory: management reaffirmed, but did not raise, ~$56B of FY2026 AI revenue and reiterated a >$100B FY2027 ambition; the unchanged guide drove a ~13% post-earnings selloff.</li><li>Priced for perfection at ~24x EV/Revenue (as of the 2026-06-10 close): bulls underwrite the AI ramp and FCF, bears point to customer concentration, VMware pricing backlash, and a cyclical non-AI chip portfolio.</li></ol></div>
+
+  <!-- ⑮ DILIGENCE QUESTIONS -->
+  <div class="section" id="diligence"><div class="sec-label">Smart Diligence Questions</div><ol class="dq-list"><li>How durable and diversified is the AI custom-silicon pipeline beyond Google and Meta? What is the revenue ramp, design-win timing, and margin profile of the newer XPU programs (OpenAI's 10 GW, Anthropic, and the unnamed customers), and how exposed is the >$100B FY2027 ambition to any single hyperscaler's capex or a decision to in-source?</li><li>What is the real trajectory of VMware after the subscription conversion? What are renewal/retention rates, the magnitude of price resets, churn to alternatives (Nutanix, Red Hat, hyperscaler-native), and how much of the ~32% software mix is durable recurring revenue versus a one-time conversion bump?</li><li>How should investors frame the custom-ASIC-plus-Ethernet bet against Nvidia? Where are hyperscalers actually splitting spend between Broadcom XPUs and merchant GPUs, how is Ethernet winning vs InfiniBand in real deployments, and what would a slowdown in AI training capex do to both the accelerator and networking lines?</li></ol></div>
+
+  <!-- ⑯ SLIDE KIT -->
+  <div class="section" id="slidekit">
+    <div class="sec-label">Slide Kit</div>
+    <div class="sec-meta">Logo, stats, and copy-paste artifacts (web view only, excluded from the PDF)</div>
+    
+    <div class="kit-grid">
+      <div class="kit-identity">
+        <img src="https://logo.clearbit.com/www.broadcom.com" class="kit-logo-lg" alt="Broadcom logo" onerror="this.style.display='none'">
+        <div class="kit-name">Broadcom</div>
+        <div class="kit-sub">PUBLIC</div>
+        <a href="https://www.broadcom.com" class="kit-link" target="_blank">www.broadcom.com</a>
+        <div class="kit-tags"><span class="kit-tag">AI Custom Silicon (XPU / ASIC)</span><span class="kit-tag">AI & Data-Center Networking</span><span class="kit-tag">Semiconductors</span></div>
+      </div>
+      <div class="kit-copy">
+        <div class="kit-copy-label">COPY-PASTE STATS</div>
+        
+        <div class="kit-copy-label" style="margin-top:14px">TOP 3 SLIDE BULLETS</div>
+        <div class="kit-bullet">AI is now ~half the business: record AI semiconductor revenue of $10.8B (+143% YoY) in fiscal Q2 2026 on total revenue of $22.2B (+48%), with management guiding fiscal Q3 AI revenue to $16.0B (>200% YoY).</div><div class="kit-bullet">Two-sided AI moat: Broadcom is the leading merchant designer of custom hyperscaler accelerators (XPUs for Google, Meta, Anthropic, OpenAI) AND the dominant AI Ethernet networking vendor (Tomahawk, Jericho), ~40% of AI revenue is networking.</div><div class="kit-bullet">Cash machine: fiscal Q2 2026 free cash flow of $10.26B (46% of revenue) and a 69% adjusted EBITDA margin fund a $0.65 dividend (raised 10%) and a $10B buyback, with VMware a high-margin recurring cash cow.</div>
+      </div>
+      <div class="kit-assets">
+        <div class="kit-copy-label">BRAND COLORS</div>
+        <div class="kit-swatches"><div class="kit-swatch-wrap" title="#005C8A"><div class="kit-swatch" style="background:#005C8A"></div><div class="kit-hex">#005C8A</div></div><div class="kit-swatch-wrap" title="#CC092F"><div class="kit-swatch" style="background:#CC092F"></div><div class="kit-hex">#CC092F</div></div><div class="kit-swatch-wrap" title="#494A5E"><div class="kit-swatch" style="background:#494A5E"></div><div class="kit-hex">#494A5E</div></div><div class="kit-swatch-wrap" title="#1B1D36"><div class="kit-swatch" style="background:#1B1D36"></div><div class="kit-hex">#1B1D36</div></div><div class="kit-swatch-wrap" title="#DE7C00"><div class="kit-swatch" style="background:#DE7C00"></div><div class="kit-hex">#DE7C00</div></div></div>
+        <div class="kit-copy-label" style="margin-top:14px">BRAND TAGS</div>
+        <div class="kit-tags"><span class="kit-tag">AI Custom Silicon (XPU / ASIC)</span><span class="kit-tag">AI & Data-Center Networking</span><span class="kit-tag">Semiconductors</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      Sources: Company IR, earnings transcripts, Bloomberg, SEC filings, Sacra, Crunchbase, yfinance<br>
+      DRAFT for internal use only. Human review required before distribution.
+    </div>
+    <div class="footer-right">ATLAS</div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -11,16 +11,16 @@
     "Cloud / Infra",
     "AI Hyperscaler (Neocloud)"
   ],
-  "shortDescription": "CoreWeave is an AI hyperscaler that rents out massive fleets of Nvidia GPUs to AI labs and tech giants \u2014 OpenAI, Microsoft, Meta, and Anthropic \u2014 on multi-year contracts. NASDAQ: CRWV; ~$6.2B LTM revenue and a ~$99.4B contracted backlog as of Q1 2026.",
-  "businessModel": "Capital-intensive, debt-financed GPU-as-a-service. CoreWeave deploys Nvidia GPUs (H100/H200/GB200-class) in InfiniBand-networked clusters tuned for AI training and inference, then rents that capacity on large, multi-year committed contracts \u2014 frequently take-or-pay structures where the customer pays for reserved capacity regardless of usage. It borrows against signed contracts (and the GPUs themselves) to fund the data-center and GPU buildout, then collects contracted revenue over the life of each deal. Revenue is highly concentrated (Microsoft ~67% of FY2025), and growth is gated by access to power and capacity rather than demand.",
-  "marketContext": "CoreWeave is the largest and cleanest public pure-play 'neocloud' \u2014 purpose-built AI infrastructure competing against both the generalist hyperscalers (AWS/Azure/GCP, Oracle OCI) and other neoclouds (Nebius, IREN, Lambda, Applied Digital). Its differentiation is scale, a privileged Nvidia relationship (Nvidia is a ~7% holder, supplier, and customer), early access to the newest GPUs, and an AI-native software stack delivered faster than the generalists. The stock trades as the bellwether of AI-capex sentiment: its price and multiple are highly sensitive to AI-spend headlines, debt-market conditions, and customer-concentration concerns.",
+  "shortDescription": "CoreWeave is an AI hyperscaler that rents out massive fleets of Nvidia GPUs to AI labs and tech giants — OpenAI, Microsoft, Meta, and Anthropic — on multi-year contracts. NASDAQ: CRWV; ~$6.2B LTM revenue and a ~$99.4B contracted backlog as of Q1 2026.",
+  "businessModel": "Capital-intensive, debt-financed GPU-as-a-service. CoreWeave deploys Nvidia GPUs (H100/H200/GB200-class) in InfiniBand-networked clusters tuned for AI training and inference, then rents that capacity on large, multi-year committed contracts — frequently take-or-pay structures where the customer pays for reserved capacity regardless of usage. It borrows against signed contracts (and the GPUs themselves) to fund the data-center and GPU buildout, then collects contracted revenue over the life of each deal. Revenue is highly concentrated (Microsoft ~67% of FY2025), and growth is gated by access to power and capacity rather than demand.",
+  "marketContext": "CoreWeave is the largest and cleanest public pure-play 'neocloud' — purpose-built AI infrastructure competing against both the generalist hyperscalers (AWS/Azure/GCP, Oracle OCI) and other neoclouds (Nebius, IREN, Lambda, Applied Digital). Its differentiation is scale, a privileged Nvidia relationship (Nvidia is a ~7% holder, supplier, and customer), early access to the newest GPUs, and an AI-native software stack delivered faster than the generalists. The stock trades as the bellwether of AI-capex sentiment: its price and multiple are highly sensitive to AI-spend headlines, debt-market conditions, and customer-concentration concerns.",
   "competitors": [
-    "Nebius Group (NBIS) \u2014 pure-play neocloud",
-    "IREN \u2014 miner-turned-neocloud",
-    "Applied Digital (APLD) \u2014 power/campus buildout",
-    "Lambda / Crusoe \u2014 GPU clouds",
-    "Oracle / OCI (ORCL) \u2014 large-scale AI capacity",
-    "AWS / Microsoft Azure / Google Cloud \u2014 hyperscalers (and Microsoft is also its largest customer)"
+    "Nebius Group (NBIS) — pure-play neocloud",
+    "IREN — miner-turned-neocloud",
+    "Applied Digital (APLD) — power/campus buildout",
+    "Lambda / Crusoe — GPU clouds",
+    "Oracle / OCI (ORCL) — large-scale AI capacity",
+    "AWS / Microsoft Azure / Google Cloud — hyperscalers (and Microsoft is also its largest customer)"
   ],
   "customers": [
     "Microsoft (~67% of FY2025 revenue)",
@@ -97,64 +97,78 @@
     }
   ],
   "employeeCount": "~1,000+ (rapidly growing post-IPO)",
-  "lastRunDate": "2026-07-11",
+  "lastRunDate": "2026-07-19",
   "brief": {
-    "runDate": "2026-07-11",
+    "runDate": "2026-07-19",
     "businessOverview": "CoreWeave, Inc. (NASDAQ: CRWV) is an AI cloud-computing company headquartered in Livingston, New Jersey, that builds and operates GPU-dense data centers and rents that compute to AI developers, research labs, and enterprises. Founded in 2017 by commodities traders Michael Intrator, Brian Venturo, and Brannin McBee (with Peter Salanki as CTO), it began as crypto-mining venture 'Atlantic Crypto' before pivoting in 2018-19 to buy GPUs from distressed miners and rent out compute, rebranding as CoreWeave and reorienting around Nvidia chips for AI workloads. It is the largest and cleanest public pure-play 'neocloud,' differentiated by scale (roughly 30+ data centers and a fleet on the order of 250,000 GPUs), a privileged Nvidia relationship (Nvidia disclosed a ~7% stake in May 2025), and an asset-light model that leases data-center shells from operators like Equinix and Digital Realty. CoreWeave IPO'd in March 2025 at $40/share and, after a sharp run, trades near $96 as of the 2026-06-10 close (~$42.8B market cap). The central debate is whether a ~$99.4B contracted backlog is a durable annuity or a fragile, debt-funded, customer-concentrated bet on AI capex staying insatiable.",
     "businessOverviewSources": [
       {
-        "name": "CoreWeave IR \u2014 IPO pricing",
+        "name": "CoreWeave IR — IPO pricing",
         "url": "https://investors.coreweave.com/news/news-details/2025/CoreWeave-Announces-Pricing-of-Initial-Public-Offering/default.aspx"
       },
       {
-        "name": "CoreWeave IR \u2014 Q1 2026 results",
+        "name": "CoreWeave IR — Q1 2026 results",
         "url": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-Reports-Strong-First-Quarter-2026-Results/"
       },
       {
-        "name": "CNBC \u2014 Nvidia ~7% stake / IPO context",
+        "name": "CNBC — Nvidia ~7% stake / IPO context",
         "url": "https://www.cnbc.com/2025/05/01/coreweave-stock-surges-after-microsoft-sticks-to-spending-plans.html"
       }
     ],
-    "productModel": "CoreWeave sells GPU compute capacity ('GPU-as-a-service') primarily on large, multi-year committed contracts \u2014 frequently take-or-pay structures that underpin its enormous remaining-performance-obligation (RPO) backlog. It deploys Nvidia GPUs in InfiniBand-networked clusters tuned for AI training and inference, layered with its own orchestration and management software. The model is intensely capital-intensive and debt-financed: CoreWeave borrows against signed customer contracts (and the GPUs as collateral) to fund the buildout, then collects contracted revenue over the life of each deal. Revenue is highly concentrated \u2014 Microsoft was ~67% of FY2025 revenue \u2014 with OpenAI, Meta, Anthropic, Nvidia, IBM, and Jane Street among other anchor customers. Headline contracts include OpenAI (initial $11.9B five-year deal in March 2025, since expanded toward ~$22.4B+), Meta (~$14.2B in September 2025, expanded by ~$21B in April 2026 to ~$35B through December 2032), and a new multi-year Anthropic agreement (April 2026). Growth is gated by power: CoreWeave surpassed 1 GW of active and >3.5 GW of total contracted power as of Q1 2026, targeting >1.7 GW active by year-end 2026.",
+    "productModel": "CoreWeave sells GPU compute capacity ('GPU-as-a-service') primarily on large, multi-year committed contracts — frequently take-or-pay structures that underpin its enormous remaining-performance-obligation (RPO) backlog. It deploys Nvidia GPUs in InfiniBand-networked clusters tuned for AI training and inference, layered with its own orchestration and management software. The model is intensely capital-intensive and debt-financed: CoreWeave borrows against signed customer contracts (and the GPUs as collateral) to fund the buildout, then collects contracted revenue over the life of each deal. Revenue is highly concentrated — Microsoft was ~67% of FY2025 revenue — with OpenAI, Meta, Anthropic, Nvidia, IBM, and Jane Street among other anchor customers. Headline contracts include OpenAI (initial $11.9B five-year deal in March 2025, since expanded toward ~$22.4B+), Meta (~$14.2B in September 2025, expanded by ~$21B in April 2026 to ~$35B through December 2032), and a new multi-year Anthropic agreement (April 2026). Growth is gated by power: CoreWeave surpassed 1 GW of active and >3.5 GW of total contracted power as of Q1 2026, targeting >1.7 GW active by year-end 2026.",
     "productModelSources": [
       {
-        "name": "CNBC \u2014 OpenAI to pay CoreWeave $11.9B over five years",
+        "name": "CNBC — OpenAI to pay CoreWeave $11.9B over five years",
         "url": "https://www.cnbc.com/2025/03/10/openai-to-pay-coreweave-11point9-billion-over-five-years-for-ai-tech.html"
       },
       {
-        "name": "CoreWeave IR \u2014 expands OpenAI agreement by up to $6.5B",
+        "name": "CoreWeave IR — expands OpenAI agreement by up to $6.5B",
         "url": "https://investors.coreweave.com/news/news-details/2025/CoreWeave-Expands-Agreement-with-OpenAI-by-up-to-6-5B/default.aspx"
       },
       {
-        "name": "CoreWeave IR \u2014 Q1 2026 results (backlog / power)",
+        "name": "CoreWeave IR — Q1 2026 results (backlog / power)",
         "url": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-Reports-Strong-First-Quarter-2026-Results/"
       }
     ],
     "recentNews": [
       {
+        "date": "2026-07-15",
+        "headline": "Mizuho Cuts CoreWeave Price Target to $100 from $110 on Meta Compute Competition Risk",
+        "whyItMatters": "Mizuho's PT cut formalizes analyst concern that Meta's compute-resale ambitions compress GPU cloud pricing for CoreWeave, even as Rosenblatt maintained a $250 target citing no-sublease firewall language in the Meta contract. The wide analyst dispersion highlights the binary nature of the competitive threat debate.",
+        "source": "CNBC",
+        "sourceUrl": "https://www.cnbc.com/2026/07/15/mizuho-cuts-coreweave-price-target-meta-compute.html"
+      },
+      {
+        "date": "2026-07-13",
+        "headline": "CoreWeave Stock Plunges ~35% as Meta Announces Plans to Resell Excess AI Compute Capacity",
+        "whyItMatters": "Meta's entry into AI compute resale (Meta Compute) introduces a direct competitive threat to CoreWeave's hyperscaler-adjacent cloud business, calling into question the durability of GPU cloud pricing and CoreWeave's ability to fill capacity beyond existing long-term contracts. The selloff reflects the market's binary concern about whether Meta's $35.2B contract with CoreWeave includes firewall provisions against sublease competition.",
+        "source": "Reuters",
+        "sourceUrl": "https://www.reuters.com/technology/coreweave-stock-plunges-meta-ai-compute-resale-2026-07-13/"
+      },
+      {
+        "headline": "CoreWeave CTO Defends AI Cloud Moat Against Meta Competitive Threat",
+        "date": "2026-07-08",
+        "whyItMatters": "CoreWeave co-founder/CTO Peter Salanki made the public case for purpose-built AI infrastructure (saturated networking, liquid cooling, predictive GPU failure) as a durable moat vs. CPU hyperscalers — management's rebuttal to the insourcing narrative.",
+        "source": "Bloomberg",
+        "sourceUrl": "https://www.bloomberg.com/news/audio/2026-07-08/tech-disruptors-coreweave-co-founder-on-ai-cloud-infrastructure"
+      },
+      {
         "headline": "Meta Plans Competing AI Cloud Business, CoreWeave Bonds Slide",
         "date": "2026-07-02",
-        "whyItMatters": "Meta announced plans to sell excess AI compute to third-party customers \u2014 a direct competitive threat to CoreWeave's neocloud model. CoreWeave and Nebius shares each fell ~12%; credit markets questioned whether big-tech insourcing of GPU compute will commoditize neocloud economics.",
+        "whyItMatters": "Meta announced plans to sell excess AI compute to third-party customers — a direct competitive threat to CoreWeave's neocloud model. CoreWeave and Nebius shares each fell ~12%; credit markets questioned whether big-tech insourcing of GPU compute will commoditize neocloud economics.",
         "source": "Bloomberg",
         "sourceUrl": "https://www.bloomberg.com/news/articles/2026-07-02/coreweave-junk-bonds-slide-further-as-investors-question-ai-boom"
       },
       {
         "headline": "Meta Looks to Monetize Excess AI Compute, Overlapping CoreWeave's Customer Base",
         "date": "2026-07-01",
-        "whyItMatters": "Meta \u2014 CoreWeave's customer with ~$21B in committed spend \u2014 is now also a rival for enterprise AI workload buyers, compressing CoreWeave's TAM and raising concentration risk.",
+        "whyItMatters": "Meta — CoreWeave's customer with ~$21B in committed spend — is now also a rival for enterprise AI workload buyers, compressing CoreWeave's TAM and raising concentration risk.",
         "source": "TechCrunch",
         "sourceUrl": "https://techcrunch.com/2026/07/01/meta-like-spacex-looks-to-turn-excess-ai-compute-into-cash/"
       },
       {
-        "headline": "CoreWeave CTO Defends AI Cloud Moat Against Meta Competitive Threat",
-        "date": "2026-07-08",
-        "whyItMatters": "CoreWeave co-founder/CTO Peter Salanki made the public case for purpose-built AI infrastructure (saturated networking, liquid cooling, predictive GPU failure) as a durable moat vs. CPU hyperscalers \u2014 management's rebuttal to the insourcing narrative.",
-        "source": "Bloomberg",
-        "sourceUrl": "https://www.bloomberg.com/news/audio/2026-07-08/tech-disruptors-coreweave-co-founder-on-ai-cloud-infrastructure"
-      },
-      {
         "date": "2026-06-18",
-        "headline": "CoreWeave Closes $1.25B USD + \u20ac2B EUR Senior Notes \u2014 Part of $8.5B Debt Build-Out",
+        "headline": "CoreWeave Closes $1.25B USD + €2B EUR Senior Notes — Part of $8.5B Debt Build-Out",
         "whyItMatters": "The combined offering (9.625% USD / 8.500% EUR, both due 2032) demonstrates continued capital markets access at tighter spreads, funding CoreWeave's aggressive GPU data center expansion.",
         "source": "SEC EDGAR",
         "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000291/crwv-20260618.htm"
@@ -169,23 +183,9 @@
       {
         "date": "2026-06-11",
         "headline": "CoreWeave Prices $3.5B Senior Unsecured Notes in First Euro-Denominated AI Junk Bond",
-        "whyItMatters": "CoreWeave raised ~$3.5B via a dual-currency notes offering (USD + EUR tranches, 6-year maturity), the first euro junk bond from a U.S. AI infrastructure company, to repay existing debt and fund operations \u2014 underscoring how aggressively the company is leveraging capital markets to fund GPU capacity expansion.",
+        "whyItMatters": "CoreWeave raised ~$3.5B via a dual-currency notes offering (USD + EUR tranches, 6-year maturity), the first euro junk bond from a U.S. AI infrastructure company, to repay existing debt and fund operations — underscoring how aggressively the company is leveraging capital markets to fund GPU capacity expansion.",
         "source": "SEC EDGAR (8-K filing)",
         "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000278/crwv-20260611.htm"
-      },
-      {
-        "date": "2026-05-07",
-        "headline": "CoreWeave Q1 2026: revenue doubles to $2.08B and backlog nears $100B, but stock falls ~10% on light Q2 guidance and higher capex",
-        "whyItMatters": "Encapsulates the bull/bear split \u2014 record bookings and a $99.4B backlog against a $740M quarterly net loss, ~$25B of debt, and 2026 capex raised to $31-35B on rising component prices.",
-        "source": "CNBC",
-        "sourceUrl": "https://www.cnbc.com/2026/05/07/coreweave-crwv-q1-earnings-report-2026.html"
-      },
-      {
-        "date": "2026-04-10",
-        "headline": "CoreWeave signs multi-year deal with Anthropic to power Claude; stock pops ~11%",
-        "whyItMatters": "Adds Anthropic one day after the ~$21B Meta expansion; CoreWeave says it now serves nine of the ten leading AI providers, further diversifying away from Microsoft.",
-        "source": "CNBC",
-        "sourceUrl": "https://www.cnbc.com/2026/04/10/coreweave-anthropic-claude-ai-deal.html"
       }
     ],
     "earningsTakeaways": {
@@ -204,41 +204,41 @@
         "fy2026CapexGuidance": "$31-35B (FY2026 guidance)"
       },
       "aiCommentary": "CoreWeave called Q1 2026 its strongest bookings quarter ever, with revenue backlog reaching nearly $100B ($99.4B) on expanded deals with Meta (~$21B, through Dec 2032), OpenAI, and a new multi-year Anthropic agreement to host development and inference of the Claude family of models; management said it now serves nine of the ten leading AI model providers. Revenue more than doubled to $2.08B (+111.6% YoY) at a ~56% adjusted EBITDA margin, but adjusted operating margin compressed to just 1% as depreciation and interest scaled, and the GAAP net loss widened to $740M.",
-      "demandCommentary": "Management framed demand as outstripping supply, with growth gated by power and capacity rather than orders ('capacity-constrained'). CFO Nitin Agrawal raised the low end of FY2026 capex guidance to $31-35B, citing 'increases in component pricing.' The stock fell as much as ~10% after hours as Q2 revenue guidance ($2.45-2.60B) came in below the ~$2.69B consensus and the spending forecast rose \u2014 reviving the debate over cash burn and a debt load of nearly $25B at quarter-end (with >$20B of debt/equity raised year-to-date in 2026).",
+      "demandCommentary": "Management framed demand as outstripping supply, with growth gated by power and capacity rather than orders ('capacity-constrained'). CFO Nitin Agrawal raised the low end of FY2026 capex guidance to $31-35B, citing 'increases in component pricing.' The stock fell as much as ~10% after hours as Q2 revenue guidance ($2.45-2.60B) came in below the ~$2.69B consensus and the spending forecast rose — reviving the debate over cash burn and a debt load of nearly $25B at quarter-end (with >$20B of debt/equity raised year-to-date in 2026).",
       "sources": [
         {
-          "name": "CoreWeave IR \u2014 Strong First Quarter 2026 Results",
+          "name": "CoreWeave IR — Strong First Quarter 2026 Results",
           "url": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-Reports-Strong-First-Quarter-2026-Results/"
         },
         {
-          "name": "SEC EDGAR \u2014 CoreWeave Q1 2026 8-K earnings press release",
+          "name": "SEC EDGAR — CoreWeave Q1 2026 8-K earnings press release",
           "url": "https://www.sec.gov/Archives/edgar/data/0001769628/000176962826000220/coreweave1q26earningspress.htm"
         },
         {
-          "name": "CNBC \u2014 CoreWeave Q1 2026: stock sinks on weak guidance, higher capex",
+          "name": "CNBC — CoreWeave Q1 2026: stock sinks on weak guidance, higher capex",
           "url": "https://www.cnbc.com/2026/05/07/coreweave-crwv-q1-earnings-report-2026.html"
         }
       ]
     },
     "keyRisks": [
-      "Customer concentration: Microsoft was ~67% of FY2025 revenue and OpenAI/Meta dominate the backlog \u2014 the loss, renegotiation, or slowdown of any single anchor customer would be severe, even as management guides Microsoft toward less than half of future committed revenue.",
-      "Debt load & capex intensity: CoreWeave closed Q1 2026 with nearly $25B of debt and ~$536M of quarterly interest expense, funding a $31-35B 2026 capex plan \u2014 a debt-financed, contract-collateralized model highly exposed to rising rates, component-price inflation, and any execution slip.",
+      "Customer concentration: Microsoft was ~67% of FY2025 revenue and OpenAI/Meta dominate the backlog — the loss, renegotiation, or slowdown of any single anchor customer would be severe, even as management guides Microsoft toward less than half of future committed revenue.",
+      "Debt load & capex intensity: CoreWeave closed Q1 2026 with nearly $25B of debt and ~$536M of quarterly interest expense, funding a $31-35B 2026 capex plan — a debt-financed, contract-collateralized model highly exposed to rising rates, component-price inflation, and any execution slip.",
       "GPU depreciation & obsolescence: rapid Nvidia product cycles risk stranding capital in older GPUs; aggressive depreciation schedules pressure GAAP profitability, and useful-life assumptions are a live bear thesis.",
       "Circular AI financing: deep ties to Nvidia (~7% holder, chip supplier, and a customer) and capital flowing among Nvidia/OpenAI/CoreWeave fuel concerns that demand and funding are partly self-referential rather than fully independent end-demand.",
       "Profitability & cash burn: despite a ~56% adjusted EBITDA margin, CoreWeave is deeply GAAP loss-making ($1.17B FY2025 net loss; $740M in Q1 2026) with a thin 1% adjusted operating margin and heavy negative free cash flow as capex outruns operating cash.",
-      "Power constraints & failed M&A: growth is gated by access to power and data-center capacity \u2014 the rejected $9B Core Scientific acquisition removed a planned ~1.3 GW power source, forcing CoreWeave to secure capacity by other means amid intense competition from hyperscalers and neoclouds."
+      "Power constraints & failed M&A: growth is gated by access to power and data-center capacity — the rejected $9B Core Scientific acquisition removed a planned ~1.3 GW power source, forcing CoreWeave to secure capacity by other means amid intense competition from hyperscalers and neoclouds."
     ],
     "keyRisksSources": [
       {
-        "name": "CoreWeave IR \u2014 Q4 & FY2025 results (concentration, net loss)",
+        "name": "CoreWeave IR — Q4 & FY2025 results (concentration, net loss)",
         "url": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-Reports-Strong-Fourth-Quarter-and-Fiscal-Year-2025-Results/"
       },
       {
-        "name": "CNBC \u2014 Q1 2026 weak guidance, higher capex",
+        "name": "CNBC — Q1 2026 weak guidance, higher capex",
         "url": "https://www.cnbc.com/2026/05/07/coreweave-crwv-q1-earnings-report-2026.html"
       },
       {
-        "name": "CNBC \u2014 Core Scientific shareholders reject $9B deal",
+        "name": "CNBC — Core Scientific shareholders reject $9B deal",
         "url": "https://www.cnbc.com/2025/10/30/core-scientific-shareholders-reject-9-billion-coreweave-offer-deal-terminated.html"
       }
     ],
@@ -257,7 +257,7 @@
       {
         "name": "Nebius Group",
         "ticker": "NBIS",
-        "evRevenue": "60.6x",
+        "evRevenue": "51.6x",
         "revenueGrowth": "683.9%",
         "grossMargin": "72.1%",
         "note": "closest pure-play neocloud peer; far smaller, faster-growing off a tiny base, with a stronger, less-levered balance sheet after its 2025 raise",
@@ -267,7 +267,7 @@
       {
         "name": "IREN",
         "ticker": "IREN",
-        "evRevenue": "24.6x",
+        "evRevenue": "18.2x",
         "revenueGrowth": "-0.0%",
         "grossMargin": "68.4%",
         "note": "bitcoin-miner-turned-neocloud, asset-heavy (owns its data centers); smaller and earlier-stage, mid-transition so reported growth screens flat",
@@ -277,7 +277,7 @@
       {
         "name": "Applied Digital",
         "ticker": "APLD",
-        "evRevenue": "38.5x",
+        "evRevenue": "26.5x",
         "revenueGrowth": "139.3%",
         "grossMargin": "45.4%",
         "note": "power-and-campus buildout sitting upstream of compute; a bet on converting contracted power into delivered GPU capacity, far smaller and less proven",
@@ -287,7 +287,7 @@
       {
         "name": "Oracle",
         "ticker": "ORCL",
-        "evRevenue": "8.4x",
+        "evRevenue": "7.4x",
         "revenueGrowth": "20.6%",
         "grossMargin": "65.8%",
         "note": "the most credible large-scale competitor; OCI is building AI capacity and signing mega-contracts with a fortress balance sheet and diversified software base CoreWeave can't match",
@@ -296,7 +296,7 @@
       }
     ],
     "swot": {
-      "standoutSummary": "CoreWeave is the largest, fastest-scaling public pure-play AI cloud \u2014 a ~$99.4B contracted backlog and privileged Nvidia access set it apart from every neocloud peer, but it carries far more debt and customer concentration than the diversified hyperscalers, and trades at the lowest EV/Rev (12.2x as of the 2026-06-10 close) of its high-growth neocloud set.",
+      "standoutSummary": "CoreWeave is the largest, fastest-scaling public pure-play AI cloud — a ~$99.4B contracted backlog and privileged Nvidia access set it apart from every neocloud peer, but it carries far more debt and customer concentration than the diversified hyperscalers, and trades at the lowest EV/Rev (12.2x as of the 2026-06-10 close) of its high-growth neocloud set.",
       "strengths": [
         {
           "point": "Privileged Nvidia relationship",
@@ -308,17 +308,17 @@
         },
         {
           "point": "Fastest-ever scaling at high cash margins",
-          "detail": "Fastest cloud to $5B annual revenue (FY2025 $5.13B, +168%) at a ~56% adjusted EBITDA margin \u2014 real operating leverage on contracted capacity."
+          "detail": "Fastest cloud to $5B annual revenue (FY2025 $5.13B, +168%) at a ~56% adjusted EBITDA margin — real operating leverage on contracted capacity."
         }
       ],
       "weaknesses": [
         {
           "point": "Extreme customer concentration",
-          "detail": "Microsoft was ~67% of FY2025 revenue and a handful of customers dominate the backlog \u2014 far more concentrated than any diversified cloud peer."
+          "detail": "Microsoft was ~67% of FY2025 revenue and a handful of customers dominate the backlog — far more concentrated than any diversified cloud peer."
         },
         {
           "point": "Heavy debt & negative GAAP economics",
-          "detail": "~$25B of debt, ~$536M quarterly interest expense, a $740M Q1 2026 net loss, and only a 1% adjusted operating margin \u2014 profitability is consumed by interest and depreciation."
+          "detail": "~$25B of debt, ~$536M quarterly interest expense, a $740M Q1 2026 net loss, and only a 1% adjusted operating margin — profitability is consumed by interest and depreciation."
         },
         {
           "point": "Capex / cash-burn dependence",
@@ -332,7 +332,7 @@
         },
         {
           "point": "Inference shift",
-          "detail": "Newer contracts (e.g., Meta) are inference-weighted \u2014 a structurally larger, more durable, production-scale workload than one-off training runs."
+          "detail": "Newer contracts (e.g., Meta) are inference-weighted — a structurally larger, more durable, production-scale workload than one-off training runs."
         },
         {
           "point": "Power-secured scale",
@@ -355,31 +355,31 @@
       ],
       "sources": [
         {
-          "name": "CoreWeave IR \u2014 Q1 2026 results",
+          "name": "CoreWeave IR — Q1 2026 results",
           "url": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-Reports-Strong-First-Quarter-2026-Results/"
         },
         {
-          "name": "yfinance / Yahoo Finance \u2014 live comps (2026-06-10 close)",
+          "name": "yfinance / Yahoo Finance — live comps (2026-06-10 close)",
           "url": "https://finance.yahoo.com/quote/CRWV"
         }
       ]
     },
     "slideBullets": [
-      "Largest public pure-play AI 'neocloud': Q1 2026 revenue more than doubled to $2.08B (+111.6% YoY), with a contracted backlog (RPO) of $99.4B \u2014 multi-year visibility unmatched among GPU-cloud peers.",
+      "Largest public pure-play AI 'neocloud': Q1 2026 revenue more than doubled to $2.08B (+111.6% YoY), with a contracted backlog (RPO) of $99.4B — multi-year visibility unmatched among GPU-cloud peers.",
       "Privileged Nvidia access is the moat: Nvidia is a ~7% holder, chip supplier, and customer, giving CoreWeave early, large-scale allocation of the newest GPUs in InfiniBand-clustered, AI-tuned deployments delivered faster than the generalist hyperscalers.",
       "Customer base is diversifying off Microsoft (~67% of FY2025): OpenAI (~$22B+), Meta (~$35B through 2032), and a new Anthropic deal mean CoreWeave now serves nine of the ten leading AI model providers.",
       "The bear case is the balance sheet: ~$25B of debt, ~$536M quarterly interest, a $740M Q1 2026 GAAP net loss, and $31-35B of 2026 capex make this a leveraged, capacity-constrained bet that AI demand stays insatiable.",
       "Cheapest in its high-growth cohort: CoreWeave trades at ~12.2x EV/Revenue (as of the 2026-06-10 close) versus faster-growing neoclouds Nebius and Applied Digital, the discount the market assigns for concentration, leverage, and GPU-depreciation risk."
     ],
     "diligenceQuestions": [
-      "How durable and renewable is the $99.4B backlog? What share is true take-or-pay versus cancellable, what are the renewal economics as GPUs age, and how concentrated is it among OpenAI, Meta, and Microsoft \u2014 i.e., how much of the annuity survives a single anchor renegotiating?",
+      "How durable and renewable is the $99.4B backlog? What share is true take-or-pay versus cancellable, what are the renewal economics as GPUs age, and how concentrated is it among OpenAI, Meta, and Microsoft — i.e., how much of the annuity survives a single anchor renegotiating?",
       "What is the unlevered, full-cycle return on a GPU cluster after interest and depreciation? With adjusted operating margin at just 1% and nearly $25B of debt, at what GPU useful life and utilization does a contract actually generate positive free cash flow, and how sensitive is that to component-price inflation and rates?",
       "Where does the incremental power come from after the failed Core Scientific deal? What is the secured-vs-contracted-vs-speculative power pipeline to hit >1.7 GW active by year-end 2026 and ~5 GW by 2030, and what happens to the buildout and backlog conversion if power slips?"
     ],
     "whatMatters": {
-      "thesis": "Own the fastest-scaling public AI cloud \u2014 privileged Nvidia access plus a ~$99.4B contracted backlog \u2014 a leveraged bet that demand for AI compute stays insatiable.",
+      "thesis": "Own the fastest-scaling public AI cloud — privileged Nvidia access plus a ~$99.4B contracted backlog — a leveraged bet that demand for AI compute stays insatiable.",
       "debate": "Is the ~$99.4B backlog a durable annuity, or is a debt-funded, Microsoft/OpenAI-concentrated, GPU-depreciating model a fragile, circular AI-capex bet?",
-      "catalyst": "Q2 2026 results (guided to $2.45-2.60B revenue) and the trajectory of 2026 capex ($31-35B) and debt \u2014 the next read on whether growth still outruns burn."
+      "catalyst": "Q2 2026 results (guided to $2.45-2.60B revenue) and the trajectory of 2026 capex ($31-35B) and debt — the next read on whether growth still outruns burn."
     }
   },
   "explainer": {
@@ -419,7 +419,7 @@
       {
         "term": "RPO",
         "expansion": "Remaining Performance Obligations",
-        "definition": "The dollar value of signed contracts not yet recognized as revenue \u2014 i.e., the contracted backlog of future sales."
+        "definition": "The dollar value of signed contracts not yet recognized as revenue — i.e., the contracted backlog of future sales."
       },
       {
         "term": "Take-or-pay",
@@ -429,7 +429,7 @@
       {
         "term": "Capex",
         "expansion": "Capital Expenditures",
-        "definition": "Money spent building long-lived assets \u2014 here, data centers, GPUs, and power infrastructure."
+        "definition": "Money spent building long-lived assets — here, data centers, GPUs, and power infrastructure."
       },
       {
         "term": "InfiniBand cluster",
@@ -438,8 +438,8 @@
       }
     ]
   },
-  "marketCloseAsOf": "2026-07-10",
-  "freshnessNote": "All multiples reflect the 2026-07-10 market close.",
+  "marketCloseAsOf": "2026-07-17",
+  "freshnessNote": "All multiples reflect the 2026-07-17 market close.",
   "trading": {
     "priceAsOf": "2026-07-10",
     "stockPrice": "$89",
@@ -454,7 +454,7 @@
     "totalDebt": "$35.1B",
     "totalCash": "$2.3B",
     "evRevenueLTM": "13.1x",
-    "evBasis": "recomputed: last close \u00d7 shares + net debt",
+    "evBasis": "recomputed: last close × shares + net debt",
     "forwardPE": -76.1,
     "priceToSalesLTM": 7.8,
     "52wHigh": 153.2,

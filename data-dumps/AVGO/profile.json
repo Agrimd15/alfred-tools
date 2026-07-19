@@ -14,18 +14,18 @@
   ],
   "shortDescription": "Broadcom designs custom AI chips and the networking silicon that wires them together for hyperscalers like Google, Meta and OpenAI, and sells VMware and other infrastructure software to enterprises. NASDAQ: AVGO; $75.5B LTM revenue, with AI semiconductors ~half of quarterly sales.",
   "businessModel": "Two engines. (1) Semiconductor Solutions: custom AI accelerators ('XPUs'/ASICs) co-designed with individual hyperscalers on 18-24 month cycles, the highest-bandwidth AI networking silicon (Tomahawk Ethernet switches, Jericho fabric routers), plus broadband, wireless (Apple connectivity), storage and industrial chips. (2) Infrastructure Software: VMware (acquired ~$69B, Nov 2023), being converted from perpetual licenses to high-margin VMware Cloud Foundation subscriptions, alongside mainframe (CA/Brocade) and security (Symantec). The combination is a free-cash-flow machine that funds a growing dividend and large buybacks.",
-  "marketContext": "Broadcom is the picks-and-shovels winner of the AI build-out and the leading merchant alternative to Nvidia's GPU-plus-InfiniBand stack: it pairs custom hyperscaler silicon with the dominant AI Ethernet networking franchise, layered on a VMware/infrastructure-software cash cow. AI semiconductor revenue hit a record $10.8B (+143% YoY) in fiscal Q2 2026, roughly half of total revenue. The core debate is whether the AI ramp keeps accelerating toward management's >$100B FY2027 ambition \u2014 or whether, at ~24x EV/Revenue (2026-06-10 close), the stock is priced for perfection (an in-line, not raised, $56B FY2026 AI guide drove a ~13% post-earnings drop).",
+  "marketContext": "Broadcom is the picks-and-shovels winner of the AI build-out and the leading merchant alternative to Nvidia's GPU-plus-InfiniBand stack: it pairs custom hyperscaler silicon with the dominant AI Ethernet networking franchise, layered on a VMware/infrastructure-software cash cow. AI semiconductor revenue hit a record $10.8B (+143% YoY) in fiscal Q2 2026, roughly half of total revenue. The core debate is whether the AI ramp keeps accelerating toward management's >$100B FY2027 ambition — or whether, at ~24x EV/Revenue (2026-06-10 close), the stock is priced for perfection (an in-line, not raised, $56B FY2026 AI guide drove a ~13% post-earnings drop).",
   "competitors": [
-    "NVIDIA (NVDA) \u2014 merchant AI GPUs + InfiniBand (primary competitive frame)",
-    "Marvell Technology (MRVL) \u2014 closest custom-silicon & AI-networking peer",
-    "AMD (AMD) \u2014 merchant AI GPUs (Instinct) + data-center CPUs",
-    "Qualcomm (QCOM) \u2014 connectivity/compute, less AI-data-center levered",
-    "Arista Networks / Cisco \u2014 AI networking",
-    "Nutanix / Red Hat \u2014 VMware alternatives"
+    "NVIDIA (NVDA) — merchant AI GPUs + InfiniBand (primary competitive frame)",
+    "Marvell Technology (MRVL) — closest custom-silicon & AI-networking peer",
+    "AMD (AMD) — merchant AI GPUs (Instinct) + data-center CPUs",
+    "Qualcomm (QCOM) — connectivity/compute, less AI-data-center levered",
+    "Arista Networks / Cisco — AI networking",
+    "Nutanix / Red Hat — VMware alternatives"
   ],
   "customers": [
     "Hyperscaler custom-silicon customers: Google (TPU), Meta (MTIA), plus Anthropic and OpenAI among six core XPU customers",
-    "Apple \u2014 wireless / connectivity content",
+    "Apple — wireless / connectivity content",
     "Cloud and enterprise networking customers (Tomahawk / Jericho)",
     "Global 2000 enterprises on VMware Cloud Foundation, mainframe and Symantec"
   ],
@@ -90,10 +90,10 @@
     }
   ],
   "employeeCount": "~37,000 (post-VMware)",
-  "lastRunDate": "2026-07-11",
+  "lastRunDate": "2026-07-19",
   "brief": {
-    "runDate": "2026-07-11",
-    "businessOverview": "Broadcom Inc. (NASDAQ: AVGO), headquartered in Palo Alto, CA and led by CEO Hock Tan, is a global semiconductor and infrastructure-software leader operating in two segments. Semiconductor Solutions (~68% of fiscal Q2 2026 revenue) spans custom AI accelerators ('XPUs'/ASICs) co-designed with hyperscalers, AI networking silicon (Tomahawk Ethernet switches, Jericho fabric routers), plus broadband, wireless (Apple is a large connectivity customer), server storage and industrial chips. Infrastructure Software (~32%) is anchored by VMware \u2014 acquired for roughly $69B in November 2023, which transformed Broadcom's software mix \u2014 alongside mainframe (CA/Brocade) and security (Symantec). The company has reoriented around the AI build-out: in fiscal Q2 2026 (ended May 3, 2026), AI semiconductor revenue hit a record $10.8B (+143% YoY), about half of total revenue, with networking ~40% of AI sales. Broadcom is the dominant merchant custom-silicon (ASIC) designer, now serving six core XPU customers including Google (TPU), Meta (MTIA), Anthropic and OpenAI. It trades near $372 as of the 2026-06-10 close (~$1.8T market cap).",
+    "runDate": "2026-07-19",
+    "businessOverview": "Broadcom Inc. (NASDAQ: AVGO), headquartered in Palo Alto, CA and led by CEO Hock Tan, is a global semiconductor and infrastructure-software leader operating in two segments. Semiconductor Solutions (~68% of fiscal Q2 2026 revenue) spans custom AI accelerators ('XPUs'/ASICs) co-designed with hyperscalers, AI networking silicon (Tomahawk Ethernet switches, Jericho fabric routers), plus broadband, wireless (Apple is a large connectivity customer), server storage and industrial chips. Infrastructure Software (~32%) is anchored by VMware — acquired for roughly $69B in November 2023, which transformed Broadcom's software mix — alongside mainframe (CA/Brocade) and security (Symantec). The company has reoriented around the AI build-out: in fiscal Q2 2026 (ended May 3, 2026), AI semiconductor revenue hit a record $10.8B (+143% YoY), about half of total revenue, with networking ~40% of AI sales. Broadcom is the dominant merchant custom-silicon (ASIC) designer, now serving six core XPU customers including Google (TPU), Meta (MTIA), Anthropic and OpenAI. It trades near $372 as of the 2026-06-10 close (~$1.8T market cap).",
     "businessOverviewSources": [
       {
         "name": "Broadcom Q2 FY2026 results (SEC EDGAR 8-K)",
@@ -104,11 +104,11 @@
         "url": "https://www.sec.gov/Archives/edgar/data/0001730168/000173016825000116/avgo-11022025x8kxex99.htm"
       },
       {
-        "name": "CNBC \u2014 OpenAI partners with Broadcom on custom AI chips",
+        "name": "CNBC — OpenAI partners with Broadcom on custom AI chips",
         "url": "https://www.cnbc.com/2025/10/13/openai-partners-with-broadcom-custom-ai-chips-alongside-nvidia-amd.html"
       }
     ],
-    "productModel": "Broadcom's economics rest on two engines. (1) AI semiconductors: it co-designs custom XPUs/ASICs with individual hyperscalers (18-24 month design cycles) and supplies the highest-bandwidth Ethernet networking silicon (Tomahawk 6 at 102.4 Tbps; the Jericho4 fabric router links more than 1M XPUs across data centers). Management has reaffirmed roughly $56B of FY2026 AI semiconductor revenue and reiterated a more than $100B FY2027 AI-revenue ambition, with AI bookings exceeding $30B. (2) Infrastructure software: VMware is being converted from perpetual licenses to VMware Cloud Foundation (VCF) subscriptions, lifting recurring revenue and margins. The model is a free-cash-flow machine \u2014 fiscal Q2 2026 free cash flow was $10.26B (46% of revenue) and adjusted EBITDA was $15.24B (69% margin) \u2014 funding a $0.65/quarter dividend (raised 10% for FY2026) and a $10B buyback authorization.",
+    "productModel": "Broadcom's economics rest on two engines. (1) AI semiconductors: it co-designs custom XPUs/ASICs with individual hyperscalers (18-24 month design cycles) and supplies the highest-bandwidth Ethernet networking silicon (Tomahawk 6 at 102.4 Tbps; the Jericho4 fabric router links more than 1M XPUs across data centers). Management has reaffirmed roughly $56B of FY2026 AI semiconductor revenue and reiterated a more than $100B FY2027 AI-revenue ambition, with AI bookings exceeding $30B. (2) Infrastructure software: VMware is being converted from perpetual licenses to VMware Cloud Foundation (VCF) subscriptions, lifting recurring revenue and margins. The model is a free-cash-flow machine — fiscal Q2 2026 free cash flow was $10.26B (46% of revenue) and adjusted EBITDA was $15.24B (69% margin) — funding a $0.65/quarter dividend (raised 10% for FY2026) and a $10B buyback authorization.",
     "productModelSources": [
       {
         "name": "Broadcom Q2 FY2026 results (SEC EDGAR 8-K)",
@@ -121,36 +121,50 @@
     ],
     "recentNews": [
       {
+        "date": "2026-07-16",
+        "headline": "Standard Chartered Selects Broadcom to Deploy VMware Cloud Foundation Across 54 Global Markets",
+        "whyItMatters": "A major global bank standardizing on VMware Cloud Foundation across 54 countries is a marquee enterprise win for Broadcom's VMware integration, validating the post-acquisition monetization thesis and providing a concrete data point for the software upsell story that underpins Broadcom's premium multiple.",
+        "source": "GlobeNewswire (Broadcom IR)",
+        "sourceUrl": "https://www.globenewswire.com/news-release/2026/07/16/broadcom-standard-chartered-vmware-cloud-foundation.html"
+      },
+      {
+        "date": "2026-07-14",
+        "headline": "Morgan Stanley Reaffirms Overweight on Broadcom, 'AVGO Remains a Core AI Winner'",
+        "whyItMatters": "Morgan Stanley reiteration reinforces analyst conviction ahead of the next earnings cycle, supporting the custom-ASIC AI chip revenue ramp thesis (Apple $30B+ deal through 2031) as a durable growth driver.",
+        "source": "CNBC",
+        "sourceUrl": "https://www.cnbc.com/2026/07/14/morgan-stanley-broadcom-core-ai-winner.html"
+      },
+      {
         "headline": "Apple Signs $30B+ Broadcom Chip Supply Deal Through 2031 for 15B+ US-Made Custom Chips",
         "date": "2026-07-08",
-        "whyItMatters": "Apple's single largest manufacturing commitment under its $600B American Manufacturing Program \u2014 15B+ custom wireless connectivity chips built at Broadcom's Fort Collins CO facility, Apple investing $1.5B in facility expansion. Provides massive multi-year revenue visibility on a customer representing ~20% of Broadcom's annual revenue, and cements US manufacturing as a geopolitical moat against export-control risk.",
+        "whyItMatters": "Apple's single largest manufacturing commitment under its $600B American Manufacturing Program — 15B+ custom wireless connectivity chips built at Broadcom's Fort Collins CO facility, Apple investing $1.5B in facility expansion. Provides massive multi-year revenue visibility on a customer representing ~20% of Broadcom's annual revenue, and cements US manufacturing as a geopolitical moat against export-control risk.",
         "source": "Bloomberg",
         "sourceUrl": "https://www.bloomberg.com/news/articles/2026-07-08/apple-aapl-chip-deal-with-broadcom-avgo-expected-to-exceed-30-billion"
       },
       {
         "headline": "Broadcom Files 8-K on New Multi-Year Apple Custom ASIC Supply Agreements Through 2031",
         "date": "2026-07-06",
-        "whyItMatters": "SEC filing disclosed new long-term agreements to develop and supply custom ASIC silicon across multiple generations of Apple products through 2031 \u2014 expanding beyond RF/wireless into broader custom silicon. No dollar value disclosed in the filing; Apple quantified the $30B+ two days later.",
+        "whyItMatters": "SEC filing disclosed new long-term agreements to develop and supply custom ASIC silicon across multiple generations of Apple products through 2031 — expanding beyond RF/wireless into broader custom silicon. No dollar value disclosed in the filing; Apple quantified the $30B+ two days later.",
         "source": "SEC EDGAR",
         "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001730168/000119312526295589/d84378d8k.htm"
       },
       {
         "date": "2026-06-24",
-        "headline": "OpenAI and Broadcom Unveil 'Jalape\u00f1o' \u2014 OpenAI's First Custom AI Inference Chip",
+        "headline": "OpenAI and Broadcom Unveil 'Jalapeño' — OpenAI's First Custom AI Inference Chip",
         "whyItMatters": "The ASIC delivers ~50% cost savings vs. Nvidia GPUs for inference and validates Broadcom's XPU business with a sixth major hyperscaler customer, directly supporting management's $100B+ FY2027 AI revenue forecast.",
         "source": "CNBC",
         "sourceUrl": "https://www.cnbc.com/2026/06/24/openai-and-broadcom-reveal-jalapeno-first-ai-chip-in-partnership.html"
       },
       {
         "date": "2026-06-24",
-        "headline": "Broadcom Rallies on Jalape\u00f1o as OpenAI Reduces Nvidia Dependence",
+        "headline": "Broadcom Rallies on Jalapeño as OpenAI Reduces Nvidia Dependence",
         "whyItMatters": "The co-branded chip launch reinforces Broadcom's custom silicon moat with a sixth hyperscaler XPU customer, expanding the addressable market and providing a re-rating catalyst.",
         "source": "Bloomberg",
         "sourceUrl": "https://www.bloomberg.com/news/articles/2026-06-24/openai-and-broadcom-unveil-ai-chip-to-run-models-faster-cheaper"
       },
       {
         "date": "2026-06-18",
-        "headline": "Broadcom Completes $3.0B Senior Notes Tender Offer \u2014 Liability Management Ahead of AI Build Cycle",
+        "headline": "Broadcom Completes $3.0B Senior Notes Tender Offer — Liability Management Ahead of AI Build Cycle",
         "whyItMatters": "Settlement of legacy senior notes due 2037/2038 (upsized from $2.5B) reduces interest costs and signals proactive balance sheet management as Broadcom invests heavily in AI infrastructure.",
         "source": "SEC EDGAR",
         "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1730168/000119312526275077/d149683d8k.htm"
@@ -161,20 +175,6 @@
         "whyItMatters": "Leadership transition at a pivotal moment: Thuener, previously VP/Corporate Controller and CAO at Alphabet, joins as Broadcom executes a $56B AI chip roadmap and integrates VMware. Spears continues under a nine-month consulting agreement through March 2027.",
         "source": "SEC EDGAR (8-K filing)",
         "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1730168/000119312526266777/d152717d8k.htm"
-      },
-      {
-        "date": "2026-06-03",
-        "headline": "Broadcom posts record fiscal Q2 2026: revenue $22.2B (+48%), AI semis $10.8B (+143%); stock falls ~13% on unchanged $56B AI guide",
-        "whyItMatters": "Confirms AI is now ~half of revenue, but shows the stock is priced for perfection \u2014 an in-line (not raised) full-year AI guide and a small VMware/software miss triggered a double-digit selloff.",
-        "source": "CNBC",
-        "sourceUrl": "https://www.cnbc.com/2026/06/03/broadcom-avgo-earnings-report-q2-2026.html"
-      },
-      {
-        "date": "2026-03-30",
-        "headline": "Broadcom names Alphabet finance exec Amie Thuener CFO, succeeding retiring Kirsten Spears effective June 12, 2026",
-        "whyItMatters": "First CFO change in years; hiring Alphabet's chief accounting officer adds hyperscaler-finance pedigree as AI scales, but is a key-person transition to watch.",
-        "source": "Broadcom CFO transition (SEC EDGAR 8-K)",
-        "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1730168/000119312526140574/d109450d8k.htm"
       }
     ],
     "earningsTakeaways": {
@@ -200,13 +200,13 @@
           "url": "https://www.sec.gov/Archives/edgar/data/0001730168/000173016826000051/avgo-05032026x8kxex99.htm"
         },
         {
-          "name": "CNBC \u2014 Broadcom fiscal Q2 2026 earnings",
+          "name": "CNBC — Broadcom fiscal Q2 2026 earnings",
           "url": "https://www.cnbc.com/2026/06/03/broadcom-avgo-earnings-report-q2-2026.html"
         }
       ]
     },
     "keyRisks": [
-      "Customer concentration: a handful of hyperscalers (Google, Meta, plus Apple in wireless) and now OpenAI/Anthropic drive a large share of AI and total revenue \u2014 loss, in-sourcing, or a capex pause at any one would hit results outsized.",
+      "Customer concentration: a handful of hyperscalers (Google, Meta, plus Apple in wireless) and now OpenAI/Anthropic drive a large share of AI and total revenue — loss, in-sourcing, or a capex pause at any one would hit results outsized.",
       "AI-revenue durability vs. Nvidia merchant GPUs: the bull case rests on hyperscalers preferring custom XPUs and Ethernet over Nvidia's GPU+InfiniBand stack; an unchanged $56B FY2026 AI guide already spooked investors who feared a ceiling.",
       "VMware pricing backlash / churn: the forced perpetual-to-subscription conversion and large VCF bundles have driven steep price increases and customer pushback, and fiscal Q2 software revenue already slightly missed the Street.",
       "China & geopolitical exposure: U.S.-China export controls and softer Chinese demand weigh on the non-AI semiconductor and networking businesses and add regulatory uncertainty.",
@@ -215,7 +215,7 @@
     ],
     "keyRisksSources": [
       {
-        "name": "CNBC \u2014 Broadcom fiscal Q2 2026 earnings / stock drop",
+        "name": "CNBC — Broadcom fiscal Q2 2026 earnings / stock drop",
         "url": "https://www.cnbc.com/2026/06/03/broadcom-avgo-earnings-report-q2-2026.html"
       },
       {
@@ -238,7 +238,7 @@
       {
         "name": "NVIDIA",
         "ticker": "NVDA",
-        "evRevenue": "18.2x",
+        "evRevenue": "19.2x",
         "revenueGrowth": "85.2%",
         "grossMargin": "74.1%",
         "note": "the merchant-GPU incumbent and primary competitive frame; faster-growing at a lower EV/Rev, the GPU+InfiniBand stack Broadcom's custom-ASIC+Ethernet alternative competes against",
@@ -248,7 +248,7 @@
       {
         "name": "Marvell Technology",
         "ticker": "MRVL",
-        "evRevenue": "26.9x",
+        "evRevenue": "19.1x",
         "revenueGrowth": "27.6%",
         "grossMargin": "51.5%",
         "note": "closest custom-silicon (ASIC) and AI-networking peer; the other merchant designer chasing hyperscaler XPU and optical sockets, lower gross margin",
@@ -258,7 +258,7 @@
       {
         "name": "AMD",
         "ticker": "AMD",
-        "evRevenue": "22.5x",
+        "evRevenue": "21.4x",
         "revenueGrowth": "37.8%",
         "grossMargin": "53.1%",
         "note": "merchant AI GPU (Instinct) and data-center CPU challenger; competes for the same hyperscaler AI compute budget",
@@ -268,16 +268,16 @@
       {
         "name": "Qualcomm",
         "ticker": "QCOM",
-        "evRevenue": "4.6x",
+        "evRevenue": "4.2x",
         "revenueGrowth": "-3.5%",
         "grossMargin": "54.8%",
-        "note": "diversified mobile/edge connectivity peer; far less AI-data-center levered and far cheaper \u2014 a valuation/cyclicality contrast point",
+        "note": "diversified mobile/edge connectivity peer; far less AI-data-center levered and far cheaper — a valuation/cyclicality contrast point",
         "source": "yfinance / Yahoo Finance",
         "sourceUrl": "https://finance.yahoo.com/quote/QCOM"
       }
     ],
     "swot": {
-      "standoutSummary": "Broadcom is the only at-scale merchant designer pairing custom AI accelerators (XPUs) AND the dominant AI Ethernet networking stack \u2014 a hyperscaler-aligned alternative to Nvidia \u2014 layered on a VMware/software cash cow that funds a sector-leading ~46% FCF margin and a growing dividend. At a premium EV/Rev (live multiple in comps table) (2026-06-10 close) it sits between faster-growing Nvidia (~19x) and lower-margin Marvell (~26x).",
+      "standoutSummary": "Broadcom is the only at-scale merchant designer pairing custom AI accelerators (XPUs) AND the dominant AI Ethernet networking stack — a hyperscaler-aligned alternative to Nvidia — layered on a VMware/software cash cow that funds a sector-leading ~46% FCF margin and a growing dividend. At a premium EV/Rev (live multiple in comps table) (2026-06-10 close) it sits between faster-growing Nvidia (~19x) and lower-margin Marvell (~26x).",
       "strengths": [
         {
           "point": "Custom-silicon moat",
@@ -327,7 +327,7 @@
         },
         {
           "point": "Valuation / expectations",
-          "detail": "elevated EV/Rev (live multiple in comps table) EV/Rev (2026-06-10 close) prices in perfection \u2014 an in-line guide already drove a ~13% drop; any AI-demand wobble de-rates the multiple fast."
+          "detail": "elevated EV/Rev (live multiple in comps table) EV/Rev (2026-06-10 close) prices in perfection — an in-line guide already drove a ~13% drop; any AI-demand wobble de-rates the multiple fast."
         },
         {
           "point": "China & cyclicality",
@@ -340,16 +340,16 @@
           "url": "https://www.sec.gov/Archives/edgar/data/0001730168/000173016826000051/avgo-05032026x8kxex99.htm"
         },
         {
-          "name": "yfinance / Yahoo Finance \u2014 live comps (2026-06-10 close)",
+          "name": "yfinance / Yahoo Finance — live comps (2026-06-10 close)",
           "url": "https://finance.yahoo.com/quote/AVGO"
         }
       ]
     },
     "slideBullets": [
       "AI is now ~half the business: record AI semiconductor revenue of $10.8B (+143% YoY) in fiscal Q2 2026 on total revenue of $22.2B (+48%), with management guiding fiscal Q3 AI revenue to $16.0B (>200% YoY).",
-      "Two-sided AI moat: Broadcom is the leading merchant designer of custom hyperscaler accelerators (XPUs for Google, Meta, Anthropic, OpenAI) AND the dominant AI Ethernet networking vendor (Tomahawk, Jericho) \u2014 ~40% of AI revenue is networking.",
+      "Two-sided AI moat: Broadcom is the leading merchant designer of custom hyperscaler accelerators (XPUs for Google, Meta, Anthropic, OpenAI) AND the dominant AI Ethernet networking vendor (Tomahawk, Jericho) — ~40% of AI revenue is networking.",
       "Cash machine: fiscal Q2 2026 free cash flow of $10.26B (46% of revenue) and a 69% adjusted EBITDA margin fund a $0.65 dividend (raised 10%) and a $10B buyback, with VMware a high-margin recurring cash cow.",
-      "The debate is the trajectory: management reaffirmed \u2014 but did not raise \u2014 ~$56B of FY2026 AI revenue and reiterated a >$100B FY2027 ambition; the unchanged guide drove a ~13% post-earnings selloff.",
+      "The debate is the trajectory: management reaffirmed — but did not raise — ~$56B of FY2026 AI revenue and reiterated a >$100B FY2027 ambition; the unchanged guide drove a ~13% post-earnings selloff.",
       "Priced for perfection at ~24x EV/Revenue (as of the 2026-06-10 close): bulls underwrite the AI ramp and FCF, bears point to customer concentration, VMware pricing backlash, and a cyclical non-AI chip portfolio."
     ],
     "diligenceQuestions": [
@@ -358,9 +358,9 @@
       "How should investors frame the custom-ASIC-plus-Ethernet bet against Nvidia? Where are hyperscalers actually splitting spend between Broadcom XPUs and merchant GPUs, how is Ethernet winning vs InfiniBand in real deployments, and what would a slowdown in AI training capex do to both the accelerator and networking lines?"
     ],
     "whatMatters": {
-      "thesis": "Broadcom is the picks-and-shovels winner of the AI build-out \u2014 custom accelerators plus the dominant AI networking stack \u2014 wrapped around a VMware cash cow throwing off ~$10B of quarterly free cash flow.",
-      "debate": "Is the AI ramp accelerating or plateauing? An in-line (not raised) $56B FY2026 AI guide drove a ~13% selloff \u2014 bulls see >$100B by FY2027, bears see a stock priced for perfection at ~24x EV/Rev (2026-06-10 close).",
-      "catalyst": "Fiscal Q3 2026 results (quarter ending ~August 2, 2026), where management guides AI semiconductor revenue to $16.0B (>200% YoY) \u2014 the next test of whether the ramp re-accelerates, and new CFO Amie Thuener's first full quarter."
+      "thesis": "Broadcom is the picks-and-shovels winner of the AI build-out — custom accelerators plus the dominant AI networking stack — wrapped around a VMware cash cow throwing off ~$10B of quarterly free cash flow.",
+      "debate": "Is the AI ramp accelerating or plateauing? An in-line (not raised) $56B FY2026 AI guide drove a ~13% selloff — bulls see >$100B by FY2027, bears see a stock priced for perfection at ~24x EV/Rev (2026-06-10 close).",
+      "catalyst": "Fiscal Q3 2026 results (quarter ending ~August 2, 2026), where management guides AI semiconductor revenue to $16.0B (>200% YoY) — the next test of whether the ramp re-accelerates, and new CFO Amie Thuener's first full quarter."
     }
   },
   "explainer": {
@@ -420,12 +420,12 @@
       {
         "term": "FCF",
         "expansion": "Free Cash Flow",
-        "definition": "The cash a business generates after operating costs and capital spending \u2014 the money available for dividends, buybacks and debt paydown."
+        "definition": "The cash a business generates after operating costs and capital spending — the money available for dividends, buybacks and debt paydown."
       }
     ]
   },
-  "marketCloseAsOf": "2026-07-10",
-  "freshnessNote": "All multiples reflect the 2026-07-10 market close.",
+  "marketCloseAsOf": "2026-07-17",
+  "freshnessNote": "All multiples reflect the 2026-07-17 market close.",
   "trading": {
     "priceAsOf": "2026-07-10",
     "stockPrice": "$400",
@@ -440,7 +440,7 @@
     "totalDebt": "$64.9B",
     "totalCash": "$19.6B",
     "evRevenueLTM": "25.8x",
-    "evBasis": "recomputed: last close \u00d7 shares + net debt",
+    "evBasis": "recomputed: last close × shares + net debt",
     "forwardPE": 20.6,
     "priceToSalesLTM": 25.2,
     "52wHigh": 495.0,
