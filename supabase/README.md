@@ -2,9 +2,9 @@
 
 This turns on real per-user accounts ("Sign in with Google") for **Alfred**. Sign-in lives on the
 **`alfred-analyst`** front door (alfred-analyst.com); it gates and proxies `/atlas/*` to this Atlas
-deployment, so one login covers everything. The code is already built; it stays open (or on the
-legacy `SITE_PASSWORD`) until these env vars are set. None of this needs code — it's the Supabase +
-Google dashboards plus the one SQL file here.
+deployment, so one login covers everything. The code is already built; it stays open until these
+env vars are set. None of this needs code — it's the Supabase + Google dashboards plus the one SQL
+file here.
 
 > **Two Vercel projects share the env.** `alfred-analyst` (the front door) needs `SUPABASE_URL` +
 > `SUPABASE_ANON_KEY` (its login client) **and** `SUPABASE_JWT_SECRET` (its `/atlas` gate). This
@@ -41,8 +41,8 @@ Google dashboards plus the one SQL file here.
    SUPABASE_JWT_SECRET=<JWT secret>
    ```
    (`alfred-analyst` also serves a committed `config.js` with the public URL + anon key for its login
-   client.) The moment `SUPABASE_JWT_SECRET` is present, the gates switch from open/password to
-   per-user accounts. You can then remove any `SITE_PASSWORD`.
+   client.) The moment `SUPABASE_JWT_SECRET` is present, the gates switch from open to
+   per-user accounts.
 
 ## How to confirm it works
 - Redeploy both. Visit `alfred-analyst.com/atlas` while signed out → you're redirected to

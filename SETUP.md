@@ -57,20 +57,19 @@ the edge gate, so the app is open for preview — that's expected; the gate appl
 
 ## 6. Choose who can get in (the gate)
 The whole Alfred app is walled by `middleware.js`. Pick one:
-- **Simplest — a shared password.** Set the env var **`SITE_PASSWORD`**; the site asks for it once
-  and remembers you. Good for a private instance you don't want to wire up accounts for.
-- **Real accounts — Sign in with Google (recommended).** Follow **[`supabase/README.md`](supabase/README.md)**:
+- **Real accounts — Sign in with Google.** Follow **[`supabase/README.md`](supabase/README.md)**:
   create a free Supabase project, enable Google, run `supabase/schema.sql`, and set `SUPABASE_URL`,
-  `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET`. When the JWT secret is set it takes over from the
-  password, giving each user their own login.
-- **Set neither** and the site is fully open (handy for a public, ungated demo deployment).
+  `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET` — each user gets their own login.
+- **Set nothing** and the site is fully open (handy for a public, ungated demo deployment).
+
+(The old shared-password gate — `SITE_PASSWORD` — was removed 2026-07-20; the env var is now inert.)
 
 ## 7. Deploy to Vercel
 1. Push your repo to GitHub.
 2. Vercel → **Add New → Project** → import it.
 3. **Leave Root Directory at the repo root**; Framework = **Other** (build command + output dir come
    from `vercel.json` automatically).
-4. Add your gate env vars from step 6 (`SITE_PASSWORD`, **or** the three `SUPABASE_*` vars).
+4. Add your gate env vars from step 6 (the three `SUPABASE_*` vars, or none for an open site).
 5. **Deploy.** Vercel auto-issues HTTPS.
 
 Every push to `main` redeploys. To add a company later: `/atlas TICKER` → `git push` → live in ~1 minute.
@@ -102,6 +101,6 @@ const DEMO_IDS = ['NTSK', 'CRWV', 'AVGO'];   // folder ids: ticker for public co
 ## Security & rules
 - `vercel.json` ships with HSTS, a Content-Security-Policy, and other hardening headers (A/A+ on securityheaders.com).
 - The whole app is gated **server-side at the edge** (`middleware.js`) — by your Google login
-  (Supabase session) or `SITE_PASSWORD` — so brief files are protected before they're served, not
-  just hidden in the browser.
+  (Supabase session) — so brief files are protected before they're served, not just hidden in
+  the browser.
 - **Public information only** - no MNPI, client names, or deal data. Every output is **DRAFT** until you review it.

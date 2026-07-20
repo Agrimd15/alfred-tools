@@ -336,8 +336,7 @@ reach Atlas at `alfred-analyst.com/atlas` after logging in there.
 `middleware.js` here is a **verify-only** gate (defense-in-depth for direct
 `atlas-private.vercel.app` access): with `SUPABASE_JWT_SECRET` set it requires a valid Supabase
 session cookie and redirects misses to the front-door login (`LOGIN_URL`, default
-`https://alfred-analyst.com`); a legacy `SITE_PASSWORD` is honored only while Supabase is unset; with
-neither, the site is open (how the public `alfred-tools` clone serves the synced `DEMO_IDS`
+`https://alfred-analyst.com`); with it unset, the site is open (how the public `alfred-tools` clone serves the synced `DEMO_IDS`
 ungated). To deploy: import this repo into Vercel, **leave the Root Directory at the repo root**,
 Framework = Other (build command + output come from `vercel.json`). Set `SUPABASE_JWT_SECRET` (+
 optionally `LOGIN_URL`). HTTPS + security headers are configured out of the box.

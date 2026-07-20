@@ -17,7 +17,7 @@
 //   • Algorithm confusion: alg:"none" and alg:"HS512" → reject.
 //   • base64url: padding handled, malformed base64url → reject (no throw).
 //   • Cookie parsing: token byte-for-byte round-trips; other cookies alongside sb_at.
-//   • Fallback modes: legacy SITE_PASSWORD when no JWT secret; fully open when neither.
+//   • Fallback: fully open when SUPABASE_JWT_SECRET is not set (legacy password gate removed).
 
 import crypto from 'node:crypto';
 
@@ -98,7 +98,7 @@ const { default: middleware } = await import(MW_URL);
 
 async function withEnv(env, fn) {
   const saved = {};
-  for (const k of ['SUPABASE_JWT_SECRET', 'SITE_PASSWORD']) {
+  for (const k of ['SUPABASE_JWT_SECRET']) {
     saved[k] = process.env[k];
     if (env[k] === undefined) delete process.env[k];
     else process.env[k] = env[k];
@@ -207,14 +207,7 @@ await withEnv({ SUPABASE_JWT_SECRET: SECRET }, async () => {
     /next=%2Fatlas%2Fbriefs/.test(r.headers.get('location') || ''));
 });
 
-// ── 9. Fallback: legacy password when no JWT secret ──
-await withEnv({ SITE_PASSWORD: 'hunter2' }, async () => {
-  const res = await middleware(req(null));
-  check('legacy password mode: gated GET without cookie → 401 password page',
-    res && res.status === 401);
-});
-
-// ── 10. Open: neither configured ──
+// ── 9. Open: no JWT secret configured ──
 await withEnv({}, async () => {
   check('no env configured → site is OPEN (allow)', isAllowed(await middleware(req(null))));
 });
