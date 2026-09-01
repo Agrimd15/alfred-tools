@@ -83,15 +83,15 @@
     {
       "year": "LTM (ended Mar 2026)",
       "value": 1.16,
-      "label": "$1.16B",
-      "source": "yfinance / Yahoo Finance (live pull, 2026-06-10 close)",
+      "label": "$1.3B",
+      "source": "yfinance / Yahoo Finance",
       "sourceUrl": "https://finance.yahoo.com/quote/FIG/financials"
     }
   ],
   "employeeCount": "~1,500+ (rapidly scaling)",
-  "lastRunDate": "2026-07-13",
+  "lastRunDate": "2026-08-30",
   "brief": {
-    "runDate": "2026-07-13",
+    "runDate": "2026-08-30",
     "businessOverview": "Figma, Inc. (NYSE: FIG) makes browser-native, multiplayer software for designing digital products. Its core product, Figma Design, lets designers, developers, product managers, and marketers collaborate live in the same file from any browser \u2014 the 'Google Docs for design' that disrupted desktop incumbents Adobe XD and Sketch. The platform has expanded well beyond design canvases into FigJam (online whiteboarding), Dev Mode (design-to-code handoff), Figma Slides (presentations), Figma Sites (web/app builder), Figma Draw, and a fast-growing AI layer \u2014 Figma Make (prompt-to-prototype, built on Anthropic's Claude) and Figma Weave (AI media creation, from the ~$200M October 2025 Weavy acquisition). Co-founded in 2012 by CEO Dylan Field (a Thiel Fellow) and Evan Wallace, Figma is headquartered in San Francisco and serves 95% of the Fortune 500. Its defining pre-IPO event was the collapse of Adobe's $20B acquisition, abandoned in December 2023 over EU/UK antitrust opposition (Adobe paid a $1B reverse-termination fee). Figma IPO'd on the NYSE on July 31, 2025 at $33/share \u2014 opening at $85, halted past $112, closing day one at $115.50 (+250%) \u2014 then de-rated severely to near $20 by the 2026-06-10 close (~$8.8B market cap) as lockups expired and the market repriced AI risk.",
     "businessOverviewSources": [
       {
@@ -120,6 +120,41 @@
     ],
     "recentNews": [
       {
+        "date": "2026-08-19",
+        "headline": "Figma CEO Dylan Field defends growth outlook and AI positioning in post-earnings CNBC interview",
+        "whyItMatters": "Field publicly addressed the AI-disruption overhang and the post-IPO de-rating, underscoring that management sees agents as expanding rather than eroding Figma's monetization surface.",
+        "source": "CNBC",
+        "sourceUrl": "https://www.cnbc.com/video/2026/08/19/figma-ceo-dylan-field-on-q2-results-state-of-ai-disruption-and-company-growth-outlook.html"
+      },
+      {
+        "date": "2026-08-11",
+        "headline": "Figma extends MCP server coverage so Figma Design, Make, FigJam and Weave run inside ChatGPT, Claude and Cursor",
+        "whyItMatters": "Pushing Figma's canvas and design system into third-party AI clients turns the agent wave into a distribution channel rather than a substitution risk - the crux of the bull case.",
+        "source": "Figma",
+        "sourceUrl": "https://www.figma.com/mcp-catalog/"
+      },
+      {
+        "date": "2026-08-07",
+        "headline": "Final extended lock-up tranche releases roughly 77.7 million Class A shares",
+        "whyItMatters": "The extended lock-up terminated on the second trading day after the June-quarter release, removing the last contractual constraint on insider and VC supply into an already de-rated tape.",
+        "source": "SEC EDGAR (Figma 8-K, extended lock-up agreement)",
+        "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1579878/000157987825000026/fig-20250903.htm"
+      },
+      {
+        "date": "2026-08-05",
+        "headline": "Figma stock falls as Q3 revenue guidance disappoints and two executives depart",
+        "whyItMatters": "Shares dropped roughly 15% after hours as management guided September-quarter growth to decelerate to ~36% and disclosed the exits of CPO Yuhki Yamashita and CMO Sheila Vashee.",
+        "source": "The Information",
+        "sourceUrl": "https://www.theinformation.com/briefings/figma-stock-falls-despite-higher-revenue-growth-amid-new-ai-pricing"
+      },
+      {
+        "date": "2026-08-05",
+        "headline": "CEO Dylan Field forfeits about $46 million in stock awards after share decline",
+        "whyItMatters": "A voluntary forfeiture with no replacement grant is an unusual founder-alignment signal aimed at investors worried about dilution, and it modestly relieves the SBC burden weighing on GAAP profitability.",
+        "source": "Bloomberg",
+        "sourceUrl": "https://www.bloomberg.com/news/articles/2026-08-05/figma-ceo-forfeits-46-million-in-stock-after-share-decline"
+      },
+      {
         "date": "2026-07-07",
         "headline": "Figma acquires team behind a vibe-coding app (Bud), expanding platform from design into agentic coding and prototyping",
         "whyItMatters": "Acquiring the Bud (Y Combinator-backed AI app/agent builder) team extends Figma's platform from collaborative design into agentic coding and rapid prototyping \u2014 reinforcing the AI-as-growth-catalyst thesis and reducing the perceived threat from AI coding tools by bringing them in-house.",
@@ -139,64 +174,38 @@
         "whyItMatters": "Figma deepened its design-to-code capabilities with code layer support, animation, and AI-powered plugin generation, strengthening its platform moat against Framer and Adobe in the design-to-dev handoff market.",
         "source": "TechCrunch",
         "sourceUrl": "https://techcrunch.com/2026/06/24/figma-adds-code-layers-support-for-animations-more-ai-features-in-new-update/"
-      },
-      {
-        "date": "2026-05-14",
-        "headline": "Figma Q1 FY2026 revenue re-accelerates to +46% ($333.4M); NDR 139%; stock jumps ~13%",
-        "whyItMatters": "Growth re-accelerated and net dollar retention hit a two-year high on AI-credit monetization, prompting a $55M FY2026 guidance raise \u2014 the first clear signal AI is a net tailwind to revenue, though gross margin fell to ~82% on inference costs.",
-        "source": "Figma Q1 2026 results (SEC 8-K)",
-        "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001579878/000162828026035087/q126pressrelease.htm"
-      },
-      {
-        "date": "2026-02-18",
-        "headline": "Figma posts Q4 FY2025 revenue of $303.8M (+40%); full-year tops $1B (+41%), NDR 136%",
-        "whyItMatters": "The first full fiscal year as a public company crossed the $1B revenue mark with 40%+ growth and a 91% non-GAAP gross margin \u2014 confirming the growth-and-profitability story even as the stock stayed well below IPO levels.",
-        "source": "Figma FY2025 results (SEC 8-K)",
-        "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001579878/000162828026009024/fy25pressrelease.htm"
-      },
-      {
-        "date": "2025-11-05",
-        "headline": "Figma's first earnings since IPO: Q3 revenue +38% to $274.2M; stock falls as lockups loom",
-        "whyItMatters": "The first print as a public company showed growth decelerating from IPO-era rates and a ~$975.7M one-time IPO-related stock-comp charge, driving a large GAAP loss and stoking the de-rating as lockup releases enabled insider selling.",
-        "source": "Figma Q3 2025 results (SEC 8-K)",
-        "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001579878/000162828025049555/q325pressrelease.htm"
-      },
-      {
-        "date": "2025-10-28",
-        "headline": "Figma acquires Israeli AI startup Weavy for ~$200M, rebrands as Figma Weave",
-        "whyItMatters": "Adds AI image/video/animation generation to the platform, extending Figma beyond static design into media creation and signaling an aggressive M&A push to stay ahead of generative-AI rivals.",
-        "source": "Figma Blog \u2014 Welcome Weavy to Figma",
-        "sourceUrl": "https://www.figma.com/blog/welcome-weavy-to-figma/"
-      },
-      {
-        "date": "2025-07-31",
-        "headline": "Figma's IPO triples on day one \u2014 closes at $115.50 (+250%) after pricing at $33",
-        "whyItMatters": "Priced above its raised $30-32 range at $33 and raised ~$1.2B; the largest first-day pop in 30 years for a $1B+ US IPO, valuing Figma near $50B intraday \u2014 the high-water mark the stock has since fallen far below.",
-        "source": "CNBC",
-        "sourceUrl": "https://www.cnbc.com/2025/07/31/figma-fig-starts-trading-on-nyse-after-ipo.html"
       }
     ],
     "earningsTakeaways": {
-      "quarter": "Q1 FY2026 (ended March 31, 2026)",
-      "reportDate": "May 14, 2026",
+      "quarter": "Q2 2026 (ended June 30, 2026)",
+      "reportDate": "2026-08-05",
       "keyMetrics": {
-        "revenue": "$333.4M (+46% YoY, Q1 FY2026)",
-        "netDollarRetention": "139% (Q1 FY2026, highest in over two years)",
-        "nonGaapOperatingIncome": "$52.1M / 16% margin (Q1 FY2026)",
-        "nonGaapGrossMargin": "~82% (Q1 FY2026, down ~3.8 pts QoQ on higher AI inference costs)",
-        "gaapNetLoss": "~$(142)M (Q1 FY2026)",
-        "freeCashFlow": "$88.6M (Q1 FY2026; FCF margin 27%)",
-        "paidCustomers": "~690,000 (+54% YoY, as of March 31, 2026)",
-        "customersOver100kArr": "1,525 (+48% YoY, as of March 31, 2026)",
-        "fy2026RevenueGuidance": "$1.422-1.428B (+35% YoY at midpoint; FY2026 guidance, raised $55M)",
-        "fy2026NonGaapOpIncomeGuidance": "$125-135M (FY2026 guidance)"
+        "revenue": "$370.1M (Q2 2026, +48% YoY)",
+        "nonGaapGrossMargin": "85% (Q2 2026); non-GAAP gross profit $314.0M, +40% YoY",
+        "gaapOperatingLoss": "$(117.3)M, (32)% margin (Q2 2026)",
+        "nonGaapOperatingIncome": "$36.1M, 10% margin (Q2 2026)",
+        "gaapNetLoss": "$(112.2)M / $(0.21) diluted EPS (Q2 2026)",
+        "nonGaapEPS": "$0.08 (Q2 2026); non-GAAP net income $42.6M",
+        "netDollarRetention": "136% (as of June 30, 2026)",
+        "customersOver100kArr": "1,635 (as of June 30, 2026, +46% YoY); 15,964 customers >$10K ARR, +34% YoY",
+        "freeCashFlow": "$53.2M, 14% margin (Q2 2026)",
+        "researchAndDevelopment": "$167.3M (Q2 2026, vs $83.1M in Q2 2025); stock-based compensation $147.6M",
+        "fy2026Guidance": "Revenue $1.463-1.467B (~+39% YoY, raised ~$40M); non-GAAP operating income $125-135M (FY2026 guidance)"
       },
-      "aiCommentary": "Management framed AI as the growth accelerant: NDR jumped to 139% on stronger-than-expected seat expansion plus early AI-credit monetization from Figma Make, Figma Weave, and an MCP server. The flip side is cost \u2014 CFO Praveer Melwani attributed the ~3.8pt QoQ gross-margin decline (to ~82%) to broader, deeper AI adoption and users reaching for higher-capability models, and said Figma optimizes gross-profit dollars (not a margin target) via model routing and first-party models trained on its design corpus. Management cautioned AI inference costs could keep pressuring gross margin as usage scales.",
-      "demandCommentary": "Demand was broad-based: revenue growth re-accelerated to 46% with international revenue +48% YoY, driven by seat expansion across entire organizations as design's role grows and AI products attach. Paid customers rose 54% YoY to ~690,000; the high-value $100K+ ARR cohort grew 48%. Figma raised full-year guidance on AI-monetization traction and core-platform strength \u2014 the first clear data point that, at least so far, AI is a net tailwind to Figma's revenue rather than a seat-killer.",
+      "aiCommentary": "Q2 was Figma's first full quarter of AI credit monetization and a third consecutive quarter of accelerating revenue growth. More than 80% of paid customers with over $10K ARR were consuming AI credits weekly, and over 50% were using the Figma agent weekly as of July 31, 2026. CEO Dylan Field framed the strategy as bringing code, new creative capabilities and agents directly to the canvas to increase the surface for AI consumption inside Figma. Product vectors include Code Layers, the canvas-native Figma agent with Skills and connectors into Notion, Slack, GitHub and Atlassian, plus Motion, Shaders, 3D Transforms and Weave. The offset is cost: R&D roughly doubled YoY to $167.3M, driving a $(117.3)M GAAP operating loss even as non-GAAP operating income stayed positive.",
+      "demandCommentary": "Demand broadened across both seats and AI consumption. Net dollar retention was 136%, paid customers above $10K ARR grew 34% YoY to 15,964 and those above $100K ARR grew 46% YoY to 1,635, indicating upmarket expansion is outpacing the base. International revenue grew 50% YoY, faster than the 48% total. Management nonetheless guided Q3 2026 revenue to $373.0-375.0M, roughly 36% YoY growth at the midpoint - a deceleration from Q2's 48% that drove the negative post-print reaction - while raising the FY2026 revenue outlook by roughly $40M.",
       "sources": [
         {
-          "name": "Figma Q1 2026 results (SEC 8-K)",
-          "url": "https://www.sec.gov/Archives/edgar/data/0001579878/000162828026035087/q126pressrelease.htm"
+          "name": "Figma Investor Relations - Q2 2026 Financial Results",
+          "url": "https://investor.figma.com/news-events/news/news-details/2026/Figma-Announces-Second-Quarter-2026-Financial-Results/default.aspx"
+        },
+        {
+          "name": "SEC EDGAR - Figma Form 8-K (Q2 2026 results), filed August 5, 2026",
+          "url": "https://www.sec.gov/Archives/edgar/data/0001579878/000162828026053331/fig-20260805.htm"
+        },
+        {
+          "name": "SEC EDGAR - Figma Form 10-Q for the quarter ended June 30, 2026",
+          "url": "https://www.sec.gov/Archives/edgar/data/0001579878/000162828026053348/fig-20260630.htm"
         }
       ]
     },
@@ -223,56 +232,61 @@
         "name": "Figma",
         "ticker": "FIG",
         "type": "Subject",
-        "evRevenue": "8.2x",
-        "revenueGrowth": "46.1%",
-        "grossMargin": "79.8%",
+        "evRevenue": "10.7x",
+        "revenueGrowth": "48.2%",
+        "grossMargin": "79.1%",
         "note": "subject; design-native category leader re-accelerating to 46% growth with 139% NDR; trading at a live EV/Rev multiple below its IPO level on AI-disruption fears",
         "source": "yfinance / Yahoo Finance",
-        "sourceUrl": "https://finance.yahoo.com/quote/FIG"
+        "sourceUrl": "https://finance.yahoo.com/quote/FIG",
+        "priceAsOf": "2026-08-28"
       },
       {
         "name": "Adobe",
         "ticker": "ADBE",
-        "evRevenue": "3.6x",
+        "evRevenue": "4.7x",
         "revenueGrowth": "12.7%",
         "grossMargin": "89.4%",
         "note": "the incumbent Figma displaced and tried (and failed) to buy for $20B; far larger and more profitable but slower-growing \u2014 Figma is the higher-growth, design-native challenger",
         "source": "yfinance / Yahoo Finance",
-        "sourceUrl": "https://finance.yahoo.com/quote/ADBE"
+        "sourceUrl": "https://finance.yahoo.com/quote/ADBE",
+        "priceAsOf": "2026-08-28"
       },
       {
         "name": "Atlassian",
         "ticker": "TEAM",
-        "evRevenue": "3.7x",
-        "revenueGrowth": "31.7%",
-        "grossMargin": "84.8%",
+        "evRevenue": "7.3x",
+        "revenueGrowth": "27.6%",
+        "grossMargin": "85.6%",
         "note": "closest collaboration-software comp by motion (bottoms-up, seat/usage-led expansion across software teams), but dev-workflow-centric rather than design-centric",
         "source": "yfinance / Yahoo Finance",
-        "sourceUrl": "https://finance.yahoo.com/quote/TEAM"
+        "sourceUrl": "https://finance.yahoo.com/quote/TEAM",
+        "priceAsOf": "2026-08-28"
       },
       {
         "name": "monday.com",
         "ticker": "MNDY",
-        "evRevenue": "1.9x",
-        "revenueGrowth": "24.5%",
-        "grossMargin": "89.1%",
+        "evRevenue": "2.5x",
+        "revenueGrowth": "21.9%",
+        "grossMargin": "88.7%",
         "note": "another high-growth, seat-based collaboration-SaaS comp with strong NDR; a growth-and-margin yardstick, though work-management rather than the design layer",
         "source": "yfinance / Yahoo Finance",
-        "sourceUrl": "https://finance.yahoo.com/quote/MNDY"
+        "sourceUrl": "https://finance.yahoo.com/quote/MNDY",
+        "priceAsOf": "2026-08-28"
       },
       {
         "name": "Salesforce",
         "ticker": "CRM",
-        "evRevenue": "3.8x",
-        "revenueGrowth": "13.3%",
-        "grossMargin": "77.6%",
+        "evRevenue": "5.5x",
+        "revenueGrowth": "10.8%",
+        "grossMargin": "77.3%",
         "note": "broad enterprise-SaaS benchmark for scaled, profitable software; far larger and slower-growing, framing Figma as a still-early, premium-growth name versus mature platform peers",
         "source": "yfinance / Yahoo Finance",
-        "sourceUrl": "https://finance.yahoo.com/quote/CRM"
+        "sourceUrl": "https://finance.yahoo.com/quote/CRM",
+        "priceAsOf": "2026-08-28"
       }
     ],
     "swot": {
-      "standoutSummary": "Figma is the design-native, browser-multiplayer category leader \u2014 the only name combining 95%-of-Fortune-500 reach, 40%+ growth re-accelerating to 46%, 139% NDR, and a historically ~91% gross margin \u2014 now testing whether AI is the seat-killer bears fear or the new monetization engine the latest print suggests. It trades at a live EV/Rev multiple (see comps table) (2026-06-17 close), a premium to slower-growing Adobe (~3.8x) but well off its IPO valuation.",
+      "standoutSummary": "Figma is the design-native, browser-multiplayer category leader \u2014 the only name combining 95%-of-Fortune-500 reach, 40%+ growth re-accelerating to 46%, 139% NDR, and a historically ~91% gross margin \u2014 now testing whether AI is the seat-killer bears fear or the new monetization engine the latest print suggests. It trades at a live EV/Rev multiple (see comps table) (2026-08-28 close), a premium to slower-growing Adobe (~4.7x) but well off its IPO valuation.",
       "strengths": [
         {
           "point": "Collaboration moat & network effects",
@@ -345,7 +359,7 @@
       "The IPO arc is the story: priced at $33 on July 31, 2025, popped +250% to $115.50 day one (biggest 30-year first-day pop for a $1B+ US IPO), then de-rated ~80%+ to ~$20 (below the IPO price) as lockups expired and AI risk was repriced.",
       "AI is now a net revenue tailwind \u2014 at a cost: Figma Make/Weave and AI credits helped re-accelerate growth and lift guidance, but non-GAAP gross margin slipped to ~82% (from ~91%) on inference costs, the most-watched line in the model.",
       "Premium unit economics: a historically ~91% non-GAAP gross margin with 16% non-GAAP operating margin and 27% FCF margin \u2014 genuinely profitable on an adjusted basis for a 40%+ grower.",
-      "Key debate: do AI app-builders (Lovable, v0, Claude Design, Stitch) shrink design-seat demand, or does Figma capture it via credits? The stock trades at ~6.2x EV/Revenue (as of the 2026-06-10 close), a premium to Adobe on faster growth but far below its IPO mark."
+      "Key debate: do AI app-builders (Lovable, v0, Claude Design, Stitch) shrink design-seat demand, or does Figma capture it via credits? The stock trades at ~10.7x EV/Revenue (as of the 2026-08-28 close), a premium to Adobe on faster growth but far below its IPO mark."
     ],
     "diligenceQuestions": [
       "Is AI net additive or dilutive to Figma's economics? How much of the 139% NDR and the guidance raise is AI-credit revenue versus core seat expansion, and what is the gross-margin trajectory as inference scales \u2014 does AI add high-margin dollars, or does it grind the ~91% historical gross margin toward the low 80s and below?",
@@ -353,9 +367,24 @@
       "What does the post-lockup share supply and SBC trajectory mean for the stock? With ~54% of Class A under an extended lockup releasing through mid-2026, ongoing IPO-related SBC, and dual-class founder control, how much technical overhang and dilution should a buyer underwrite before the fundamentals are reflected in the price?"
     ],
     "whatMatters": {
-      "thesis": "Figma is the design-native category leader re-accelerating to 46% revenue growth with 139% NDR \u2014 the question isn't growth, it's whether AI is a tailwind it monetizes or a threat that compresses design seats.",
-      "debate": "Does generative AI (Lovable, v0, Claude Design, Stitch) shrink the need for design seats, or does Figma capture that demand through AI credits \u2014 while inference costs grind gross margin from ~91% toward ~82%?",
-      "catalyst": "Q2 FY2026 earnings (expected ~August 2026): whether AI-credit monetization keeps NDR elevated and whether gross margin stabilizes against rising inference costs; lockup releases run through mid-2026."
+      "thesis": "Figma's first full quarter of AI credit monetization delivered 48% revenue growth and 136% net dollar retention, shifting the model from pure seat-based subscription toward a seat-plus-consumption hybrid - but R&D roughly doubled to $167.3M, swinging GAAP operating income to a $(117.3)M loss.",
+      "debate": "Do AI agents expand Figma's monetization surface, as management argues, or commoditize design work? The Q3 guide decelerates growth to ~36% from 48%, and the final lock-up tranche released ~77.7M Class A shares into an already de-rated tape.",
+      "catalyst": "Q3 2026 results against the $373-375M guide, and whether AI credit consumption keeps compounding after the first full quarter of monetization."
+    },
+    "bullBearBase": {
+      "bear": {
+        "label": "~$18 (-38%)",
+        "detail": "Growth keeps decelerating past the guided 36%, AI-native design tools compress seat pricing, and post-lock-up insider supply meets a name still running a GAAP operating loss with $147.6M of quarterly SBC."
+      },
+      "base": {
+        "label": "$30.80 (+6%)",
+        "detail": "Street consensus (buy, 10 analysts): revenue lands near the raised $1.463-1.467B FY2026 range, AI credits keep attaching, and the stock stabilizes well below its IPO-era valuation.",
+        "street": true
+      },
+      "bull": {
+        "label": "~$37 (+27%)",
+        "detail": "MCP distribution into ChatGPT, Claude and Cursor turns the agent wave into a channel, AI credits scale into a genuine second revenue engine, and R&D intensity moderates back toward GAAP breakeven (analyst high end)."
+      }
     }
   },
   "explainer": {
@@ -414,8 +443,8 @@
       }
     ]
   },
-  "marketCloseAsOf": "2026-07-10",
-  "freshnessNote": "All multiples reflect the 2026-07-10 market close.",
+  "marketCloseAsOf": "2026-08-28",
+  "freshnessNote": "All multiples reflect the 2026-08-28 market close.",
   "trading": {
     "priceAsOf": "2026-07-10",
     "stockPrice": "$21",

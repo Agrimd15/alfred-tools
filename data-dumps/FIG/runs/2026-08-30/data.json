@@ -1,0 +1,355 @@
+{
+  "ticker": "FIG",
+  "runDate": "2026-08-30",
+  "marketCloseAsOf": "2026-08-28",
+  "freshnessNote": "All multiples reflect the 2026-08-28 market close.",
+  "sources": [
+    "yfinance / Yahoo Finance",
+    "FMP /stable/profile",
+    "SEC EDGAR"
+  ],
+  "trading": {
+    "priceAsOf": "2026-08-28",
+    "stockPrice": "$29",
+    "marketCap": "$15.4B",
+    "enterpriseValue": "$13.8B",
+    "totalRevenueLTM": "$1.3B",
+    "revenueGrowthYoY": "48.2%",
+    "grossMargin": "79.1%",
+    "operatingMarginGAAP": "-31.7%",
+    "ebitdaMargin": "-122.0%",
+    "fcfPerShare": 866974272,
+    "totalDebt": "$68M",
+    "totalCash": "$1.7B",
+    "evRevenueLTM": "10.7x",
+    "evBasis": "recomputed: last close \u00d7 shares + net debt",
+    "forwardPE": 81.0,
+    "priceToSalesLTM": 12.0,
+    "52wHigh": 71.48,
+    "52wLow": 16.6,
+    "dayChange": "-5.9%",
+    "volume": 19067109,
+    "avgVolume": 20707596,
+    "analystTargetPrice": 30.8,
+    "analystTargetHigh": 37.0,
+    "analystTargetLow": 25.0,
+    "analystRating": "buy",
+    "numberOfAnalysts": 10,
+    "shortName": "Figma, Inc.",
+    "sector": "Technology",
+    "industry": "Software - Application",
+    "sharesOutstanding": 455113611
+  },
+  "quarterlyTrend": {
+    "ticker": "FIG",
+    "quarters": [
+      {
+        "periodEnd": "2026-06-30",
+        "label": "2Q26",
+        "revenue": "$370M",
+        "revenueNum": 370083000.0,
+        "grossMargin": "83.7%",
+        "qoqGrowth": "11.0%",
+        "yoyGrowth": "48.2%"
+      },
+      {
+        "periodEnd": "2026-03-31",
+        "label": "1Q26",
+        "revenue": "$333M",
+        "revenueNum": 333439000.0,
+        "grossMargin": "79.4%",
+        "qoqGrowth": "9.8%",
+        "yoyGrowth": null
+      },
+      {
+        "periodEnd": "2025-12-31",
+        "label": "4Q25",
+        "revenue": "$304M",
+        "revenueNum": 303776000.0,
+        "grossMargin": "82.1%",
+        "qoqGrowth": "10.8%",
+        "yoyGrowth": null
+      },
+      {
+        "periodEnd": "2025-09-30",
+        "label": "3Q25",
+        "revenue": "$274M",
+        "revenueNum": 274173000.0,
+        "grossMargin": "69.4%",
+        "qoqGrowth": "9.8%",
+        "yoyGrowth": null
+      },
+      {
+        "periodEnd": "2025-06-30",
+        "label": "2Q25",
+        "revenue": "$250M",
+        "revenueNum": 249640000.0,
+        "grossMargin": "88.8%",
+        "qoqGrowth": null,
+        "yoyGrowth": null
+      }
+    ],
+    "basis": "calendar-quarter labels on fiscal period-ends; gross margin = gross profit / revenue",
+    "source": "yfinance / Yahoo Finance (quarterly income statement)",
+    "sourceUrl": "https://finance.yahoo.com/quote/FIG/financials"
+  },
+  "profile": {
+    "cik": "0001579878",
+    "exchange": "New York Stock Exchange",
+    "isin": "US3168411052",
+    "beta": 0.92,
+    "lastDividend": 0
+  },
+  "comps": [
+    {
+      "ticker": "ADBE",
+      "name": "Adobe Inc.",
+      "priceAsOf": "2026-08-28",
+      "marketCap": "$115.9B",
+      "evRevenueLTM": "4.7x",
+      "revenueGrowth": "12.7%",
+      "grossMargin": "89.4%",
+      "analystRating": "hold",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/ADBE"
+    },
+    {
+      "ticker": "TEAM",
+      "name": "Atlassian Corporation",
+      "priceAsOf": "2026-08-28",
+      "marketCap": "$48.2B",
+      "evRevenueLTM": "7.3x",
+      "revenueGrowth": "27.6%",
+      "grossMargin": "85.6%",
+      "analystRating": "strong_buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/TEAM"
+    },
+    {
+      "ticker": "MNDY",
+      "name": "monday.com Ltd.",
+      "priceAsOf": "2026-08-28",
+      "marketCap": "$4.3B",
+      "evRevenueLTM": "2.5x",
+      "revenueGrowth": "21.9%",
+      "grossMargin": "88.7%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/MNDY"
+    },
+    {
+      "ticker": "CRM",
+      "name": "Salesforce, Inc.",
+      "priceAsOf": "2026-08-28",
+      "marketCap": "$210.7B",
+      "evRevenueLTM": "5.5x",
+      "revenueGrowth": "10.8%",
+      "grossMargin": "77.3%",
+      "analystRating": "buy",
+      "source": "yfinance / Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/CRM"
+    }
+  ],
+  "secFilings": {
+    "company": "Figma, Inc.",
+    "cik": "0001579878",
+    "fiscalYearEnd": "1231",
+    "filings": [
+      {
+        "form": "10-Q",
+        "filingDate": "2026-08-05",
+        "reportDate": "2026-06-30",
+        "url": "https://www.sec.gov/Archives/edgar/data/1579878/000162828026053348/fig-20260630.htm",
+        "source": "SEC EDGAR (primary filing)"
+      },
+      {
+        "form": "8-K",
+        "filingDate": "2026-08-05",
+        "reportDate": "2026-08-05",
+        "url": "https://www.sec.gov/Archives/edgar/data/1579878/000162828026053331/fig-20260805.htm",
+        "source": "SEC EDGAR (primary filing)"
+      },
+      {
+        "form": "8-K",
+        "filingDate": "2026-06-04",
+        "reportDate": "2026-06-02",
+        "url": "https://www.sec.gov/Archives/edgar/data/1579878/000162828026040792/fig-20260602.htm",
+        "source": "SEC EDGAR (primary filing)"
+      },
+      {
+        "form": "10-Q",
+        "filingDate": "2026-05-14",
+        "reportDate": "2026-03-31",
+        "url": "https://www.sec.gov/Archives/edgar/data/1579878/000162828026035209/fig-20260331.htm",
+        "source": "SEC EDGAR (primary filing)"
+      },
+      {
+        "form": "10-K",
+        "filingDate": "2026-02-18",
+        "reportDate": "2025-12-31",
+        "url": "https://www.sec.gov/Archives/edgar/data/1579878/000162828026009228/fig-20251231.htm",
+        "source": "SEC EDGAR (primary filing)"
+      }
+    ],
+    "source": "SEC EDGAR",
+    "sourceUrl": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001579878&type=&dateb=&owner=include&count=40"
+  },
+  "secFacts": {
+    "annualRevenue": [
+      {
+        "end": "2023-12-31",
+        "value": 504874000,
+        "valueFormatted": "$505M",
+        "fy": 2025,
+        "fp": "FY",
+        "filed": "2026-02-18",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "end": "2024-12-31",
+        "value": 749011000,
+        "valueFormatted": "$749M",
+        "fy": 2025,
+        "fp": "FY",
+        "filed": "2026-02-18",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "end": "2025-12-31",
+        "value": 1055788000,
+        "valueFormatted": "$1.1B",
+        "fy": 2025,
+        "fp": "FY",
+        "filed": "2026-02-18",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      }
+    ],
+    "quarterlyRevenue": [
+      {
+        "end": "2025-03-31",
+        "value": 228199000,
+        "valueFormatted": "$228M",
+        "fy": 2026,
+        "fp": "Q1",
+        "filed": "2026-05-14",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "end": "2025-06-30",
+        "value": 249640000,
+        "valueFormatted": "$250M",
+        "fy": 2026,
+        "fp": "Q2",
+        "filed": "2026-08-05",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "end": "2025-09-30",
+        "value": 274173000,
+        "valueFormatted": "$274M",
+        "fy": 2025,
+        "fp": "Q3",
+        "filed": "2025-11-05",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "end": "2026-03-31",
+        "value": 333439000,
+        "valueFormatted": "$333M",
+        "fy": 2026,
+        "fp": "Q1",
+        "filed": "2026-05-14",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "end": "2026-06-30",
+        "value": 370083000,
+        "valueFormatted": "$370M",
+        "fy": 2026,
+        "fp": "Q2",
+        "filed": "2026-08-05",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      }
+    ],
+    "annualNetIncome": [
+      {
+        "end": "2023-12-31",
+        "value": 737841000,
+        "valueFormatted": "$738M",
+        "fy": 2025,
+        "fp": "FY",
+        "filed": "2026-02-18",
+        "concept": "NetIncomeLoss"
+      },
+      {
+        "end": "2024-12-31",
+        "value": -732120000,
+        "valueFormatted": "$-732M",
+        "fy": 2025,
+        "fp": "FY",
+        "filed": "2026-02-18",
+        "concept": "NetIncomeLoss"
+      },
+      {
+        "end": "2025-12-31",
+        "value": -1250463000,
+        "valueFormatted": "$-1.3B",
+        "fy": 2025,
+        "fp": "FY",
+        "filed": "2026-02-18",
+        "concept": "NetIncomeLoss"
+      }
+    ],
+    "cik": "0001579878",
+    "source": "SEC EDGAR XBRL companyfacts (as reported)",
+    "sourceUrl": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001579878&type=10-K"
+  },
+  "secSharesOutstanding": {
+    "dilutedShares": 527460000,
+    "dilutedSharesFormatted": "527.5M",
+    "dilutedPeriod": "Q ended 2026-06-30",
+    "dilutedForm": "10-Q",
+    "dilutedFiled": "2026-08-05",
+    "basicShares": 527460000,
+    "basicSharesFormatted": "527.5M",
+    "dilutionPctVsBasic": 0.0,
+    "coverShares": null,
+    "coverSharesFormatted": null,
+    "coverAsOf": null,
+    "splitAdjusted": false,
+    "splitEvents": [],
+    "crossCheck": {
+      "yahooShares": 533009867,
+      "yahooSharesFormatted": "533.0M",
+      "diffPct": -1.0,
+      "ok": true,
+      "note": "ties with Yahoo's live share count within 1.0%"
+    },
+    "basis": "Diluted = weighted-average diluted shares as reported in the filing's income statement (ASC 260 \u2014 treasury stock method applied by the filer to options/warrants/RSUs; if-converted for convertibles). Cover count = actual shares outstanding on the filing cover page as of its stated date.",
+    "source": "SEC EDGAR XBRL companyfacts (as reported)",
+    "sourceUrl": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001579878&type=10-Q"
+  },
+  "relativePerformance": {
+    "benchmark": "QQQ",
+    "periods": {
+      "1M": {
+        "stock": "18.5%",
+        "bench": "4.1%",
+        "spreadPp": 14.4
+      },
+      "YTD": {
+        "stock": "-23.4%",
+        "bench": "17.1%",
+        "spreadPp": -40.5
+      },
+      "1Y": {
+        "stock": "-59.0%",
+        "bench": "26.2%",
+        "spreadPp": -85.2
+      }
+    },
+    "asOf": "2026-08-28",
+    "source": "yfinance / Yahoo Finance"
+  },
+  "rampDemandSignal": null
+}
