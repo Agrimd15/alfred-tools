@@ -111,6 +111,14 @@ def _x(val) -> str | None:
     return f"{float(val):.1f}x"
 
 
+def _px(val) -> str | None:
+    """A per-share price, always to the cent — never _b(), whose sub-$1M branch rounds
+    to the dollar and prints a $1.89 stock as '$2'."""
+    if val is None or val != val:
+        return None
+    return f"${float(val):,.2f}"
+
+
 # ── Last market close: the single dated anchor for every multiple ─────────────
 
 def last_close(stock) -> tuple:
@@ -760,7 +768,7 @@ def get_yf(ticker: str) -> dict:
 
         return {
             "priceAsOf":           q.get("priceAsOf"),       # date the price/multiples reflect
-            "stockPrice":          _b(close, 2) if close else _b(info.get("currentPrice") or info.get("regularMarketPrice"), 2),
+            "stockPrice":          _px(close or info.get("currentPrice") or info.get("regularMarketPrice")),
             "marketCap":           q.get("marketCap"),
             "enterpriseValue":     q.get("enterpriseValue"),
             "totalRevenueLTM":     q.get("totalRevenueLTM"),
@@ -768,7 +776,10 @@ def get_yf(ticker: str) -> dict:
             "grossMargin":         q.get("grossMargin"),
             "operatingMarginGAAP": _pct(info.get("operatingMargins")),
             "ebitdaMargin":        _pct(info.get("ebitdaMargins")),
-            "fcfPerShare":         info.get("freeCashflow"),
+            # TOTAL LTM free cash flow in dollars — Yahoo's `freeCashflow` is not a
+            # per-share figure (it shipped here as "fcfPerShare" until 2026-09).
+            "freeCashFlowLTM":     info.get("freeCashflow"),
+            "freeCashFlowLTMFormatted": _b(info.get("freeCashflow")),
             "totalDebt":           _b(info.get("totalDebt")),
             "totalCash":           _b(info.get("totalCash")),
             "evRevenueLTM":        q.get("evRevenueLTM"),

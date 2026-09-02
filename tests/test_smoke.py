@@ -96,7 +96,36 @@ def test_formatters_never_print_nan():
     assert data_agent._b(float("nan")) is None
     assert data_agent._pct(float("nan")) is None
     assert data_agent._x(float("nan")) is None
+    assert data_agent._px(float("nan")) is None
     assert data_agent._b(1.5e9) == "$1.5B"
+
+
+def test_price_formatter_keeps_the_cents():
+    """_b() rounds sub-$1M values to the dollar, so a $1.89 stock printed as '$2'."""
+    assert data_agent._px(1.89) == "$1.89"
+    assert data_agent._px(246.53) == "$246.53"
+
+
+class _FakeTicker:
+    def __init__(self, info):
+        self.info = info
+
+
+def test_get_yf_labels_free_cash_flow_as_a_total_not_per_share(monkeypatch):
+    """Yahoo's `freeCashflow` is TOTAL FCF in dollars. It shipped as `fcfPerShare`
+    (NXPI: 3,555,000,064 — off by the ~252M share count) until 2026-09."""
+    info = {"freeCashflow": 3.555e9, "sharesOutstanding": 252_000_000,
+            "currentPrice": 246.53, "totalDebt": 1.1e10, "totalCash": 3.0e9}
+    monkeypatch.setattr(data_agent, "yf", type("_YF", (), {
+        "Ticker": staticmethod(lambda t: _FakeTicker(info))})())
+    monkeypatch.setattr(data_agent, "live_quote",
+                        lambda t, stock=None, info=None: {"priceAsOf": "2026-09-01",
+                                                          "closePrice": 246.53})
+    m = data_agent.get_yf("TST")
+    assert "fcfPerShare" not in m                       # the mislabeled key is gone
+    assert m["freeCashFlowLTM"] == 3.555e9              # raw dollars, honestly named
+    assert m["freeCashFlowLTMFormatted"] == "$3.6B"
+    assert m["stockPrice"] == "$246.53"                 # a price, not a $B magnitude
 
 
 # ── source_audit: trust + shallow-link heuristics ──────────────────────────────
